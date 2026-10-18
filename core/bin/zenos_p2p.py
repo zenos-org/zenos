@@ -94,7 +94,7 @@ def unseal(blob):
     """Verify the device signature and decrypt with the level key. Callers check the session level first."""
     h, hb, sig, ct = zenos.parse(blob)
     zenos.verify(hb, sig, ct)
-    data = zenos.decrypt_ct(h, hb, ct)
+    data = zenos.decrypt_ct(h, hb, ct, sig=sig)
     return h, data
 
 

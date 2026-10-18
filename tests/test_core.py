@@ -181,6 +181,62 @@ class AccessRequests(unittest.TestCase):
         self.assertIsNone(zenos.valid_grant(self.file))
 
 
+class KeyAgent(unittest.TestCase):
+    """root key agent: plaintext only within clearance or with an officer-signed grant for that exact file"""
+    @classmethod
+    def setUpClass(cls):
+        import pwd as _pwd
+        d = TMP / "keyd"
+        d.mkdir()
+        os.environ.update(ZENOS_KEYD_KEYS=str(d / "keys"), ZENOS_CLEARANCE=str(d / "clearance"), ZENOS_APPROVERS=str(d / "approvers"),
+                          ZENOS_KEYD_LOG=str(d / "keyd.jsonl"), ZENOS_KEYD_LEDGER=str(d / "ledger.jsonl"))
+        import importlib, zenos_keyd
+        cls.K = importlib.reload(zenos_keyd)
+        cls.K.ensure_keys()
+        cls.user = _pwd.getpwuid(os.getuid()).pw_name
+        (d / "clearance").write_text(f"{cls.user} = 2\n")
+        (d / "approvers").mkdir()
+        cls.officers = {n: Ed25519PrivateKey.generate() for n in ("sato", "tanaka")}
+        for n, k in cls.officers.items():
+            (d / "approvers" / f"{n}.pub").write_bytes(raw_pub(k))
+
+    def call(self, **m):
+        return self.K.handle(m, os.getuid())
+
+    def seal(self, level, data=b"secret"):
+        r = self.call(op="seal", level=level, name="f.txt", data=base64.b64encode(data).decode())
+        self.assertTrue(r["ok"])
+        return base64.b64decode(r["blob"])
+
+    def grant_for(self, blob, level, signers):
+        core = {"id": "r1", "requester": self.user, "file": "/x/f.zen", "file_hash": hashlib.sha256(blob).hexdigest(),
+                "level": level, "reason": "test", "created": "2026-10-19T10:00:00+0900"}
+        d = hashlib.sha256(json.dumps(core, sort_keys=True, ensure_ascii=False).encode()).digest()
+        return {"request": "r1", "requester": self.user, "file_hash": core["file_hash"], "level": level, "expires": 4e9,
+                "digest": base64.b64encode(d).decode(), "core": core,
+                "approvals": [{"approver": n, "sig": base64.b64encode(self.officers[n].sign(d)).decode()} for n in signers]}
+
+    def test_clearance_decides(self):
+        self.assertEqual(self.call(op="whoami")["clearance"], 2)
+        low, high = self.seal(2, b"L2 text"), self.seal(4, b"L4 text")
+        self.assertEqual(base64.b64decode(self.call(op="open", blob=base64.b64encode(low).decode())["data"]), b"L2 text")
+        r = self.call(op="open", blob=base64.b64encode(high).decode())
+        self.assertFalse(r["ok"])
+        self.assertEqual(r["error"], "level")
+
+    def test_officer_grant_opens_one_file(self):
+        high, other = self.seal(4, b"L4 text"), self.seal(4, b"other")
+        b64 = lambda b: base64.b64encode(b).decode()
+        self.assertFalse(self.call(op="open", blob=b64(high), grant=self.grant_for(high, 4, ["sato"]))["ok"])          # needs two
+        self.assertTrue(self.call(op="open", blob=b64(high), grant=self.grant_for(high, 4, ["sato", "tanaka"]))["ok"])
+        self.assertFalse(self.call(op="open", blob=b64(other), grant=self.grant_for(high, 4, ["sato", "tanaka"]))["ok"])  # another file
+
+    def test_tampered_file_is_refused(self):
+        blob = bytearray(self.seal(2))
+        blob[-1] ^= 1
+        self.assertEqual(self.call(op="open", blob=base64.b64encode(bytes(blob)).decode())["error"], "signature")
+
+
 class AuditShipping(unittest.TestCase):
     """a PC that rewrites its own ledger is caught by the audit node holding the earlier copy"""
     @classmethod

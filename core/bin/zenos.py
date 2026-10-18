@@ -67,9 +67,36 @@ except Exception:
     _zfrag = None
 KSTORE = K / "frag"
 
+# Installed system: the level keys belong to root (zenos-keyd); every seal and unseal goes through it, and it
+# decides by the caller's clearance (or an officer-signed grant). The development layout keeps keys in the home.
+KEYD_SOCK = os.environ.get("ZENOS_KEYD_SOCK", "/run/zenos/keyd.sock")
+
+
+def use_keyd():
+    return os.path.exists(KEYD_SOCK)
+
+
+def keyd(msg):
+    import socket
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(60)
+    s.connect(KEYD_SOCK)
+    s.sendall((json.dumps(msg) + "\n").encode())
+    buf = b""
+    while not buf.endswith(b"\n"):
+        chunk = s.recv(1 << 20)
+        if not chunk:
+            break
+        buf += chunk
+    s.close()
+    return json.loads(buf or b"{}")
+
+
 def _device_id():
     try:
         import hashlib as _h
+        if use_keyd():
+            return _h.sha256(base64.b64decode(keyd({"op": "whoami"})["device"])).hexdigest()[:16]
         return _h.sha256((K / "device_ed25519.pub").read_bytes()).hexdigest()[:16]
     except Exception:
         return "unknown"
@@ -97,6 +124,8 @@ def audit(event, **kw):
 
 
 def ensure_keys():
+    if use_keyd():
+        return                                       # the keys live with the root key agent
     K.mkdir(parents=True, exist_ok=True)
     os.chmod(K, 0o700)
     for n in range(1, 6):
@@ -116,9 +145,15 @@ def ensure_keys():
 
 def session_level():
     try:
-        return max(1, min(5, int((CFG / "level").read_text().strip())))
+        s = max(1, min(5, int((CFG / "level").read_text().strip())))
     except Exception:
-        return 1
+        s = 1
+    if use_keyd():                                   # never above the clearance the administrator set
+        try:
+            s = min(s, int(keyd({"op": "whoami"})["clearance"]))
+        except Exception:
+            s = 1
+    return s
 
 
 def folder_for(level):
@@ -140,6 +175,11 @@ def folder_range(path):
 
 
 def seal(data: bytes, level: int, name: str) -> bytes:
+    if use_keyd():
+        r = keyd({"op": "seal", "level": level, "name": name, "data": base64.b64encode(data).decode()})
+        if not r.get("ok"):
+            raise RuntimeError("The key agent refused to seal: " + str(r.get("error")))
+        return base64.b64decode(r["blob"])
     ensure_keys()
     base = {"zenos": 1, "level": level, "label": LABEL[level], "name": name,
             "created": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "author": os.environ.get("USER", "zenos")}
@@ -155,8 +195,17 @@ def seal(data: bytes, level: int, name: str) -> bytes:
     sig = sk.sign(hb + hashlib.sha256(ct).digest())
     return MAGIC + hb + b"\n" + base64.b64encode(sig) + b"\n" + ct
 
-def decrypt_ct(h, hb, ct):
-    """Single decrypt path: fragmented (per-fragment keys) or legacy (per-level key)."""
+def decrypt_ct(h, hb, ct, sig=None, grant=None):
+    """Single decrypt path: fragmented (per-fragment keys) or legacy (per-level key). With the key agent the whole
+    signed file goes to it, with the officers' grant when the file is above the caller's clearance."""
+    if use_keyd():
+        if sig is None:
+            raise RuntimeError("the key agent needs the signed file")
+        r = keyd({"op": "open", "blob": base64.b64encode(MAGIC + hb + b"\n" + base64.b64encode(sig) + b"\n" + ct).decode(),
+                  "grant": grant})
+        if not r.get("ok"):
+            raise PermissionError(r.get("message") or r.get("error") or "refused")
+        return base64.b64decode(r["data"])
     if h.get("fmt") == "zfrag2":
         return _zfrag.open_full(ct, str(KSTORE))
     return AESGCM((K / f"L{h['level']}.key").read_bytes()).decrypt(base64.b64decode(h["nonce"]), ct, hb)
@@ -171,6 +220,11 @@ def parse(blob: bytes):
 
 
 def verify(hb, sig, ct):
+    if use_keyd():
+        r = keyd({"op": "verify", "blob": base64.b64encode(MAGIC + hb + b"\n" + base64.b64encode(sig) + b"\n" + ct).decode()})
+        if not r.get("ok"):
+            raise ValueError("signature check failed")
+        return
     pk = Ed25519PublicKey.from_public_bytes((K / "device_ed25519.pub").read_bytes())
     pk.verify(sig, hb + hashlib.sha256(ct).digest())  # raises InvalidSignature
 
@@ -596,7 +650,12 @@ def cmd_open(path):
             if rc == 0:
                 request_access(p, h)
             return
-    data = decrypt_ct(h, hb, ct)
+    try:
+        data = decrypt_ct(h, hb, ct, sig=sig, grant=granted)
+    except PermissionError as e:                      # the key agent's own check (clearance / grant)
+        audit("open-refused", file=p.name, level=lvl, reason="key-agent")
+        kd("--title", f"ZENOS · L{lvl}", "--sorry", f"\"{h['name']}\" stays encrypted.\n\n{e}")
+        return
     audit("open-granted" if granted else "open", file=p.name, level=lvl,
           **({"request": granted["request"], "approvers": [a["approver"] for a in granted["approvals"]]} if granted else {}))
     _ng = lvl >= 4

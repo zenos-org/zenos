@@ -6,7 +6,11 @@ if [ "$1" = "configure" ]; then
     if [ -d /run/systemd/system ]; then
         systemctl daemon-reload || true
     fi
-    systemctl enable zenos-firewall.service zenos-netsentinel.service zenos-heartwatch.service zenos-guardd.service zenos-auditship.service >/dev/null 2>&1 || true
+    # clearances (which levels each user may open without an approval) are set by the administrator:
+    #   sudo zenos_keyd.py --clearance <user> <1-5>      until then every user is cleared for L1 only
+    mkdir -p /etc/zenos
+    [ -e /etc/zenos/clearance ] || printf '# user = level (1-5). Set with: sudo zenos_keyd.py --clearance USER N\n' > /etc/zenos/clearance
+    systemctl enable zenos-keyd.service zenos-firewall.service zenos-netsentinel.service zenos-heartwatch.service zenos-guardd.service zenos-auditship.service >/dev/null 2>&1 || true
     if [ -d /run/systemd/system ]; then
         # never take the inbound lockdown down during an upgrade: start it if needed, otherwise re-apply the
         # rules in place (the script flushes and refills its own chain), so there is no unprotected window
@@ -15,7 +19,7 @@ if [ "$1" = "configure" ]; then
         else
             systemctl start zenos-firewall.service || true
         fi
-        systemctl restart zenos-netsentinel.service zenos-heartwatch.service zenos-guardd.service || true
+        systemctl restart zenos-keyd.service zenos-netsentinel.service zenos-heartwatch.service zenos-guardd.service || true
         systemctl try-restart zenos-auditship.service || true
     fi
     # per-user endpoint audit, for every user session

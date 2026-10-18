@@ -20,8 +20,7 @@ LEDGER = str(zenos.Z / "ledger.jsonl")
 
 
 def _actor_device():
-    return os.environ.get("USER", "zenos"), __import__("hashlib").sha256(
-        (zenos.K / "device_ed25519.pub").read_bytes()).hexdigest()[:16]
+    return os.environ.get("USER", "zenos"), zenos._device_id()
 
 
 def check_send(path):

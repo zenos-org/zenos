@@ -63,6 +63,15 @@ sudo packaging/iso/build-iso.sh build/zenos_*_amd64.deb   # -> build/iso/zenos-a
 
 The image boots as a live session and installs with Calamares.
 
+**Set each user's clearance**
+
+The level keys belong to root. Each user can open files up to their clearance; anything above goes through an
+access request their officers approve. Until set, a user is cleared for L1 only.
+
+```
+sudo zenos_keyd.py --clearance <user> <1-5>
+```
+
 **Enroll the officers who release a stopped PC**
 
 Each officer opens ZENOS Messages on their own device → Settings → Approval key, makes a key there (it never leaves
