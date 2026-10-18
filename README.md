@@ -75,6 +75,21 @@ sudo zenos_guardd.py --enroll <account> <public key>
 When the PC stops, the request reaches the enrolled officers in ZENOS Messages. Each one reads the match code off the
 stopped screen, approves or declines, and the device signs the answer.
 
+**Keep the audit trail off the PC**
+
+Run an audit node on a server the PC users do not control, and point each PC at it:
+
+```
+# on the server
+zenos_auditnode.py --store /var/lib/zenos-audit --show-key                  # the node's key
+zenos_auditnode.py --store /var/lib/zenos-audit --port 8443 --cert node.crt --key node.key
+# on each PC: write /etc/zenos/audit.json (see zenos_auditship.py), then enroll the PC on the node
+sudo zenos_auditship.py --show-key     # prints the --enroll line to run on the server
+sudo systemctl restart zenos-auditship
+```
+
+The PC sends its ledgers every 30 seconds; the node refuses any rewritten history and reports a PC that goes silent.
+
 **Tests**
 
 ```

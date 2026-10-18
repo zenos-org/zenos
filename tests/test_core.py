@@ -120,5 +120,66 @@ class Guard(unittest.TestCase):
         self.assertFalse(G.handle({"op": "approve", "request": r["id"], "approver": "sato", "code": r["code"], "sig": sig})["ok"])
 
 
+class AuditShipping(unittest.TestCase):
+    """a PC that rewrites its own ledger is caught by the audit node holding the earlier copy"""
+    @classmethod
+    def setUpClass(cls):
+        d = TMP / "audit"
+        os.environ.update(ZENOS_AUDIT_CONF=str(d / "audit.json"), ZENOS_AUDIT_KEY=str(d / "device.key"),
+                          ZENOS_AUDIT_STATE=str(d / "state.json"), ZENOS_AUDIT_LOG=str(d / "ship.log"))
+        import importlib, zledger, zenos_auditnode, zenos_auditship
+        cls.L, cls.N, cls.S = zledger, zenos_auditnode, importlib.reload(zenos_auditship)
+        cls.S.print = lambda *a, **k: None
+        cls.node = cls.N.Node(d / "node")
+        cls.ledger = str(d / "pc" / "access-ledger.jsonl")
+        cls.key = cls.S.device_key()
+        pub = base64.b64encode(raw_pub(cls.key)).decode()
+        cls.node.enroll("pc-test", pub)
+        (d / "audit.json").write_text(json.dumps({"machine": "pc-test", "ledgers": {"guard": cls.ledger},
+                                                  "nodes": [{"name": "n", "url": "http://127.0.0.1:1", "pub": cls.node.pub_b64()}]}))
+        cls.S.post = lambda url, body: cls.node.accept(json.loads(json.dumps(body)))   # the node, without the network
+
+    def ship(self):
+        self.S.ship_once(self.S.conf(), self.key, self.state)
+
+    def test_ship_then_rewrite_is_refused(self):
+        self.state = {}
+        for i in range(5):
+            self.L.append(self.ledger, "halt" if i == 2 else "open", "officer", "pc", file=f"f{i}.zen")
+        self.ship()
+        self.assertEqual(len(self.node.held("pc-test", "guard")), 5)
+        for i in range(3):
+            self.L.append(self.ledger, "open", "officer", "pc", file=f"g{i}.zen")
+        self.ship()
+        self.assertEqual(len(self.node.held("pc-test", "guard")), 8)
+        # the user rewrites history on the PC: drops the halt and rebuilds a perfectly valid local chain
+        with open(self.ledger, encoding="utf-8") as f:
+            recs = [json.loads(l) for l in f]
+        os.unlink(self.ledger)
+        for r in recs:
+            if r["event"] != "halt":
+                self.L.append(self.ledger, r["event"], r["actor"], r["device"], file=r["file"])
+        self.assertTrue(self.L.verify(self.ledger)[0])               # locally it looks intact
+        self.state = {}
+        self.ship()
+        self.assertEqual(len(self.node.held("pc-test", "guard")), 8)   # the node kept the original
+        alerts = (self.node.dir / "alerts.jsonl").read_text()
+        self.assertIn("history-rewritten", alerts)
+
+    def test_silent_machine_is_reported(self):
+        self.state = {}
+        self.ship()                                                  # heartbeat even with nothing new
+        self.node.check_silence(-1)
+        self.assertIn("machine-silent", (self.node.dir / "alerts.jsonl").read_text())
+        self.ship()
+        self.assertIn("machine-back", (self.node.dir / "alerts.jsonl").read_text())
+
+    def test_forged_batch_is_refused(self):
+        b = {"machine": "pc-test", "chain": "other", "from": 0, "records": [], "sig": base64.b64encode(b"x" * 64).decode()}
+        self.assertEqual(self.node.accept(b)[0], 403)
+        b["machine"] = "pc-unknown"
+        self.assertEqual(self.node.accept(b)[0], 403)
+
+
 if __name__ == "__main__":
     unittest.main()

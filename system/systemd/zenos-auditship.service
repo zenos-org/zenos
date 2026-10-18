@@ -1,0 +1,13 @@
+[Unit]
+Description=ZENOS audit shipping (ledgers to the audit nodes)
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/zenos/audit.json
+
+[Service]
+ExecStart=/usr/bin/python3 -I /usr/sbin/zenos_auditship.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
