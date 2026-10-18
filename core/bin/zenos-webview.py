@@ -53,6 +53,18 @@ if NO_COPY:
     ucm.connect('script-message-received::znocopy', on_nocopy)
     ucm.register_script_message_handler('znocopy')
 
+    # X11 also hands out the selected text itself (the PRIMARY selection, pasted with a middle click in any
+    # program). Whenever this window takes PRIMARY, it is emptied again.
+    from gi.repository import Gdk
+    _prim = Gtk.Clipboard.get(Gdk.SELECTION_PRIMARY)
+
+    def on_primary(clip, ev):
+        if ev.owner is None:                     # another program owns it now
+            return
+        if clip.wait_for_text():
+            clip.set_text('', 0)
+    _prim.connect('owner-change', on_primary)
+
 
 # printing a sealed file: every page carries the level, the user and the time; above the policy's ceiling
 # (default L3, /etc/zenos/policy.conf "print_max_level = N") printing is refused. Each attempt is recorded.

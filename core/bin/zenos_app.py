@@ -91,6 +91,11 @@ class App(Gtk.Window):
         self.view = WebKit2.WebView.new_with_user_content_manager(ucm)
         if SEALED >= 3:     # and no right-click "Copy Image" / "Save Image As"
             self.view.connect("context-menu", lambda *a: True)
+            # and selected text (a PDF's text layer) never stays in the X11 PRIMARY selection (middle-click paste)
+            def on_primary(clip, ev):
+                if ev.owner is not None and clip.wait_for_text():
+                    clip.set_text("", 0)
+            Gtk.Clipboard.get(Gdk.SELECTION_PRIMARY).connect("owner-change", on_primary)
         self.view.set_background_color(Gdk.RGBA(0.08, 0.08, 0.09, 1))
         s = self.view.get_settings()
         s.set_allow_file_access_from_file_urls(True)
