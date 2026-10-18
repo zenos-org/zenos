@@ -47,12 +47,13 @@ fcitx5
 fcitx5-anthy
 kde-config-fcitx5
 im-config
-# installer and live system
+# installer and live system (live-config creates the live user only through user-setup)
 calamares
 calamares-settings-debian
 live-boot
 live-config
 live-config-systemd
+user-setup
 # hardware
 firmware-linux-free
 firmware-misc-nonfree
