@@ -1,0 +1,11 @@
+[Unit]
+Description=ZENOS network sensor + reflex + agent
+After=network.target docker.service zenos-firewall.service
+Wants=zenos-firewall.service
+[Service]
+Environment=PULSE_SERVER=unix:/mnt/wslg/PulseServer
+ExecStart=/usr/bin/python3 -I /usr/local/sbin/zenos_netsentinel.py
+Restart=always
+RestartSec=1
+[Install]
+WantedBy=multi-user.target

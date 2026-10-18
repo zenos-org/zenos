@@ -1,0 +1,9 @@
+#!/bin/sh
+# Rollback for zenos-firewall.sh
+for IPT in iptables ip6tables; do
+  command -v $IPT >/dev/null 2>&1 || continue
+  while $IPT -D INPUT -j ZENOS_IN 2>/dev/null; do :; done
+  $IPT -F ZENOS_IN 2>/dev/null || true
+  $IPT -X ZENOS_IN 2>/dev/null || true
+done
+echo "ZENOS_IN removed"

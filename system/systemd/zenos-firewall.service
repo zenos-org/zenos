@@ -1,0 +1,13 @@
+[Unit]
+Description=ZENOS inbound lockdown (drop all new inbound TCP except loopback)
+After=network.target docker.service
+Wants=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/zenos-firewall
+ExecStop=/usr/local/sbin/zenos-firewall-off
+
+[Install]
+WantedBy=multi-user.target

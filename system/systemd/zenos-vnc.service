@@ -1,0 +1,14 @@
+[Unit]
+Description=ZENOS preview desktop (VNC :1)
+After=network.target
+[Service]
+Type=forking
+User=zenos
+WorkingDirectory=/home/zenos
+ExecStartPre=+/bin/sh -c "umount -l /tmp/.X11-unix 2>/dev/null; rm -rf /tmp/.X11-unix; mkdir -m 1777 /tmp/.X11-unix"
+ExecStartPre=-/usr/bin/vncserver -kill :1
+ExecStart=/usr/bin/vncserver :1 -localhost yes -geometry 1600x900 -depth 24 -AcceptSetDesktopSize=1
+ExecStop=/usr/bin/vncserver -kill :1
+Restart=on-failure
+[Install]
+WantedBy=multi-user.target

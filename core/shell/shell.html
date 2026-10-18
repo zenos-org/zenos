@@ -1,0 +1,101 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{color-scheme:dark}
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,'Inter','Noto Sans JP',sans-serif;-webkit-user-select:none;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden}
+body{color:#fff;
+background:
+ radial-gradient(1250px 720px at 46% -8%,rgba(10,132,255,.20),transparent 60%),
+ radial-gradient(820px 560px at 112% 112%,rgba(110,91,255,.14),transparent 60%),
+ radial-gradient(760px 520px at -8% 78%,rgba(47,183,201,.10),transparent 60%),
+ linear-gradient(180deg,#0B1018 0%,#05070B 55%,#070910 86%,#10141E 100%);
+}
+/* MENU BAR */
+.menubar{position:fixed;top:0;left:0;right:0;height:30px;display:flex;align-items:center;justify-content:space-between;
+ padding:0 16px;font-size:13px;z-index:50;
+ background:linear-gradient(180deg,rgba(52,52,58,.70),rgba(30,30,34,.62));
+ -webkit-backdrop-filter:blur(34px);backdrop-filter:blur(34px);
+ box-shadow:inset 0 1.5px 0 rgba(255,255,255,.16),0 1px 8px rgba(0,0,0,.35);
+ border-bottom:1px solid rgba(0,0,0,.5)}
+.mb-left,.mb-right{display:flex;align-items:center;gap:18px}
+.mb-right{gap:14px}
+.brandname{font-weight:600}
+.menu{color:#98989D}
+.chip{display:flex;align-items:center;padding:2px 9px;border-radius:7px;font-size:11px;font-weight:600;color:#3B9CFF;
+ background:linear-gradient(180deg,rgba(10,132,255,.30),rgba(10,132,255,.16));border:1px solid rgba(10,132,255,.5)}
+.mb-date{color:#98989D}.mb-time{color:#fff;font-weight:500}
+/* DOCK */
+.dockwrap{position:fixed;left:0;right:0;bottom:26px;display:flex;flex-direction:column;align-items:center;z-index:40}
+.dock{display:flex;align-items:center;gap:8px;padding:10px;border-radius:22px;
+ background:linear-gradient(180deg,rgba(58,58,66,.55),rgba(26,26,32,.5));
+ -webkit-backdrop-filter:blur(36px);backdrop-filter:blur(36px);
+ border:1px solid rgba(255,255,255,.14);
+ box-shadow:0 20px 48px rgba(0,0,0,.5),inset 0 1.3px 0 rgba(255,255,255,.18)}
+.icon{position:relative;width:58px;height:58px;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;
+ border:1px solid rgba(255,255,255,.22);
+ box-shadow:inset 0 1.6px 1.2px rgba(255,255,255,.7),inset 0 -4px 5px rgba(0,0,0,.5),0 5px 10px rgba(0,0,0,.42);
+ transition:transform .12s ease}
+.icon:hover{transform:translateY(-6px) scale(1.04)}
+.icon::before{content:'';position:absolute;left:0;right:0;top:0;height:46%;background:linear-gradient(180deg,rgba(255,255,255,.4),rgba(255,255,255,0))}
+.icon svg{position:relative;filter:drop-shadow(0 .7px .8px rgba(0,0,0,.4))}
+.icon .zt{position:relative;font-size:28px;font-weight:800;color:#fff;text-shadow:0 .8px 1px rgba(0,0,0,.35)}
+.sep{width:1.5px;height:42px;background:rgba(255,255,255,.12);margin:0 2px}
+.reflection{transform:scaleY(-1);opacity:.5;filter:blur(2px);margin-top:4px;
+ -webkit-mask:linear-gradient(to bottom,rgba(0,0,0,.45),transparent 70%);
+ mask:linear-gradient(to bottom,rgba(0,0,0,.45),transparent 70%);pointer-events:none}
+.reflection .icon{box-shadow:none;border-color:transparent}
+.reflection .icon::before{display:none}
+</style></head>
+<body>
+<div class="menubar">
+  <div class="mb-left">
+    <svg width="18" height="18" viewBox="0 0 124 124" fill="none"><defs><linearGradient id="eg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6E5BFF"/><stop offset="0.38" stop-color="#9B3BEF"/><stop offset="0.7" stop-color="#D83AB0"/><stop offset="1" stop-color="#FF6A8B"/></linearGradient></defs><path d="M86 24 a46 46 0 1 0 20 30" stroke="url(#eg)" stroke-width="10" stroke-linecap="round" fill="none"/><path d="M46 48 H80 L46 78 H82" stroke="url(#eg)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+    <span class="brandname">ZENOS</span>
+    <span class="menu">File</span><span class="menu">Edit</span><span class="menu">View</span><span class="menu">Window</span><span class="menu">Help</span>
+  </div>
+  <div class="mb-right">
+    <span class="chip">L1 · Public</span>
+    <span class="mb-date">Sat 17 Oct</span>
+    <span class="mb-time" id="clock">21:54</span>
+  </div>
+</div>
+<div class="dockwrap">
+  <div class="dock" id="dock"></div>
+  <div class="reflection"><div class="dock" id="dockr"></div></div>
+</div>
+<script>
+const G={
+ doc:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5M8.5 13h7M8.5 16.5h5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>',
+ grid:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" rx="2" stroke="#fff" stroke-width="1.8"/><path d="M4 10h16M4 15h16M10 4v16" stroke="#fff" stroke-width="1.8"/></svg>',
+ present:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="12" rx="2" stroke="#fff" stroke-width="1.8"/><path d="M12 16v4M8 20h8" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>',
+ globe:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="1.8"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" stroke="#fff" stroke-width="1.8"/></svg>',
+ chat:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1.1-4.2A8 8 0 1 1 21 12z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+ folder:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+ gear:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3.2" stroke="#fff" stroke-width="1.8"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M18.8 5.2l-2.1 2.1M7.3 16.7l-2.1 2.1" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>',
+ trash:'<svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
+const apps=[
+ {app:'launcher',brand:true,z:true},
+ {app:'documents',l:'#8CABFF',d:'#2B41C8',g:G.doc},
+ {app:'sheets',l:'#6FE68E',d:'#0E8A38',g:G.grid},
+ {app:'slides',l:'#FFC866',d:'#E0760A',g:G.present},
+ {app:'browser',l:'#7FCFFF',d:'#0A6FE0',g:G.globe},
+ {app:'messenger',l:'#BBA3FF',d:'#5B38E8',g:G.chat},
+ {app:'files',l:'#FFE487',d:'#E0A200',g:G.folder},
+ {app:'settings',l:'#C9C9CF',d:'#4A4A50',g:G.gear},
+ {sep:true},
+ {app:'trash',l:'#8A8A90',d:'#2E2E34',g:G.trash}];
+const dock=document.getElementById('dock');
+for(const a of apps){
+ if(a.sep){const s=document.createElement('div');s.className='sep';dock.appendChild(s);continue;}
+ const d=document.createElement('div');d.className='icon'+(a.brand?' brand':'');d.dataset.app=a.app;
+ d.style.background=a.brand?'linear-gradient(135deg,#6E5BFF,#9B3BEF 38%,#D83AB0 70%,#FF6A8B)':('linear-gradient(180deg,'+a.l+','+a.d+')');
+ d.innerHTML=a.z?'<span class="zt">Z</span>':a.g;
+ d.addEventListener('click',()=>{location.href='zenosapp://'+a.app;});
+ dock.appendChild(d);
+}
+document.getElementById('dockr').innerHTML=dock.innerHTML;
+function tick(){const n=new Date();document.getElementById('clock').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}
+tick();setInterval(tick,10000);
+</script>
+</body></html>

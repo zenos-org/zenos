@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Ministry AI
+Icon=/home/zenos/.local/share/zenos/icons/zenos-ministryai.svg
+Exec=kdialog --title "ZENOS Ministry AI" --msgbox "Ministry AI is in development for the ZENOS preview."
+Categories=Utility;

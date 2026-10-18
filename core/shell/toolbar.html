@@ -1,0 +1,112 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',-apple-system,'Noto Sans JP',sans-serif;-webkit-user-select:none;user-select:none}
+html,body{height:100%;overflow:hidden}
+body{background:linear-gradient(180deg,rgba(51,51,56,1),rgba(36,36,42,1));box-shadow:inset 0 1px 0.6px rgba(255,255,255,.22)}
+#top{height:42px;display:flex;align-items:center;gap:10px;padding:0 16px;color:#fff;
+ background:transparent}
+.lights{display:flex;align-items:center;gap:8px;width:52px;flex:0 0 auto}
+.light{width:12px;height:12px;border-radius:50%;cursor:pointer;position:relative;box-shadow:inset 0 -1px 1.2px rgba(0,0,0,.4),inset 0 1px 1px rgba(255,255,255,.55),0 .5px 1px rgba(0,0,0,.45)}
+.light::after{content:'';position:absolute;top:1.6px;left:2.6px;width:4px;height:3px;border-radius:50%;background:rgba(255,255,255,.85)}
+.r{background:radial-gradient(circle at 35% 28%,#FF9B91,#FF5F57 55%,#E0392F)}
+.y{background:radial-gradient(circle at 35% 28%,#FFE39A,#FEBC2E 55%,#E0960F)}
+.gr{background:radial-gradient(circle at 35% 28%,#8CF2A6,#28C840 55%,#16A42F)}
+.nav{display:flex;align-items:center;gap:12px;padding-left:8px;flex:0 0 auto}
+.ib{background:transparent;border:none;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
+.ib:hover svg{opacity:1}
+.ib svg{opacity:.85;display:block}
+.sp{flex:1 1 0;align-self:stretch}
+.addr{flex:0 0 auto;width:440px;max-width:48%;display:flex;align-items:center;justify-content:center;gap:8px;height:36px;
+ border:1px solid rgba(0,0,0,.5);border-radius:9px;
+ background:linear-gradient(180deg,#141417,#1a1a1e);
+ box-shadow:inset 0 1.5px 2.5px rgba(0,0,0,.55);cursor:text}
+.addr input{background:transparent;border:none;outline:none;color:#fff;font-size:13px;font-weight:500;text-align:center;width:100%}
+.addr input::placeholder{color:#8E8E93;font-weight:400}
+.right{display:flex;align-items:center;gap:14px;flex:0 0 auto}
+#tabs{height:34px;display:flex;align-items:center;gap:6px;padding:0 10px 6px;background:transparent;border-bottom:1px solid rgba(0,0,0,.6)}
+#tl{flex:1 1 auto;display:flex;gap:6px;min-width:0}
+.tab{flex:1 1 0;min-width:60px;max-width:240px;height:26px;display:flex;align-items:center;gap:6px;padding:0 6px 0 12px;border-radius:8px;color:#AEAEB2;font-size:12px;font-weight:500;cursor:default;border:1px solid transparent;background:transparent}
+.tab:hover{background:rgba(255,255,255,.06)}
+/* the open tab looks like the address field: dark inset glass */
+.tab.on{color:#fff;border-color:rgba(0,0,0,.5);background:linear-gradient(180deg,#141417,#1a1a1e);box-shadow:inset 0 1.5px 2.5px rgba(0,0,0,.55)}
+.tab span{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tab .x{width:18px;height:18px;border-radius:5px;border:none;background:transparent;color:#AEAEB2;font-size:15px;line-height:18px;cursor:pointer;opacity:0}
+.tab:hover .x,.tab.on .x{opacity:1}
+.tab .x:hover{background:rgba(255,255,255,.14);color:#fff}
+#nt{width:28px;height:28px;border-radius:8px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#nt:hover{background:rgba(255,255,255,.08)}
+.addr{position:relative;padding:0 34px}
+#star{position:absolute;right:8px;top:7px;width:22px;height:22px;border-radius:6px}
+#star:hover{background:rgba(255,255,255,.08)}
+#star path{fill:none;stroke:#AEAEB2}
+#star.on path{fill:#FFD60A;stroke:#FFD60A}
+body.withbar #tabs{border-bottom:none}
+#bm{display:none;height:28px;align-items:center;gap:2px;padding:0 10px 3px;background:linear-gradient(180deg,#24242A,#202025);border-bottom:1px solid rgba(0,0,0,.6);overflow:hidden}
+body.withbar #bm{display:flex}
+.bmi{display:flex;align-items:center;gap:6px;height:22px;padding:0 9px 0 8px;border-radius:6px;color:#C7C7CC;font-size:12px;font-weight:500;white-space:nowrap;max-width:180px;cursor:default;flex:0 0 auto}
+.bmi span{overflow:hidden;text-overflow:ellipsis}
+.bmi:hover{background:rgba(255,255,255,.08);color:#fff}
+.bmi.open{background:rgba(255,255,255,.12);color:#fff}
+.bmi svg{flex:0 0 auto}
+#bmhint{color:#8E8E93;font-size:12px;padding-left:8px;white-space:nowrap}
+#bmmore{margin-left:auto}
+</style></head><body><div id="top">
+<div class="lights">
+ <div class="light r" onclick="S({cmd:'close'})"></div>
+ <div class="light y" onclick="S({cmd:'min'})"></div>
+ <div class="light gr" onclick="S({cmd:'max'})"></div>
+</div>
+<div class="nav">
+ <button class="ib" onclick="S({cmd:'back'})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+ <button class="ib" onclick="S({cmd:'forward'})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="opacity:.4"><path d="M9 6l6 6-6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+ <button class="ib" onclick="S({cmd:'reload'})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 1 0 2.3-5.6M4 4v3h3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+</div>
+<div class="sp"></div>
+<div class="addr">
+ <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="#4AD66B" stroke-width="1.8"/><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="#4AD66B" stroke-width="1.8"/></svg>
+ <input id="u" placeholder="Search or enter address" onkeydown="if(event.key==='Enter'){S({cmd:'navigate',url:this.value});this.blur();}">
+ <button class="ib" id="star" title="Bookmark this page (Ctrl+D)" onclick="S({cmd:'star',x:R(this).right+8,y:0})"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" stroke-width="1.6" stroke-linejoin="round"/></svg></button>
+</div>
+<div class="sp"></div>
+<div class="right">
+ <button class="ib"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 15V4M8 8l4-4 4 4" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+ <button class="ib" title="New tab (Ctrl+T)" onclick="S({cmd:'newtab'})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></button>
+ <button class="ib" id="more" title="More" onclick="S({cmd:'menu',x:R(this).right+6,y:0})"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="5" cy="12" r="1.7" fill="#fff"/><circle cx="12" cy="12" r="1.7" fill="#fff"/><circle cx="19" cy="12" r="1.7" fill="#fff"/></svg></button>
+</div>
+</div>
+<div id="tabs"><div id="tl"></div><button id="nt" title="New tab (Ctrl+T)" onclick="S({cmd:'newtab'})"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+<div id="bm"></div>
+<script>
+function R(el){return el.getBoundingClientRect();}
+var GLOBE='<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="#8EC5FF" stroke-width="1.7"/><path d="M3.5 12h17M12 3.5c3 3.2 3 13.8 0 17M12 3.5c-3 3.2-3 13.8 0 17" stroke="#8EC5FF" stroke-width="1.5"/></svg>';
+var FOLDER='<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z" stroke="#C7C7CC" stroke-width="1.8"/></svg>';
+window.zenosStar=function(on,able){document.getElementById('star').style.visibility=able===false?'hidden':'';document.getElementById('star').classList.toggle('on',!!on);document.getElementById('star').title=on?'Edit bookmark (Ctrl+D)':'Bookmark this page (Ctrl+D)';};
+window.zenosBar=function(items,show){
+ document.body.classList.toggle('withbar',!!show);
+ var bm=document.getElementById('bm');bm.innerHTML='';
+ if(!items.length){var h=document.createElement('div');h.id='bmhint';h.textContent='For quick access, bookmark pages here with Ctrl+D.';bm.appendChild(h);return;}
+ items.forEach(function(it){
+  var d=document.createElement('div');d.className='bmi';d.dataset.id=it.id;if(it.type==='url')d.title=it.title+'\n'+it.url;
+  d.innerHTML=(it.type==='folder'?FOLDER:GLOBE);var s=document.createElement('span');s.textContent=it.title;d.appendChild(s);
+  d.onmousedown=function(e){
+   if(e.button===1&&it.type==='url'){e.preventDefault();S({cmd:'bmopen',id:it.id,nt:true});return;}
+   if(e.button!==0)return;
+   if(it.type==='folder'){var r=R(d);S({cmd:'bmfolder',id:it.id,x:r.left,y:0});}
+   else S({cmd:'bmopen',id:it.id,nt:e.ctrlKey||e.metaKey});
+  };
+  bm.appendChild(d);});
+};
+window.zenosBarOpen=function(id){[].forEach.call(document.querySelectorAll('.bmi'),function(e){e.classList.toggle('open',e.dataset.id===id);});};
+function S(o){try{window.webkit.messageHandlers.zenos.postMessage(JSON.stringify(o));}catch(e){}}
+window.zenosSetAddr=function(u){var el=document.getElementById('u');if(document.activeElement!==el){el.value=u;}};
+document.addEventListener('mousedown',function(e){if(!e.target.closest('button,input,.light,.addr,.tab,#bm')){S({cmd:'drag'});}});
+document.addEventListener('dblclick',function(e){if(!e.target.closest('button,input,.light,.addr,.tab')){S({cmd:'max'});}});
+window.zenosTabs=function(list){var r=document.getElementById('tl');r.innerHTML='';list.forEach(function(t,i){
+ var d=document.createElement('div');d.className='tab'+(t.a?' on':'');d.title=t.t;
+ var s=document.createElement('span');s.textContent=t.t;d.appendChild(s);
+ var x=document.createElement('button');x.className='x';x.innerHTML='&times;';x.title='Close tab';
+ x.onclick=function(e){e.stopPropagation();S({cmd:'closetab',i:i});};d.appendChild(x);
+ d.onmousedown=function(e){if(e.button===1){e.preventDefault();S({cmd:'closetab',i:i});}else if(e.button===0&&!e.target.closest('.x')){S({cmd:'tab',i:i});}};
+ r.appendChild(d);});};
+window.zenosFocusAddr=function(){var el=document.getElementById('u');el.focus();el.select();};
+</script>
+</body></html>

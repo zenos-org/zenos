@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=ZENOS Guard
+Exec=/home/zenos/.local/share/zenos/bin/zenos-guard.sh
+X-KDE-autostart-phase=2

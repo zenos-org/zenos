@@ -1,0 +1,10 @@
+[Unit]
+Description=ZENOS call SFU (LiveKit, self-hosted; forwards end-to-end encrypted media only)
+After=network.target
+[Service]
+User=zenos
+WorkingDirectory=/home/zenos/.local/share/zenos/livekit
+ExecStart=/home/zenos/.local/share/zenos/livekit/livekit-server --config /home/zenos/.local/share/zenos/livekit/livekit.yaml
+Restart=on-failure
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Fcitx 5 (Japanese / English input)
+Exec=fcitx5 -d --disable=wayland,waylandim
+X-KDE-autostart-phase=1

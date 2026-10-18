@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Id": "jp.zenos.launcher",
+        "Name": "ZENOS Launcher",
+        "Description": "Start button and full-screen app grid (iPhone-style) for ZENOS",
+        "Icon": "start-here",
+        "Version": "0.1",
+        "License": "Apache-2.0",
+        "Category": "Application Launchers"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

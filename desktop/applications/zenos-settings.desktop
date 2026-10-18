@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Settings
+Icon=/home/zenos/.local/share/zenos/icons/zenos-settings.svg
+Exec=systemsettings
+Categories=System;

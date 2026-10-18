@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Approvals
+Icon=/home/zenos/.local/share/zenos/icons/zenos-approvals.svg
+Exec=kdialog --title "ZENOS Approvals" --msgbox "Approvals is in development for the ZENOS preview."
+Categories=System;

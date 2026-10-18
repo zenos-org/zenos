@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Terminal
+Icon=/home/zenos/.local/share/zenos/icons/zenos-terminal.svg
+Exec=konsole
+Categories=System;

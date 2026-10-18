@@ -1,0 +1,8 @@
+#!/bin/sh
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+export XDG_SESSION_TYPE=x11
+export LANG=en_US.UTF-8
+export XMODIFIERS=@im=fcitx GTK_IM_MODULE=fcitx QT_IM_MODULE=fcitx SDL_IM_MODULE=fcitx
+export PULSE_SERVER=unix:/mnt/wslg/PulseServer
+exec dbus-launch --exit-with-session startplasma-x11

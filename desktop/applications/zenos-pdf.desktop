@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=PDF
+Icon=/home/zenos/.local/share/zenos/icons/zenos-pdf.svg
+Exec=/home/zenos/.local/share/zenos/bin/zenos-pdf.sh %f
+Categories=Office;Viewer;
+MimeType=application/pdf;

@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Id": "jp.zenos.level",
+        "Name": "ZENOS Level",
+        "Description": "Shows the security level of the document in focus (preview: click to cycle L1-L5)",
+        "Icon": "security-high",
+        "Version": "0.1",
+        "License": "Apache-2.0",
+        "Category": "System Information"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

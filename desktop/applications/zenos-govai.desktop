@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Gov AI
+Icon=/home/zenos/.local/share/zenos/icons/zenos-govai.svg
+Exec=kdialog --title "ZENOS Gov AI" --msgbox "Gov AI is in development for the ZENOS preview."
+Categories=Utility;

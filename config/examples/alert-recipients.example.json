@@ -1,0 +1,5 @@
+[
+  {"id": "officer-a", "name": "Officer A", "role": "Section Chief",    "device": "dev-A-01", "channel": "device"},
+  {"id": "officer-b", "name": "Officer B", "role": "Director",         "device": "dev-B-01", "channel": "device"},
+  {"id": "officer-c", "name": "Officer C", "role": "Security Officer", "device": "dev-C-01", "channel": "device"}
+]

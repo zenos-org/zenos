@@ -1,0 +1,20 @@
+# build output and dependencies
+node_modules/
+dist/
+__pycache__/
+*.pyc
+
+# runtime data: never commit
+keys/
+approvers/
+store/
+relay/
+*.key
+*.env
+audit.log
+ledger.jsonl*
+consortium.jsonl*
+halt.json
+cloud.json
+alert-recipients.json
+tunnel-url.*

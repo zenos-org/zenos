@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=ZENOS Approvals
+Exec=python3 -I /home/zenos/.local/share/zenos/bin/approval_server.py
+X-KDE-autostart-phase=2

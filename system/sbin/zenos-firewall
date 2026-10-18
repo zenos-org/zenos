@@ -1,0 +1,15 @@
+#!/bin/sh
+# ZENOS inbound lockdown: accept only connections that originate on this machine
+# (loopback, which is also how Windows localhost-forwarding reaches WSL) and replies
+# to connections we opened. Every new inbound TCP connection from any network
+# interface (eth0, docker0, ...) is dropped, regardless of what address a service binds to.
+set -e
+for IPT in iptables ip6tables; do
+  command -v $IPT >/dev/null 2>&1 || continue
+  $IPT -N ZENOS_IN 2>/dev/null || $IPT -F ZENOS_IN
+  $IPT -A ZENOS_IN -i lo -j RETURN
+  $IPT -A ZENOS_IN -m conntrack --ctstate ESTABLISHED,RELATED -j RETURN
+  $IPT -A ZENOS_IN -p tcp --syn -j DROP
+  $IPT -C INPUT -j ZENOS_IN 2>/dev/null || $IPT -I INPUT 1 -j ZENOS_IN
+done
+echo "ZENOS_IN applied"

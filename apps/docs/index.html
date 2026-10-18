@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZENOS Docs</title>
+  </head>
+  <body>
+    <div id="bar">
+      <div class="brand">
+        <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="zg" x1="4" y1="6" x2="44" y2="42" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#6E5BFF"/><stop offset="0.4" stop-color="#9B3BEF"/>
+              <stop offset="0.72" stop-color="#D83AB0"/><stop offset="1" stop-color="#FF6A8B"/>
+            </linearGradient>
+          </defs>
+          <path d="M24 5.5c10.2 0 18.5 8.3 18.5 18.5S34.2 42.5 24 42.5 5.5 34.2 5.5 24 13.8 5.5 24 5.5Z"
+                stroke="url(#zg)" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-dasharray="104 24"/>
+          <path d="M16 17h16l-15 14h16" stroke="url(#zg)" stroke-width="3.4" fill="none"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>ZENOS Docs</span>
+      </div>
+      <button id="btn-open" type="button">開く</button>
+      <button id="btn-save" type="button">保存</button>
+      <div class="spacer"></div>
+      <button id="btn-ai" type="button">AI</button>
+      <button id="btn-settings" type="button" title="AI 接続設定">設定</button>
+      <input id="fileinput" type="file" accept=".docx,.txt" style="display:none" />
+    </div>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

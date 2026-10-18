@@ -1,0 +1,15 @@
+{
+  "name": "ZENOS Messages",
+  "short_name": "ZENOS",
+  "description": "Sovereign end-to-end encrypted messenger",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B1430",
+  "theme_color": "#0B1430",
+  "icons": [
+    { "src": "/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/app-icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

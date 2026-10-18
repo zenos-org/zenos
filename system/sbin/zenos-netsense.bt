@@ -1,0 +1,19 @@
+// ZENOS network sensor: every outbound TCP send that leaves the machine, and every new listener.
+// Loopback traffic (desktop, office apps) is filtered in the kernel so it costs nothing.
+fentry:tcp_sendmsg
+{
+  $sk = args.sk;
+  if ($sk->__sk_common.skc_family == 2) {
+    $d = $sk->__sk_common.skc_daddr;
+    if (($d & 0xff) != 127) {
+      printf("S %d %s %d %d %s\n", pid, ntop($d), bswap($sk->__sk_common.skc_dport), args.size, comm);
+    }
+  }
+}
+fentry:inet_listen
+{
+  $sk = args.sock->sk;
+  if ($sk->__sk_common.skc_family == 2) {
+    printf("L %d %s %d 0 %s\n", pid, ntop($sk->__sk_common.skc_rcv_saddr), $sk->__sk_common.skc_num, comm);
+  }
+}

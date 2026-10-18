@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Slides
+Icon=/home/zenos/.local/share/zenos/icons/zenos-slides.svg
+Exec=python3 -I /home/zenos/.local/share/zenos/bin/zenos.py office pptx
+Categories=Office;

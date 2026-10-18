@@ -1,0 +1,303 @@
+html, body {
+  height: 100%;
+  margin: 0;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  background: #0d0d10;
+  color: #e8e8ea;
+  font-family: -apple-system, "Inter", "Helvetica Neue", Arial, sans-serif;
+  overflow: hidden;
+}
+
+#bar {
+  flex: 0 0 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  background: linear-gradient(180deg, #1a1a20 0%, #121216 100%);
+  border-bottom: 1px solid #2a2a31;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  z-index: 5;
+}
+#bar .brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  margin-right: 10px;
+  color: #f2f2f4;
+}
+#bar button {
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 9px;
+  border: 1px solid #30303a;
+  background: #1e1e24;
+  color: #e8e8ea;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+#bar button:hover {
+  background: #272730;
+  border-color: #3a3a46;
+}
+#bar #btn-ai {
+  border-color: #5b3aa0;
+  background: linear-gradient(180deg, #2a2140 0%, #201a30 100%);
+}
+#bar #btn-ai:hover {
+  background: linear-gradient(180deg, #332750 0%, #281f3c 100%);
+}
+#bar .spacer {
+  flex: 1;
+}
+
+#app {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+/* ---- shared buttons ---- */
+.zbtn-primary {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, #6E5BFF, #9B3BEF 45%, #D83AB0 80%, #FF6A8B);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.zbtn-ghost {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 9px;
+  border: 1px solid #34343e;
+  background: #1d1d23;
+  color: #d8d8dc;
+  font-size: 13px;
+  cursor: pointer;
+}
+.zbtn-ghost:hover { background: #26262e; }
+
+/* ---- settings modal ---- */
+.zov {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.zmodal {
+  width: 460px;
+  max-width: 92vw;
+  background: #16161b;
+  border: 1px solid #2d2d36;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+.zmodal-h {
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  border-bottom: 1px solid #26262e;
+}
+.zmodal-b { padding: 18px 20px; }
+.zmodal-b label {
+  display: block;
+  font-size: 12px;
+  color: #a0a0a8;
+  margin: 14px 0 6px;
+}
+.zmodal-b input,
+.zmodal-b select {
+  width: 100%;
+  box-sizing: border-box;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #30303a;
+  background: #0f0f13;
+  color: #ececf0;
+  font-size: 13px;
+}
+.zmodal-b select { cursor: pointer; }
+.zmodal-b input:focus,
+.zmodal-b select:focus { outline: none; border-color: #6E5BFF; }
+.zhint {
+  font-size: 11px;
+  color: #80808a;
+  margin-top: 5px;
+  line-height: 1.5;
+}
+.znote {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #8f8f98;
+  background: #111116;
+  border: 1px solid #24242b;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.zmodal-f {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid #26262e;
+  background: #121217;
+}
+
+/* ---- AI panel (right drawer) ---- */
+.zpanel {
+  position: fixed;
+  top: 46px;
+  right: 0;
+  bottom: 0;
+  width: 380px;
+  max-width: 92vw;
+  background: #141419;
+  border-left: 1px solid #2a2a33;
+  display: flex;
+  flex-direction: column;
+  z-index: 900;
+  box-shadow: -14px 0 40px rgba(0, 0, 0, 0.45);
+}
+.zpanel-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 1px solid #26262e;
+}
+.zpanel-h > span:first-child { margin-right: auto; }
+.zpanel-h .zx {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid #30303a;
+  background: #1d1d23;
+  color: #cfcfd4;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.zpanel-note {
+  font-size: 11.5px;
+  line-height: 1.5;
+  padding: 10px 16px;
+  border-bottom: 1px solid #222228;
+}
+.zpanel-note.ok { color: #7fd69a; }
+.zpanel-note.warn { color: #e6b86b; }
+.zpanel-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.zmsg {
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 10px 12px;
+  border-radius: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.zmsg.user { background: #22222a; align-self: flex-end; max-width: 85%; }
+.zmsg.ai { background: #191924; border: 1px solid #2a2a38; align-self: flex-start; max-width: 95%; }
+.zmsg.ai.err { border-color: #7a2a2a; color: #ff9a9a; }
+.zpanel-in {
+  border-top: 1px solid #26262e;
+  padding: 12px 14px;
+  background: #121217;
+}
+.zpanel-in .zchk {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: #9a9aa2;
+  margin-bottom: 8px;
+}
+.zpanel-in textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1px solid #30303a;
+  background: #0f0f13;
+  color: #ececf0;
+  font-size: 13px;
+  padding: 10px 12px;
+  resize: vertical;
+  font-family: inherit;
+}
+.zpanel-in textarea:focus { outline: none; border-color: #6E5BFF; }
+.zpanel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Dark top chrome (scoped): ensure the toolbar strip is dark and disabled
+   toolbar icons stay visible (undo/redo etc.) instead of black-on-black. */
+#app header.zenos-dark-chrome {
+  background-color: #1b1c1f !important;
+}
+.zenos-dark-chrome button:disabled,
+.zenos-dark-chrome button:disabled .univerjs-icon,
+.zenos-dark-chrome button:disabled svg,
+.zenos-dark-chrome button:disabled path {
+  color: #6b7280 !important;
+}
+/* zoom slider thumb: keep it visible on the dark bottom bar */
+.zenos-dark-chrome [class*="univer-bg-gray-200"] button.univer-absolute {
+  background-color: #c7c7cc !important;
+  border-color: #c7c7cc !important;
+}
+
+/* Ribbon tabs lifted into the ZENOS top bar */
+#bar .ztabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 10px;
+}
+#bar .ztab {
+  height: 30px;
+  padding: 0 14px;
+  border: none !important;
+  background: transparent !important;
+  color: #9a9aa2;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+}
+#bar .ztab:hover {
+  background: #26262e !important;
+  color: #e8e8ea;
+}
+#bar .ztab-active {
+  color: #ffffff;
+  background: #2b2342 !important;
+}

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=ZENOS Viewer
+Icon=/home/zenos/.local/share/zenos/icons/zenos-documents.svg
+Exec=python3 -I /home/zenos/.local/share/zenos/bin/zenos.py open %f
+MimeType=application/x-zenos;
+NoDisplay=true

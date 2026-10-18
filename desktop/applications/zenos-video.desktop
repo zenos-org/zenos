@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Video
+Icon=/home/zenos/.local/share/zenos/icons/zenos-video.svg
+Exec=/home/zenos/.local/share/zenos/bin/zenos-video.sh %f
+Categories=AudioVideo;Video;Player;
+StartupWMClass=index
+MimeType=video/mp4;video/x-matroska;video/webm;video/quicktime;video/x-msvideo;video/ogg;video/mpeg;video/mp2t;
