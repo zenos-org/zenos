@@ -88,7 +88,7 @@ chmod +x config/hooks/live/*.hook.chroot
 # installer: ZENOS branding and the Plasma X11 session for Calamares (Debian's settings package names Debian and Wayland)
 mkdir -p config/includes.chroot/etc/calamares/branding config/includes.chroot/etc/calamares/modules
 cp -r "$SRC/packaging/iso/calamares/branding/zenos" config/includes.chroot/etc/calamares/branding/
-cp "$SRC/packaging/iso/calamares/modules/displaymanager.conf" config/includes.chroot/etc/calamares/modules/
+cp "$SRC"/packaging/iso/calamares/modules/*.conf config/includes.chroot/etc/calamares/modules/   # X11 session, disk encryption on by default
 cat > config/hooks/live/0110-zenos-installer.hook.chroot <<'EOF'
 #!/bin/sh
 set -e
