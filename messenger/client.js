@@ -555,6 +555,23 @@ async function handle(req, res, remote) {
       if (act === "invite-sms") return json(res, 200, await (await fetch(RELAY + "/invite-sms", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ by: ACC, phone: b.phone }) })).json());
       return json(res, 404, { error: "unknown action" });
     }
+    if (u.pathname === "/api/myrequests") {
+      // this PC user's own requests, newest first; the match code is shown here so the user can read it to an officer
+      if (remote) return json(res, 403, { error: "Open My requests on your ZENOS PC." });
+      const me = require("os").userInfo().username, out = [];
+      for (const d of [UREQ, path.join(GSYS, "requests")]) {
+        let names = []; try { names = fs.readdirSync(d).filter((f) => f.endsWith(".json")); } catch {}
+        for (const f of names) {
+          const r = readJ(path.join(d, f));
+          if (!r || r.requester !== me) continue;
+          out.push({ id: r.id, kind: r.kind || "access", name: r.name || "", level: r.level, status: r.status, reason: r.reason || "",
+                     created: r.created, required: r.required, approvals: (r.approvals || []).map((a) => a.approver),
+                     declined_by: r.declined_by || null, code: r.status === "pending" ? r.code : null });
+        }
+      }
+      out.sort((a, b) => String(b.created).localeCompare(String(a.created)));
+      return json(res, 200, out.slice(0, 50));
+    }
     if (u.pathname === "/api/zrel/answer" && req.method === "POST") {
       // an officer's answer, signed in their browser; it goes back to the stopped PC over the same Signal channel
       const b = await readBody(req);

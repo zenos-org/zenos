@@ -363,6 +363,7 @@ mark{background:rgba(245,215,110,.28);color:inherit;border-radius:3px;padding:0 
   <div class="nv" data-v="threads"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z"/><path d="M8 10h8M8 14h5"/></svg></span>Threads<span class="c" id="c-threads"></span></div>
   <div class="nv" data-v="activity"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/></svg></span>Mentions &amp; reactions<span class="c" id="c-activity"></span></div>
   <div class="nv" data-v="calendar"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg></span>Calendar<span class="c" id="c-cal"></span></div>
+  <div class="nv" data-v="requests" id="nv-requests"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>My requests</div>
   <div class="nv" data-v="drafts"><span class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg></span>Drafts &amp; sent<span class="c" id="c-drafts"></span></div>
   <div class="nv" data-v="search"><span class="ic"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>Search</div>
   <div class="nv mo" data-v="settings"><span class="ic"><svg class="ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></span>Phone, devices &amp; notifications</div>
@@ -728,6 +729,8 @@ function render(force){
     if(force||!$("log").querySelector(".you"))renderYou();return;}
   if(view==="settings"){header("⚙","Phone, devices & notifications","Your account is your phone number. Others never see it unless you choose to share it.");
     if(force||!$("log").querySelector(".set"))renderSettings();return;}
+  if(view==="requests"){header("✓","My requests","Files above your clearance and pre-filed operations open after your officers approve on their own devices.");
+    renderRequests();return;}
   header("⌂","Home","Pick a channel or a person on the left. Everything here is end-to-end encrypted.");
   const recent=msgs().filter(m=>!m.thread).slice(-8).reverse();
   setLog(`<div class="secth">Recent</div>`+(recent.map(m=>card(m,msgHtml(m,{static:1,day:1}))).join("")||`<p class="empty">No messages yet.</p>`));
@@ -1174,6 +1177,26 @@ async function fillAkey(){
   }catch(e){box.innerHTML=`<p class="warn">${esc(e.message)}</p>`;}
 }
 
+/* ---------- My requests (Figma: "Messages — My requests (Approvals)") ---------- */
+async function renderRequests(){
+  const L=$("log");const R=await api("myrequests").catch(()=>({error:"Could not read your requests."}));
+  if(view!=="requests")return;
+  if(R.error){L.innerHTML=`<p class="empty">${esc(R.error)}</p>`;return;}
+  const ST={pending:["#F5B342",r=>`Waiting · ${r.approvals.length} of ${r.required}`],approved:["#4ADE80",r=>r.kind==="access"?"Approved":"Approved"],declined:["#FCA5A5",()=>"Declined"]};
+  const what={access:"Access request",plan:"Pre-filed operation",release:"Emergency release"};
+  const html=R.length?R.map(r=>{const [col,lab]=ST[r.status]||["#9AA0AB",()=>r.status];const lc=LC[r.level]||"#9AA0AB";
+    const who=r.status==="declined"&&r.declined_by?` · declined by ${esc(split(P(r.declined_by).name).name)}`:r.approvals.length?` · approved by ${r.approvals.map(a=>esc(split(P(a).name).name)).join(", ")}`:"";
+    return `<div class="zrq"><div class="zl"><div class="z1"><span class="lv" style="background:${lc}33;color:${lc}">L${r.level}</span><b>${esc(r.name||what[r.kind]||"")}</b></div>
+      <div class="z2">${esc(what[r.kind]||"Request")} · ${esc(String(r.created||"").replace("T"," ").slice(5,16))}${r.reason?` · "${esc(r.reason)}"`:""}${who}</div></div>
+      ${r.code?`<div class="zc"><small>Match code</small><b>${esc(r.code)}</b></div>`:""}<span class="zs" style="background:${col}29;color:${col}">${esc(lab(r))}</span></div>`;}).join("")
+    :`<p class="empty">No requests. When you open a file above your clearance, ZENOS asks whether to send a request; it shows up here.</p>`;
+  L.innerHTML=`<p style="color:var(--t-sub);font-size:13px;margin:0 0 12px">Tell your officers the match code by phone or in person; they enter it on their own device.</p>`+html;
+}
+(()=>{const s=document.createElement("style");s.textContent=`.zrq{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;background:var(--side);border:1px solid var(--line);margin-bottom:10px}
+.zrq .zl{flex:1;min-width:0}.zrq .z1{display:flex;align-items:center;gap:8px}.zrq .z1 b{font-size:15px;font-weight:600;color:var(--t-head);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.zrq .z2{font-size:12px;color:var(--t-mute);margin-top:4px}.zrq .zc{text-align:right}.zrq .zc small{display:block;font-size:11px;color:var(--t-mute)}.zrq .zc b{font-size:22px;color:var(--t-strong);letter-spacing:.05em}
+.zrq .zs{font-size:12px;font-weight:500;padding:4px 10px;border-radius:12px;white-space:nowrap}`;document.head.appendChild(s);})();
+
 /* ---------- More menu ---------- */
 function moreMenu(){$("more").innerHTML=`<div><b style="color:var(--t-strong)">ZENOS Messages</b><br>Signal protocol (libsignal) · keys never leave this device.</div>
   <div>Relay stores ciphertext only, and drops it after 14 days. History, drafts, saved items and search stay on this device.</div>
@@ -1213,7 +1236,7 @@ async function boot(){
   if("serviceWorker" in navigator){try{await navigator.serviceWorker.register("/sw.js");}catch(e){}}
   if("Notification" in window&&Notification.permission==="default"){try{Notification.requestPermission();}catch(e){}}
   await slow();await pull();
-  if(location.hash==="#calendar"){document.body.classList.remove("list");setView("calendar");}else render(true);   // opened as ZENOS Calendar
+  if(location.hash==="#calendar"||location.hash==="#requests"){document.body.classList.remove("list");setView(location.hash.slice(1));}else render(true);   // opened as ZENOS Calendar / Approvals
   setInterval(pull,1000);setInterval(slow,5000);
 }
 $("attbtn").onclick=e=>{e.stopPropagation();$("filein").click();};

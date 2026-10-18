@@ -9,5 +9,9 @@ V=${2:-}
 case $A in zenos) P=8096;; sato) P=8097;; tanaka) P=8098;; suzuki) P=8099;; esac
 T="ZENOS Messages"; [ "$A" != zenos ] && T="ZENOS Messages · $A (demo device)"
 I="$R/icons/zenos-messenger.svg"
-case $V in calendar) T="ZENOS Calendar"; I="$R/icons/zenos-calendar.svg";; *) V="";; esac
+case $V in
+  calendar) T="ZENOS Calendar"; I="$R/icons/zenos-calendar.svg";;
+  requests) T="ZENOS Approvals"; I="$R/icons/zenos-approvals.svg";;
+  *) V="";;
+esac
 setsid python3 "$M/zenos_webapp.py" "http://127.0.0.1:$P/${V:+#$V}" "$T" "$I" 980x620 >"/tmp/zenos-msgwin-$A.log" 2>&1 < /dev/null &
