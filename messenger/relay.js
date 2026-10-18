@@ -367,4 +367,4 @@ http.createServer(async (req, res) => {
   } catch (err) {
     send(res, 500, { error: String(err) });
   }
-}).listen(8095, "127.0.0.1", () => console.log("relay on 8095"));
+}).listen(Number(process.env.ZENOS_RELAY_PORT) || 8095, "127.0.0.1", () => console.log("relay on " + (Number(process.env.ZENOS_RELAY_PORT) || 8095)));

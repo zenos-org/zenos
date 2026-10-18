@@ -11,7 +11,8 @@ const path = require("path");
 
 const ACC = process.argv[2];
 const PORT = Number(process.argv[3]);
-let RELAY = "http://127.0.0.1:8095";   // chosen relay; see relays.json (selectable on the PC)
+const DEF_RELAY = process.env.ZENOS_RELAY || "http://127.0.0.1:8095";
+let RELAY = DEF_RELAY;   // chosen relay; see relays.json (selectable on the PC)
 // phone: the account anchor (one number = one account), never shown to others. username: how others find you.
 // Test accounts use +81 0x numbers, which no Japanese line can have.
 const PEOPLE = {
@@ -33,7 +34,7 @@ const HIST = path.join(DIR, "history.json");
 const MDATA = path.join(HOME, ".local/share/zenos/msg");   // per-user messenger data (the code may be read-only)
 const RELAYS_F = fs.existsSync(path.join(MDATA, "relays.json")) ? path.join(MDATA, "relays.json") : path.join(__dirname, "relays.json");
 const RCHOICE = path.join(DIR, "relay.json");
-const relayList = () => { try { return JSON.parse(fs.readFileSync(RELAYS_F, "utf8")); } catch { return [{ id: "local", name: "This PC (local test relay)", url: "http://127.0.0.1:8095", maxLevel: 5, kind: "local" }]; } };
+const relayList = () => { try { return JSON.parse(fs.readFileSync(RELAYS_F, "utf8")); } catch { return [{ id: "local", name: "This PC (local test relay)", url: DEF_RELAY, maxLevel: 5, kind: "local" }]; } };
 let RELAYCFG = (() => { let c = {}; try { c = JSON.parse(fs.readFileSync(RCHOICE, "utf8")); } catch {} return relayList().find((r) => r.id === c.id) || relayList()[0]; })();
 RELAY = RELAYCFG.url;
 const capErr = (level) => Number(level) > (RELAYCFG.maxLevel || 5)
@@ -160,6 +161,7 @@ async function send(to, text, level, meta) {
   const addr = S.ProtocolAddress.new(to, 1);
   if (!(await sess.getSession(addr))) {
     const b = await rq("GET", `/keys/${to}`);
+    if (!b || !b.signed || !b.kyber) throw new Error(`${PEOPLE[to].name} has no device registered on this relay yet.`);
     const bundle = S.PreKeyBundle.new(
       b.regId, 1,
       b.preKey ? b.preKey.id : null, b.preKey ? S.PublicKey.deserialize(ub(b.preKey.pub)) : null,
@@ -257,6 +259,11 @@ async function ingest(fromAcc, m) {
                   from: e.from, dir: "in", text: m.text, level: m.level, t: m.t, thread: m.thread || null, id: m.id || null,
                   kind: m.kind || "msg", target: m.target || null, emoji: m.emoji || null, on: m.on !== false, att: m.att || null, ev: m.ev || null, status: m.status || null, cancel: !!m.cancel });
       saveHist();
+      if (m.kind === "zrel-sig" && m.ev && ACC === DESK) await carryAnswer(e.from, m);
+      if (m.kind === "zrel" && m.ev) {
+        pushAll({ title: "Release request · " + String((PEOPLE[e.from] || { name: e.from }).name).split(" · ")[0], body: `A ZENOS PC stopped (L${m.level}). Open ZENOS to answer.`, tag: "zrel", red: true },
+                { urgency: "high", ttl: 24 * 3600 }).catch(() => {});
+      }
       if ((m.kind || "msg") === "msg") {
         recordMsg(hist[hist.length - 1]);
         const nm = String((PEOPLE[e.from] || { name: e.from }).name).split(" · ")[0];
@@ -351,7 +358,7 @@ const official = (req) => !!(req.dev && devices[req.dev] && devices[req.dev].off
 const restrict = (arr, remote, req) => {
   const cl = PEOPLE[ACC].level;
   const a = arr.filter((m) => (m.level || 1) <= cl);
-  return (remote && !official(req)) ? a.map((m) => (m.level > 2 && ["msg", "event", "call", "callkey", "share", "callsig"].includes(m.kind || "msg")) ? { ...m, text: "", att: null, ev: null, locked: true } : m) : a;
+  return (remote && !official(req)) ? a.map((m) => (m.level > 2 && ["msg", "event", "call", "callkey", "share", "callsig", "zrel"].includes(m.kind || "msg")) ? { ...m, text: "", att: null, ev: null, locked: true } : m) : a;
 };
 // ---------- attachments (Signal model): AES-256-GCM with a fresh key per file; ciphertext to the relay, key only inside the E2E message
 const ATT = path.join(DIR, "att"); fs.mkdirSync(ATT, { recursive: true, mode: 0o700 });
@@ -382,6 +389,57 @@ async function openAttachment(a) {
     const why = /authenticate|fingerprint/.test(raw) ? "it was altered on the way, so it was refused" : raw;
     audit("msg-attachment-failed", { error: raw.slice(0, 80) }); return { ...pubAtt(a), error: why };
   }
+}
+// ---------- release requests: when the root guard stops this PC, the request goes to the officers' own devices.
+// Each officer signs on their own device with a key that never leaves it (WebCrypto, non-extractable). This desk only
+// carries the signature to the guard, which checks it against the administrator-enrolled public key and against the
+// request it holds itself. The match code is never sent out: the officer reads it off the stopped PC's screen.
+const GSYS = "/var/lib/zenos", GSOCK = process.env.ZENOS_GUARDD_SOCK || "/run/zenos/guardd.sock", APPROVERS = "/etc/zenos/approvers";
+const CORE_KEYS = ["id", "kind", "requester", "file", "file_hash", "level", "reason", "created", "scope"];   // = zenos.CORE_KEYS
+const DESK = process.env.ZENOS_DESK || (() => { try { const l = fs.readFileSync(path.join(MDATA, "ports.env"), "utf8").split("\n").find((x) => /^[a-z0-9_]+=/.test(x)); return l ? l.split("=")[0] : "zenos"; } catch { return "zenos"; } })();
+const ZRF = path.join(DIR, "zrel.json");
+let zrel = load(ZRF, {});
+const saveZrel = () => fs.writeFileSync(ZRF, JSON.stringify(zrel), { mode: 0o600 });
+const zid = () => `${ACC}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+function guardd(msg) {
+  return new Promise((resolve) => {
+    const c = require("net").connect(GSOCK); let buf = "";
+    c.setTimeout(10000, () => { c.destroy(); resolve({ ok: false, message: "The guard did not answer." }); });
+    c.on("connect", () => c.write(JSON.stringify(msg) + "\n"));
+    c.on("data", (d) => { buf += d; if (buf.endsWith("\n")) { c.end(); try { resolve(JSON.parse(buf)); } catch { resolve({ ok: false, message: "Bad answer from the guard." }); } } });
+    c.on("error", () => resolve({ ok: false, message: "The guard is not running on this PC." }));
+  });
+}
+const officers = () => { try { return fs.readdirSync(APPROVERS).filter((f) => f.endsWith(".pub")).map((f) => f.slice(0, -4)); } catch { return []; } };
+async function watchRelease() {
+  if (ACC !== DESK || !fs.existsSync(GSOCK)) return;
+  let h; try { h = JSON.parse(fs.readFileSync(path.join(GSYS, "halt.json"), "utf8")); } catch { return; }
+  const z0 = h.request && zrel[h.request];
+  if (h.status === "released" && z0 && !z0.done) {            // tell the officers it is over
+    z0.done = true; saveZrel();
+    for (const o of z0.to) await send(o, "", z0.level, { id: zid(), kind: "zrel-st", ev: { id: h.request, status: "released", by: h.released_by || [] } }).catch(() => {});
+    return;
+  }
+  if (h.status !== "halted" || !h.request || z0) return;
+  let r; try { r = JSON.parse(fs.readFileSync(path.join(GSYS, "requests", path.basename(h.request) + ".json"), "utf8")); } catch { return; }
+  const core = {}; for (const k of CORE_KEYS) if (k in r) core[k] = r[k];
+  const level = Math.min(Number(r.level) || 1, PEOPLE[ACC].level);
+  const to = officers().filter((o) => o !== ACC && PEOPLE[o] && PEOPLE[o].level >= r.level);
+  zrel[h.request] = { to: [], level, t: stamp() }; saveZrel();
+  const ev = { core, required: r.required, rule_text: h.rule_text || "", stopped: h.t || "" };
+  for (const o of to) {
+    try { await send(o, `Release request: ${r.reason}`, level, { id: zid(), kind: "zrel", ev }); zrel[h.request].to.push(o); }
+    catch (err) { audit("msg-zrel-send-failed", { to: o, error: String(err).slice(0, 80) }); }
+  }
+  saveZrel(); audit("msg-zrel-sent", { request: h.request, to: zrel[h.request].to });
+}
+async function carryAnswer(from, m) {
+  // the approver is the Signal-authenticated sender; the guard still requires that person's own signature
+  const a = m.ev, op = a.op === "decline" ? "decline" : "approve";
+  const out = await guardd({ op, request: String(a.id || ""), approver: from, sig: String(a.sig || ""), code: String(a.code || "") });
+  audit("msg-zrel-answer", { request: String(a.id || "").slice(0, 40), from, op, ok: !!out.ok });
+  await send(from, "", Math.min(Number(m.level) || 1, PEOPLE[ACC].level), { id: zid(), kind: "zrel-res", ev: { id: a.id, op, ok: !!out.ok, message: String(out.message || "").slice(0, 200) } })
+    .catch((err) => audit("msg-zrel-reply-failed", { to: from, error: String(err).slice(0, 80) }));
 }
 const readBody = async (req) => { let b = ""; for await (const c of req) b += c; return b ? JSON.parse(b) : {}; };
 
@@ -455,6 +513,20 @@ async function handle(req, res, remote) {
       }
       if (act === "invite-sms") return json(res, 200, await (await fetch(RELAY + "/invite-sms", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ by: ACC, phone: b.phone }) })).json());
       return json(res, 404, { error: "unknown action" });
+    }
+    if (u.pathname === "/api/zrel/answer" && req.method === "POST") {
+      // an officer's answer, signed in their browser; it goes back to the stopped PC over the same Signal channel
+      const b = await readBody(req);
+      const z = [...hist].reverse().find((m) => m.kind === "zrel" && m.dir === "in" && m.ev && m.ev.core && m.ev.core.id === b.id);
+      if (!z) return json(res, 404, { error: "No such request." });
+      if (remote && !official(req) && z.level > 2) return json(res, 200, { error: "Answer this on a government-issued device." });
+      if (!["approve", "decline"].includes(b.op) || !/^[A-Za-z0-9+/]{86}==$/.test(String(b.sig || ""))) return json(res, 400, { error: "The signature is missing or malformed." });
+      if (b.op === "approve" && !/^\d{4}$/.test(String(b.code || ""))) return json(res, 200, { error: "Enter the 4-digit match code shown on the stopped PC." });
+      try {
+        await send(z.from, "", z.level, { id: zid(), kind: "zrel-sig", ev: { id: b.id, op: b.op, code: b.op === "approve" ? String(b.code) : "", sig: b.sig } });
+        audit("msg-zrel-signed", { request: String(b.id).slice(0, 40), op: b.op });
+        return json(res, 200, { ok: true });
+      } catch (err) { return json(res, 200, { error: err.message }); }
     }
     if (u.pathname === "/api/approvals") return json(res, 200, await rq("GET", `/approvals?who=${ACC}`));
     if (u.pathname === "/api/attach" && req.method === "POST") {
@@ -716,5 +788,7 @@ RSRV.listen(PORT + 100, "127.0.0.1");
 http.createServer((q, r) => handle(q, r, false)).listen(PORT, "127.0.0.1", async () => {
   await setup();
   setInterval(() => receive().catch((e) => console.error(e)), 1000);
+  let zbusy = false;
+  setInterval(() => { if (zbusy) return; zbusy = true; watchRelease().catch((e) => console.error(e)).finally(() => { zbusy = false; }); }, 2000);
   console.log(`${ACC} on ${PORT}`);
 });

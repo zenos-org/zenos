@@ -600,7 +600,32 @@ def enroll_demo():
     print(f"enrolled {n} officer key(s) into {PUB}")
 
 
+def enroll(name, key_b64):
+    """install one officer's device key (shown in ZENOS Messages → Settings → Approval key). Run as root."""
+    import re
+    if not re.fullmatch(r"[a-z0-9_.-]{1,32}", name):
+        sys.exit("The name must be the officer's account name (lowercase letters, digits, . _ -).")
+    try:
+        raw = base64.b64decode(key_b64, validate=True)
+        Ed25519PublicKey.from_public_bytes(raw)
+    except Exception:
+        sys.exit("That is not an Ed25519 public key. Copy the whole line from the officer's Settings → Approval key.")
+    PUB.mkdir(parents=True, exist_ok=True)
+    os.chmod(PUB, 0o755)
+    dst = PUB / f"{name}.pub"
+    old = dst.read_bytes() if dst.exists() else None
+    tmp = PUB / f".{name}.pub.tmp"
+    tmp.write_bytes(raw)
+    os.chmod(tmp, 0o644)
+    os.replace(tmp, dst)
+    fp = hashlib.sha256(raw).hexdigest()[:16].upper()
+    log(event="officer-enrolled", officer=name, fingerprint=fp, replaced=old is not None and old != raw)
+    print(f"enrolled {name} · fingerprint {' '.join(fp[i:i + 4] for i in range(0, 16, 4))}")
+
+
 def main():
+    if len(sys.argv) == 4 and sys.argv[1] == "--enroll":
+        return enroll(sys.argv[2], sys.argv[3])
     if len(sys.argv) > 1 and sys.argv[1] == "--enroll-demo":
         init_user()
         return enroll_demo()

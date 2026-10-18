@@ -1052,7 +1052,10 @@ async function renderSettings(){
       `<div class="rowb"><button class="send" id="pushon">${me.push?"Notifications are on — re-enable":"Turn on notifications"}</button><div class="btn2" id="pushtest">Send a test</div></div>`}
       <div class="kv" id="pushmsg"></div></div>`;
   }
-  html+=`</div>`;L.innerHTML=html;
+  html+=`<div class="box"><h3>Approval key</h3>
+    <p>When a ZENOS PC stops, officers release it by signing on their own device. The key was made in this browser and cannot be copied out of it.</p>
+    <div id="akbox" class="kv">Loading…</div></div>`;
+  html+=`</div>`;L.innerHTML=html;fillAkey();
   if($("sendcode"))$("sendcode").onclick=async()=>{const r=await post("register/start",{});$("regmsg").innerHTML=r.error?`<span class="ng">${esc(r.error)}</span>`:(r.via==="sms"?"A code was sent by SMS.":`<span class="warn">No SMS gateway is connected yet, so the code was written to this PC's outbox (relay/sms-outbox.log) instead of being sent.</span>`);};
   if($("verify"))$("verify").onclick=async()=>{const r=await post("register/verify",{code:$("code").value.trim()});if(r.error){$("regmsg").innerHTML=`<span class="ng">${esc(r.error)}</span>`;return;}me=await api("me");renderSettings();};
   if($("linkbtn"))$("linkbtn").onclick=async()=>{const r=await post("link/new",{});if(r.error){$("linkmsg").innerHTML=`<span class="ng">${esc(r.error)}</span>`;return;}
@@ -1081,6 +1084,90 @@ async function enablePush(){
   }catch(e){$("pushmsg").innerHTML=`<span class="ng">${esc(String(e.message||e))}</span>`;}
 }
 
+/* ---------- release requests: officers sign on their own device (Figma: Sheet — Release request, Settings — Approval key) ---------- */
+// The key is made in this browser with WebCrypto as non-extractable: it can sign, but it cannot be read out or copied.
+const pyj=v=>v===null||v===undefined?"null":Array.isArray(v)?"["+v.map(pyj).join(", ")+"]":typeof v==="object"?"{"+Object.keys(v).sort().map(k=>JSON.stringify(k)+": "+pyj(v[k])).join(", ")+"}":JSON.stringify(v);   // = Python json.dumps(sort_keys=True, ensure_ascii=False)
+const kdb=()=>new Promise((ok,ng)=>{const r=indexedDB.open("zenos-approval",1);r.onupgradeneeded=()=>r.result.createObjectStore("k");r.onsuccess=()=>ok(r.result);r.onerror=()=>ng(r.error);});
+async function akey(make){
+  if(!window.crypto||!crypto.subtle||!window.indexedDB)throw new Error("This browser cannot hold an approval key.");
+  const db=await kdb();
+  let kp=make==="new"?null:await new Promise(ok=>{const q=db.transaction("k").objectStore("k").get(me.id);q.onsuccess=()=>ok(q.result||null);q.onerror=()=>ok(null);});
+  if(!kp&&make){
+    try{kp=await crypto.subtle.generateKey({name:"Ed25519"},false,["sign","verify"]);}catch(e){throw new Error("This browser cannot make Ed25519 keys. Use a current Safari, Chrome, Edge or Firefox.");}
+    await new Promise((ok,ng)=>{const t=db.transaction("k","readwrite");t.objectStore("k").put(kp,me.id);t.oncomplete=ok;t.onerror=()=>ng(t.error);});}
+  return kp;
+}
+const b64e=u=>btoa(String.fromCharCode(...new Uint8Array(u)));
+async function akeyInfo(kp){const raw=await crypto.subtle.exportKey("raw",kp.publicKey);const h=new Uint8Array(await crypto.subtle.digest("SHA-256",raw));
+  const fp=[...h.slice(0,8)].map(x=>x.toString(16).padStart(2,"0")).join("").toUpperCase();return {pub:b64e(raw),fp:fp.match(/.{4}/g).join(" ")};}
+async function zsign(core,op){
+  const kp=await akey(false);if(!kp)throw new Error("This device has no approval key yet. Make one in Settings → Approval key, and have it enrolled.");
+  const d=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(pyj(core))));
+  const data=op==="decline"?new Uint8Array([...new TextEncoder().encode("decline:"),...d]):d;
+  return b64e(await crypto.subtle.sign({name:"Ed25519"},kp.privateKey,data));
+}
+const zrelGone=new Set();let zrelSig="";
+function zrelPending(){const last={};
+  all.filter(m=>m.kind==="zrel"&&m.dir==="in"&&m.ev&&m.ev.core).forEach(m=>last[m.from||m.peer]=m);   // a renewed request replaces the old one
+  return Object.values(last).filter(m=>!zrelGone.has(m.ev.core.id)&&!all.some(x=>x.kind==="zrel-st"&&x.ev&&x.ev.id===m.ev.core.id));}
+(()=>{const s=document.createElement("style");s.textContent=`
+#zrel{position:fixed;right:20px;bottom:20px;width:420px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 40px);overflow:auto;z-index:40;background:var(--side);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 12px 32px rgba(0,0,0,.5);display:none}
+#zrel .zh{display:flex;align-items:center;gap:10px;margin-bottom:14px}#zrel .zh i{width:10px;height:10px;border-radius:5px;background:#E5484D}#zrel .zh b{font-size:17px;font-weight:600;color:var(--t-strong);flex:1}
+#zrel .zr{font-size:14px;line-height:1.5;color:var(--t-body);margin-bottom:14px}
+#zrel .zkv{background:var(--bg);border-radius:10px;padding:12px 14px;display:grid;grid-template-columns:90px 1fr;gap:6px 12px;font-size:13px;margin-bottom:14px}#zrel .zkv span{color:var(--t-mute)}#zrel .zkv b{color:var(--t-head);font-weight:500;word-break:break-word}
+#zrel .zn{font-size:13px;line-height:1.5;color:var(--t-sub);margin-bottom:10px}
+#zrel input{width:100%;box-sizing:border-box;text-align:center;font:600 22px Inter,system-ui,sans-serif;letter-spacing:.5em;padding:10px 14px;border-radius:8px;border:1px solid var(--chipline);background:var(--bg);color:var(--t-strong);margin-bottom:14px}
+#zrel .zb{display:flex;gap:10px}#zrel .zb button{border:0;border-radius:8px;padding:10px 18px;font:500 14px Inter,system-ui,sans-serif;cursor:pointer;background:var(--tile);color:var(--t-body)}#zrel .zb .zy{flex:1;background:var(--acc);color:#fff;font-weight:600}
+#zrel .zf{font-size:12px;color:var(--t-mute);margin-top:12px}#zrel .zm{font-size:13px;margin:0 0 12px}#zrel .zm.ok{color:#4ADE80}#zrel .zm.ng{color:#FCA5A5}
+@media(max-width:700px){#zrel{right:12px;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));width:auto}}`;document.head.appendChild(s);})();
+async function zrelUI(force){
+  let el=$("zrel");if(!el){el=document.createElement("div");el.id="zrel";document.body.appendChild(el);}
+  const p=zrelPending()[0];
+  if(!p){el.style.display="none";el.innerHTML="";zrelSig="";return;}
+  const c=p.ev.core,id=c.id,sc=c.scope||{},files=sc.files||[];
+  const res=[...all].reverse().find(x=>x.kind==="zrel-res"&&x.ev&&x.ev.id===id);
+  const sent=[...all].reverse().find(x=>x.kind==="zrel-sig"&&x.dir==="out"&&x.ev&&x.ev.id===id);
+  const waiting=sent&&(!res||String(sent.t)>String(res.t));
+  const sig=id+"|"+(res?res.t:"")+"|"+(sent?sent.t:"");
+  if(sig===zrelSig&&!force)return;zrelSig=sig;el.style.display="block";
+  const done=!waiting&&res&&res.ev.ok;
+  let fp="";try{const kp=await akey(false);fp=kp?"Signed with this device's approval key · fingerprint "+(await akeyInfo(kp)).fp:"This device has no approval key yet — make one in Settings.";}catch(e){fp=e.message;}
+  const desk=split(P(p.from||p.peer).name).name;
+  el.innerHTML=`<div class="zh"><i></i><b>Release request</b><span class="lv" style="background:${LC[c.level]}33;color:${LC[c.level]}">L${c.level}</span></div>
+   <div class="zr">The PC of ${esc(desk)} stopped: ${esc(c.reason||p.ev.rule_text||"")}.</div>
+   <div class="zkv"><span>Requester</span><b>${esc(c.requester||"")} (${esc(desk)})</b><span>Stopped at</span><b>${esc(String(p.ev.stopped||c.created||"").replace("T"," ").slice(0,16))}</b>
+    <span>Rule</span><b>${esc(sc.rule||"")}</b><span>Files</span><b>${esc(files.slice(0,2).join(", "))}${files.length>2?", +"+(files.length-2):""}${files.length?"":"—"}</b><span>Approvals</span><b>${esc(String(p.ev.required||""))} needed</b></div>
+   ${waiting?'<div class="zm">Sent. Waiting for the stopped PC to confirm…</div>':res?`<div class="zm ${res.ev.ok?"ok":"ng"}">${esc(res.ev.message)}</div>`:""}
+   ${done?`<div class="zb"><button id="zclose">Close</button></div>`:`<div class="zn">Call or walk to the requester. Read the 4-digit match code on their screen, and enter it here.</div>
+   <input id="zcode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000" ${waiting?"disabled":""}>
+   <div class="zb"><button class="zy" id="zyes" ${waiting?"disabled":""}>Approve and sign</button><button id="zno" ${waiting?"disabled":""}>Decline</button></div>`}
+   <div class="zf">${esc(fp)}</div>`;
+  const answer=async op=>{const code=op==="approve"?($("zcode").value||"").trim():"";
+    if(op==="approve"&&!/^\d{4}$/.test(code)){$("zcode").focus();return;}
+    let r;try{r=await post("zrel/answer",{id,op,code,sig:await zsign(c,op)});}catch(e){r={error:e.message};}
+    if(r.error){const m=el.querySelector(".zm")||document.createElement("div");m.className="zm ng";m.textContent=r.error;if(!m.parentNode)el.insertBefore(m,el.querySelector(".zn")||el.querySelector(".zb"));return;}
+    await pull();zrelUI(true);};
+  if($("zyes"))$("zyes").onclick=()=>answer("approve");
+  if($("zno"))$("zno").onclick=()=>answer("decline");
+  if($("zcode"))$("zcode").onkeydown=e=>{if(e.key==="Enter")answer("approve");};
+  if($("zclose"))$("zclose").onclick=()=>{zrelGone.add(id);zrelUI(true);};
+}
+async function fillAkey(){
+  const box=$("akbox");if(!box)return;
+  try{const kp=await akey(false);
+    if(!kp){box.innerHTML=`<p>This device has no approval key yet.</p><div class="rowb" style="margin-top:8px"><button class="send" id="akmake">Make an approval key</button></div><div class="kv" id="akmsg"></div>`;
+      $("akmake").onclick=async()=>{try{await akey(true);fillAkey();}catch(e){$("akmsg").innerHTML=`<span class="ng">${esc(e.message)}</span>`;}};return;}
+    const k=await akeyInfo(kp),line=`sudo zenos_guardd.py --enroll ${me.id} ${k.pub}`;
+    box.innerHTML=`<div class="kv">Fingerprint <b>${esc(k.fp)}</b></div>
+      <div style="background:var(--bg);border-radius:8px;padding:10px 12px;margin:8px 0;font:500 12px ui-monospace,monospace;color:#93C5FD;word-break:break-all" id="akline">${esc(line)}</div>
+      <p style="color:var(--t-mute);font-size:12px">Give this line to the PC administrator. Until it is enrolled, your signatures are refused.</p>
+      <div class="rowb" style="margin-top:8px"><button class="send" id="akcopy">Copy</button><div class="btn2" id="aknew">Make a new key</div></div><div class="kv" id="akmsg"></div>`;
+    $("akcopy").onclick=async()=>{try{await navigator.clipboard.writeText(line);$("akmsg").textContent="Copied.";}catch(e){const r=document.createRange();r.selectNodeContents($("akline"));getSelection().removeAllRanges();getSelection().addRange(r);$("akmsg").textContent="Selected — copy it with Ctrl+C.";}};
+    $("aknew").onclick=async()=>{if($("aknew").dataset.sure!=="1"){$("aknew").dataset.sure="1";$("aknew").textContent="Press again: the old key stops working";return;}
+      try{await akey("new");fillAkey();}catch(e){$("akmsg").innerHTML=`<span class="ng">${esc(e.message)}</span>`;}};
+  }catch(e){box.innerHTML=`<p class="warn">${esc(e.message)}</p>`;}
+}
+
 /* ---------- More menu ---------- */
 function moreMenu(){$("more").innerHTML=`<div><b style="color:var(--t-strong)">ZENOS Messages</b><br>Signal protocol (libsignal) · keys never leave this device.</div>
   <div>Relay stores ciphertext only, and drops it after 14 days. History, drafts, saved items and search stay on this device.</div>
@@ -1102,6 +1189,7 @@ async function pull(){
     if(m.dir==="in"&&kind(m)==="msg"&&!(document.hasFocus()&&view==="conv"&&ckey(m)===curKey()))notify(m);}}
   const sig=all.length+"|"+chans.map(c=>c.id+(c.log||[]).length+(c.pending||[]).length).join(",")+"|"+(all.length?all[all.length-1].t:"")+"|"+JSON.stringify(loc.saved)+"|"+view+"|"+curKey()+"|"+threadRoot;
   if(sig!==lastSig){lastSig=sig;render(view!=="settings"&&view!=="you");}else sidebar();
+  zrelUI().catch(()=>{});
 }
 async function slow(){
   await pullApprovals();

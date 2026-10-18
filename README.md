@@ -15,7 +15,7 @@ leak stops the machine until responsible officers release it from their own devi
 |---|---|---|
 | Levelled, sealed files | Files saved into a level folder (L1–L5) are encrypted into `.zen` with the level in a signed header; plaintext is only ever opened in RAM (`/dev/shm`). | Working PoC |
 | Approval-based key issuance | Opening above your level files a request; the required number of approvers grows with the level; approvals are signed with each approver's key. | PoC — approver keys still live on the same machine |
-| Anomaly stop | Bulk reads, transfers to removable media and unusual egress freeze the session and lock the screen; release needs several officers' signatures. | Enforced by a root service (installed system); officer keys still demo |
+| Anomaly stop | Bulk reads, transfers to removable media and unusual egress freeze the session and lock the screen; release needs several officers' signatures. | Enforced by a root service (installed system); officers sign the release on their own devices (ZENOS Messages) |
 | Tamper-evident ledger | Hash-chained local log, anchored to a consortium tier with Merkle roots. | PoC (single host) |
 | Distributed storage | Sealed files are fragmented and replicated across storage nodes. | PoC (local test nodes) |
 | Level-gated AI | Which AI may touch a file depends on its level (external AI hidden at L4+). | UI and policy only |
