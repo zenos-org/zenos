@@ -42,14 +42,32 @@ docs/         Threat model and architecture
 
 ## Running it
 
-Today ZENOS is developed as a Debian 13 system with KDE Plasma 6 (X11). The development machine runs it inside
-WSL2, which is a convenience for development only — ZENOS itself does not depend on Windows. An installable
-image for ordinary PCs is the next milestone, and until then setup is manual and undocumented. If you want to try
-it, open an issue and we will help.
+ZENOS is a Debian 13 ("trixie") system with a KDE Plasma 6 X11 session. It does not depend on Windows.
 
-Main dependencies: Python 3.13, PyGObject with GTK 3 and WebKit2GTK 4.1, GStreamer, `cryptography`, OpenCV
-(headless) and NumPy, Node.js (messenger and office apps), KDE Plasma 6, fcitx5 with Anthy, TigerVNC (for remote
-desktop during development).
+**Install on an existing Debian 13 system**
+
+```
+packaging/build-deb.sh                     # -> build/zenos_<version>_amd64.deb
+sudo apt install ./build/zenos_*_amd64.deb
+```
+
+Users created after installation get the ZENOS desktop (security folders, level bar, launcher, dark theme,
+screen lock). Log in to the "Plasma (X11)" session.
+
+**Build a live / installer image for ordinary PCs**
+
+```
+sudo apt install live-build
+sudo packaging/iso/build-iso.sh build/zenos_*_amd64.deb   # -> build/iso/zenos-amd64.hybrid.iso
+```
+
+The image boots as a live session and installs with Calamares.
+
+Calls need the self-hosted LiveKit server, which is not bundled yet: put `livekit-server` in
+`/usr/lib/zenos/livekit/` and a config based on `config/examples/livekit.example.yaml` in `~/.config/zenos/livekit.yaml`.
+
+The development machine runs ZENOS inside WSL2 for convenience; `dev/` holds the pieces that only make sense there
+(VNC desktop service, input-method autostart for WSLg).
 
 ## Roadmap
 

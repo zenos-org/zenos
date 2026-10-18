@@ -18,7 +18,10 @@ folder "Basic · L1" basic
 folder "Green · L2-L3" green
 folder "Red · L4" red
 # PoC stand-in for removable media: copies here are watched like a USB stick
-[ -d "$D/USB Drive" ] || mkdir -p "$D/USB Drive"
+if [ ! -d "$D/USB Drive" ]; then
+  mkdir -p "$D/USB Drive"
+  printf '[Desktop Entry]\nIcon=%s/icons/zenos-usb.svg\n' "$R" > "$D/USB Drive/.directory"
+fi
 
 [ -f "$D/trash.desktop" ] || printf '[Desktop Entry]\nName=Trash\nType=Link\nURL=trash:/\nIcon=%s/icons/zenos-trash.svg\n' "$R" > "$D/trash.desktop"
 if [ ! -f "$D/zenos-vault.desktop" ] && [ -f /usr/share/applications/zenos-vault.desktop ]; then
@@ -27,4 +30,13 @@ fi
 
 # this desk's messenger account (demo devices are only started in development)
 [ -f "$DATA/msg/ports.env" ] || echo "zenos=8096" > "$DATA/msg/ports.env"
+# ZENOS wallpaper, once (Plasma must be running, so this part waits for it in the background)
+if [ ! -f "$C/.wallpaper-set" ]; then
+  ( for i in $(seq 1 60); do
+      if command -v plasma-apply-wallpaperimage >/dev/null && pgrep -u "$(id -u)" -x plasmashell >/dev/null; then
+        sleep 3; plasma-apply-wallpaperimage "$R/wallpaper.jpg" >/dev/null 2>&1 && touch "$C/.wallpaper-set"; break
+      fi
+      sleep 2
+    done ) &
+fi
 exit 0
