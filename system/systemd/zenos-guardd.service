@@ -1,0 +1,9 @@
+[Unit]
+Description=ZENOS guard (security folders, external exit, enforced stop and release)
+After=local-fs.target
+[Service]
+ExecStart=/usr/bin/python3 -I /usr/sbin/zenos_guardd.py
+Restart=always
+RestartSec=1
+[Install]
+WantedBy=multi-user.target

@@ -31,6 +31,17 @@ def user():
         return c
     if os.geteuid() != 0:
         return pwd.getpwuid(os.geteuid()).pw_name
+    # the person at the screen: owner of the running desktop session
+    for d in os.listdir("/proc"):
+        if d.isdigit():
+            try:
+                with open("/proc/%s/comm" % d) as f:
+                    if f.read().strip() in ("plasmashell", "kwin_x11", "kwin_wayland"):
+                        uid = os.stat("/proc/" + d).st_uid
+                        if uid >= 1000:
+                            return pwd.getpwuid(uid).pw_name
+            except OSError:
+                continue
     for p in pwd.getpwall():
         if p.pw_uid >= 1000 and os.path.isdir(os.path.join(p.pw_dir, ".local/share/zenos")):
             return p.pw_name

@@ -83,9 +83,10 @@ def refresh():
         reason.config(text="Approved with officer devices. The stopped operation was cancelled; quarantined files stay in quarantine.")
         root.after(2500, root.destroy)
         return
-    h = renew_if_declined(h)
+    if not zenos.GUARDD:          # development layout: no root guard, the lock renews a declined release itself
+        h = renew_if_declined(h)
     try:
-        r = json.loads((zenos.REQ / f"{h['request']}.json").read_text())
+        r = json.loads(zenos.request_path(h["request"]).read_text())
         got = len(r["approvals"])
     except Exception:
         got = 0

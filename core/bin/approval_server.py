@@ -33,7 +33,13 @@ input.code{font-size:22px;font-weight:700;letter-spacing:.3em;text-align:center}
 
 def load_requests():
     zenos.REQ.mkdir(parents=True, exist_ok=True)
-    rs = [json.loads(p.read_text()) for p in zenos.REQ.glob("*.json")]
+    rs = []
+    for d in [zenos.REQ] + ([zenos.RELEASE_REQ] if zenos.RELEASE_REQ else []):
+        for p in d.glob("*.json"):
+            try:
+                rs.append(json.loads(p.read_text()))
+            except Exception:
+                pass
     return sorted(rs, key=lambda r: r["created"], reverse=True)
 
 
@@ -112,7 +118,7 @@ class H(BaseHTTPRequestHandler):
         n = int(self.headers.get("Content-Length", 0))
         f = {k: v[0] for k, v in parse_qs(self.rfile.read(n).decode()).items()}
         rid = os.path.basename(f.get("id", ""))
-        if not (zenos.REQ / f"{rid}.json").exists():
+        if not zenos.request_path(rid).exists():
             return self.send(page("Unknown request.", False))
         if f.get("action") == "decline":
             ok, msg = zenos.decline(rid, f.get("approver", ""))

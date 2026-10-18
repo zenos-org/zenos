@@ -36,6 +36,15 @@ ROSTER = {"sato": "Sato Kenji · Section Chief", "tanaka": "Tanaka Yuko · Direc
 GRANT_MINUTES = 30
 # anomaly detection: the halt state, pre-filed operations, quarantined evidence
 HALT = CFG / "halt.json"
+# Installed system: the stop, release requests and quarantine belong to root (zenos-guardd); the officers' public
+# keys are installed by the administrator. The user can read them but cannot change them.
+SYSD = Path("/var/lib/zenos")
+GUARDD = (SYSD / "requests").is_dir()
+GUARDD_SOCK = "/run/zenos/guardd.sock"
+if GUARDD:
+    HALT = SYSD / "halt.json"
+RELEASE_REQ = SYSD / "requests" if GUARDD else None
+APPROVER_PUB = Path("/etc/zenos/approvers")
 PLANS = Z / "plans"
 QUAR = Z / "quarantine"
 USB = DESK / "USB Drive"   # PoC stand-in for removable media / external transfer
@@ -212,6 +221,38 @@ def request_digest(r):
     return hashlib.sha256(json.dumps(request_core(r), sort_keys=True, ensure_ascii=False).encode()).digest()
 
 
+def approver_pub(name):
+    """an officer's public key: the administrator-installed copy when there is one, else the PoC key store"""
+    name = os.path.basename(name)
+    p = APPROVER_PUB / f"{name}.pub"
+    return p if p.exists() else APPROVER_KEYS / f"{name}.pub"
+
+
+def request_path(rid):
+    rid = os.path.basename(rid)
+    for d in ([RELEASE_REQ] if RELEASE_REQ else []) + [REQ]:
+        if (d / f"{rid}.json").exists():
+            return d / f"{rid}.json"
+    return REQ / f"{rid}.json"
+
+
+def guardd_call(msg):
+    """talk to the root guard (release approvals and declines)"""
+    import socket
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.settimeout(10)
+    s.connect(GUARDD_SOCK)
+    s.sendall((json.dumps(msg) + "\n").encode())
+    buf = b""
+    while not buf.endswith(b"\n"):
+        chunk = s.recv(65536)
+        if not chunk:
+            break
+        buf += chunk
+    s.close()
+    return json.loads(buf or b"{}")
+
+
 def verified_approvers(core, digest_b64, approvals):
     """Recompute the digest from the request core and count approvals whose signatures verify."""
     digest = hashlib.sha256(json.dumps(core, sort_keys=True, ensure_ascii=False).encode()).digest()
@@ -220,7 +261,7 @@ def verified_approvers(core, digest_b64, approvals):
     ok = set()
     for a in approvals:
         try:
-            pk = Ed25519PublicKey.from_public_bytes((APPROVER_KEYS / f"{a['approver']}.pub").read_bytes())
+            pk = Ed25519PublicKey.from_public_bytes(approver_pub(a["approver"]).read_bytes())
             pk.verify(base64.b64decode(a["sig"]), digest)
             ok.add(a["approver"])
         except Exception:
@@ -309,8 +350,19 @@ def request_access(p, h):
 
 def approve(rid, approver, code):
     """Returns (ok, message). Signs the request with the approver's key; issues a grant when enough approvals."""
-    p = REQ / f"{rid}.json"
+    p = request_path(rid)
     r = json.loads(p.read_text())
+    if RELEASE_REQ and p.parent == RELEASE_REQ:
+        # an emergency release: the approver signs, the root guard verifies and decides
+        if approver not in ROSTER:
+            return False, "Unknown approver."
+        sig = approver_key(approver).sign(request_digest(r))
+        try:
+            out = guardd_call({"op": "approve", "request": r["id"], "approver": approver, "code": code.strip(),
+                               "sig": base64.b64encode(sig).decode()})
+        except OSError:
+            return False, "The ZENOS guard is not reachable."
+        return bool(out.get("ok")), out.get("message", "")
     if r["status"] != "pending":
         return False, "This request is already decided."
     if approver not in ROSTER:
@@ -369,8 +421,18 @@ def approve(rid, approver, code):
 
 
 def decline(rid, approver):
-    p = REQ / f"{rid}.json"
+    p = request_path(rid)
     r = json.loads(p.read_text())
+    if RELEASE_REQ and p.parent == RELEASE_REQ:
+        if approver not in ROSTER:
+            return False, "Unknown approver."
+        sig = approver_key(approver).sign(b"decline:" + request_digest(r))
+        try:
+            out = guardd_call({"op": "decline", "request": r["id"], "approver": approver,
+                               "sig": base64.b64encode(sig).decode()})
+        except OSError:
+            return False, "The ZENOS guard is not reachable."
+        return bool(out.get("ok")), out.get("message", "")
     if r["status"] != "pending":
         return False, "This request is already decided."
     r["status"] = "declined"
@@ -399,7 +461,7 @@ def valid_grant(p):
     ok = set()
     for a in g["approvals"]:
         try:
-            pk = Ed25519PublicKey.from_public_bytes((APPROVER_KEYS / f"{a['approver']}.pub").read_bytes())
+            pk = Ed25519PublicKey.from_public_bytes(approver_pub(a["approver"]).read_bytes())
             pk.verify(base64.b64decode(a["sig"]), digest)
             ok.add(a["approver"])
         except Exception:

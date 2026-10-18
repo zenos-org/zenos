@@ -1,0 +1,624 @@
+#!/usr/bin/env python3
+"""ZENOS guard (root): watches the security folders and the external exit, and enforces the stop.
+
+Why root: a watcher that runs as the user can be stopped or edited by the user, and so can its state. Here the
+detection, the stop state (/var/lib/zenos/halt.json), the release requests, the quarantine and the officers'
+public keys (/etc/zenos/approvers) all belong to root. The user can read the state but cannot lift a stop.
+
+Detection   fanotify reports every open of a protected file and every finished write to the exit, together with
+            the process id (inotify, used only for moves into the exit, cannot say who did it).
+Rules       exfiltration   a protected file (L2+) reaches the USB Drive
+            bulk-transfer  5 or more files reach the USB Drive within 30 seconds
+            bulk-read      6 or more different protected files are opened within 20 seconds
+Stop        every process of the desktop user is frozen (SIGSTOP), except the display server and the messenger
+            (it carries the release request to the officers); anything new the user starts is frozen within a
+            second. Files that reached the exit are moved to root's quarantine. A full-screen notice runs as root.
+Release     the officers' signatures arrive over /run/zenos/guardd.sock and are verified against the
+            administrator-installed public keys; with enough of them the processes involved are killed (the
+            operation is cancelled, not resumed) and everything else is thawed.
+Pre-filed operations approved in advance are honoured: the event is recorded instead of stopping the PC.
+"""
+import base64, ctypes, ctypes.util, errno, hashlib, json, os, pwd, select, signal, socket, struct, subprocess, sys
+import threading, time
+from collections import deque
+from pathlib import Path
+
+LIB = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib", "zenos"))
+sys.path.insert(0, LIB)
+import zconf
+try:
+    import zledger
+except Exception:
+    zledger = None
+sys.path.insert(0, os.path.join(zconf.root(), "bin"))
+import zenos as Z                      # constants and the request digest; no user paths are used from it
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+SYSD = Path("/var/lib/zenos")
+HALT = SYSD / "halt.json"
+REQ = SYSD / "requests"
+QUAR = SYSD / "quarantine"
+PUB = Path("/etc/zenos/approvers")
+SOCK = "/run/zenos/guardd.sock"
+LOG = Path("/var/log/zenos/guard.jsonl")
+LEDGER = "/var/log/zenos/access-ledger.jsonl"
+BULK_READ_N, BULK_READ_SEC = 6, 20
+BULK_XFER_N, BULK_XFER_SEC = 5, 30
+RULE_TEXT = {"exfiltration": "a protected file was copied to the USB Drive",
+             "bulk-transfer": "many files were copied to the USB Drive at once",
+             "bulk-read": "many protected files were opened at once"}
+# the display path keeps running so the stop notice can be seen: X server and the compositing window manager
+# (when KWin composites, nothing new reaches the screen while it is frozen)
+DISPLAY_SERVERS = {"Xorg", "Xvnc", "Xtigervnc", "Xwayland", "X", "kwin_x11", "kwin_wayland", "kscreenlocker_greet"}
+ME = os.getpid()
+lock = threading.RLock()
+reads, xfers, recent_write = deque(), deque(), {}
+lock_proc = None
+
+USER = PW = HOME = DATA = DESK = USB = None      # set by init_user() once the desktop user exists
+
+
+def init_user():
+    """wait until the desktop user exists and has logged in once (their security folders are made at login)"""
+    global USER, PW, HOME, DATA, DESK, USB
+    while True:
+        try:
+            USER = zconf.user()
+            PW = pwd.getpwnam(USER)
+            HOME = Path(PW.pw_dir)
+            DATA = Path(zconf.data(USER))
+            DESK = desktop_dir()
+            USB = DESK / "USB Drive"
+            if USB.is_dir():
+                return
+        except KeyError:
+            pass
+        time.sleep(5)
+
+
+def desktop_dir():
+    try:
+        for line in open(HOME / ".config/user-dirs.dirs"):
+            if line.startswith("XDG_DESKTOP_DIR="):
+                return Path(line.split("=", 1)[1].strip().strip('"').replace("$HOME", str(HOME)))
+    except OSError:
+        pass
+    return HOME / "Desktop"
+
+
+def log(**kw):
+    kw = {"t": time.strftime("%Y-%m-%dT%H:%M:%S%z"), **kw}
+    LOG.parent.mkdir(parents=True, exist_ok=True)
+    with open(LOG, "a") as f:
+        f.write(json.dumps(kw, ensure_ascii=False) + "\n")
+    if zledger is not None:
+        try:
+            zledger.append(LEDGER, kw.get("event", "guard"), "guardd", "endpoint", **{k: v for k, v in kw.items() if k not in ("t", "event")})
+        except Exception:
+            pass
+    print(json.dumps(kw, ensure_ascii=False), flush=True)
+
+
+def write_json(p, obj, mode=0o644):
+    p.parent.mkdir(parents=True, exist_ok=True)
+    tmp = p.with_name("." + p.name + ".tmp")
+    tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=1))
+    os.chmod(tmp, mode)
+    os.replace(tmp, p)
+
+
+def halted():
+    try:
+        h = json.loads(HALT.read_text())
+        return h if h.get("status") == "halted" else None
+    except Exception:
+        return None
+
+
+# ---------------- levels ----------------
+def folder_level(p):
+    p = Path(p)
+    if p.parent.parent == DESK and p.parent.name in Z.FOLDERS:
+        return Z.FOLDERS[p.parent.name][0]
+    return 1
+
+
+def level_of(p):
+    """the level written in a sealed file's header (read by the guard itself; its own opens are ignored)"""
+    p = Path(p)
+    try:
+        if p.suffix == ".zen":
+            with open(p, "rb") as f:
+                head = f.read(4096)
+            if head.startswith(Z.MAGIC):
+                return int(json.loads(head[len(Z.MAGIC):].split(b"\n", 1)[0])["level"])
+    except Exception:
+        pass
+    return folder_level(p)
+
+
+def in_security(p):
+    p = Path(p)
+    return p.parent.parent == DESK and p.parent.name in Z.FOLDERS
+
+
+# ---------------- fanotify ----------------
+FAN_CLASS_NOTIF, FAN_CLOEXEC, FAN_NONBLOCK = 0x0, 0x1, 0x2
+FAN_MARK_ADD = 0x1
+FAN_OPEN, FAN_CLOSE_WRITE, FAN_EVENT_ON_CHILD = 0x20, 0x8, 0x08000000
+AT_FDCWD = -100
+_libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
+META = struct.Struct("IBBHQii")      # event_len, vers, reserved, metadata_len, mask, fd, pid
+
+
+def fan_open(paths):
+    fd = _libc.fanotify_init(FAN_CLASS_NOTIF | FAN_CLOEXEC, os.O_RDONLY | os.O_LARGEFILE)
+    if fd < 0:
+        raise OSError(ctypes.get_errno(), "fanotify_init")
+    for p in paths:
+        r = _libc.fanotify_mark(fd, FAN_MARK_ADD, ctypes.c_uint64(FAN_OPEN | FAN_CLOSE_WRITE | FAN_EVENT_ON_CHILD),
+                                AT_FDCWD, os.fsencode(str(p)))
+        if r < 0:
+            raise OSError(ctypes.get_errno(), "fanotify_mark " + str(p))
+    return fd
+
+
+def fan_events(fd):
+    buf = os.read(fd, 65536)
+    off = 0
+    while off + META.size <= len(buf):
+        ev_len, vers, _, meta_len, mask, efd, pid = META.unpack_from(buf, off)
+        if ev_len == 0:
+            break
+        path = None
+        if efd >= 0:
+            try:
+                path = os.readlink(f"/proc/self/fd/{efd}")
+            except OSError:
+                pass
+            os.close(efd)
+        yield mask, pid, path
+        off += ev_len
+
+
+# ---------------- the user's processes ----------------
+def user_procs():
+    out = []
+    for d in Path("/proc").iterdir():
+        if not d.name.isdigit():
+            continue
+        try:
+            if d.stat().st_uid != PW.pw_uid:
+                continue
+            comm = (d / "comm").read_text().strip()
+            cmd = (d / "cmdline").read_bytes().replace(b"\0", b" ").decode(errors="ignore").strip()
+            out.append((int(d.name), comm, cmd))
+        except OSError:
+            continue
+    return out
+
+
+def exempt(comm, cmd):
+    if comm in DISPLAY_SERVERS:
+        return True
+    # the messenger carries the release request to the officers; the approval page is how they answer
+    return any(x in cmd for x in ("/msg/relay.js", "/msg/client.js", "approval_server.py", "zenos_lock.py"))
+
+
+def holders(paths):
+    roots = [str(p) for p in paths] + [str(USB)] + [str(DESK / n) for n in Z.FOLDERS]
+    out = []
+    for pid, comm, cmd in user_procs():
+        try:
+            d = Path(f"/proc/{pid}")
+            hit = any(any(os.readlink(fd).startswith(r) for r in roots) for fd in (d / "fd").iterdir())
+            if not hit:                                    # a script working inside the folder (its current directory)
+                cwd = os.readlink(d / "cwd")
+                hit = any(cwd.startswith(r) for r in roots)
+            if hit:
+                out.append({"pid": pid, "comm": comm, "cmd": cmd[:120]})
+        except OSError:
+            continue
+    return out
+
+
+def freeze_all():
+    """stop every non-exempt process of the user; returns the pids stopped now"""
+    stopped = []
+    for pid, comm, cmd in user_procs():
+        if exempt(comm, cmd):
+            continue
+        try:
+            st = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[0]
+            if st != "T":
+                os.kill(pid, signal.SIGSTOP)
+                stopped.append(pid)
+        except OSError:
+            pass
+    return stopped
+
+
+def thaw_all():
+    for pid, comm, cmd in user_procs():
+        try:
+            os.kill(pid, signal.SIGCONT)
+        except OSError:
+            pass
+
+
+def session_env():
+    """DISPLAY and XAUTHORITY of the user's graphical session, taken from a running session process"""
+    for pid, comm, cmd in user_procs():
+        if comm not in ("plasmashell", "kwin_x11", "ksmserver", "startplasma-x11", "xfce4-session", "gnome-shell", "Xtigervnc", "Xvnc"):
+            continue
+        try:
+            env = dict(x.split("=", 1) for x in Path(f"/proc/{pid}/environ").read_bytes().decode(errors="ignore").split("\0") if "=" in x)
+            if comm in ("Xtigervnc", "Xvnc"):
+                disp = next((a for a in cmd.split() if a.startswith(":")), None)
+                if disp:
+                    return {"DISPLAY": disp, "XAUTHORITY": env.get("XAUTHORITY", str(HOME / ".Xauthority"))}
+            if env.get("DISPLAY"):
+                return {"DISPLAY": env["DISPLAY"], "XAUTHORITY": env.get("XAUTHORITY", str(HOME / ".Xauthority"))}
+        except OSError:
+            continue
+    return None
+
+
+def ensure_lock():
+    """the stop notice runs as root on the user's screen; if it is closed it comes back"""
+    global lock_proc
+    if lock_proc is not None and lock_proc.poll() is None:
+        return
+    env = session_env()
+    if not env:
+        return
+    full = dict(os.environ, HOME="/root", **env)
+    lock_proc = subprocess.Popen([sys.executable, "-I", os.path.join(zconf.root(), "bin", "zenos_lock.py")],
+                                 env=full, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+
+
+# ---------------- requests and approvals ----------------
+def roster():
+    if PUB.is_dir():
+        return sorted(p.stem for p in PUB.glob("*.pub"))
+    return []
+
+
+def pubkey(name):
+    return Ed25519PublicKey.from_public_bytes((PUB / f"{os.path.basename(name)}.pub").read_bytes())
+
+
+def release_required(level):
+    return min(max(1, len(roster())), max(2, Z.REQUIRED[level] + 1))
+
+
+def new_release(level, rule, files, hid):
+    REQ.mkdir(parents=True, exist_ok=True)
+    rid = time.strftime("%Y%m%d-%H%M%S") + "-" + os.urandom(2).hex()
+    code = f"{int.from_bytes(os.urandom(2), 'big') % 10000:04d}"
+    r = {"id": rid, "kind": "release", "requester": USER, "level": level, "label": Z.LABEL[level],
+         "reason": RULE_TEXT[rule], "created": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+         "required": release_required(level), "code": code, "status": "pending", "approvals": [],
+         "scope": {"halt": hid, "rule": rule, "files": [Path(f).name for f in files][:20]}}
+    write_json(REQ / f"{rid}.json", r)
+    return r
+
+
+def verified(r):
+    digest = Z.request_digest(r)
+    ok = set()
+    for a in r.get("approvals", []):
+        try:
+            pubkey(a["approver"]).verify(base64.b64decode(a["sig"]), digest)
+            ok.add(a["approver"])
+        except Exception:
+            pass
+    return ok
+
+
+def plan_allows(rule, level, n=1):
+    """a pre-filed operation approved by enough officers (signatures checked with the installed public keys)"""
+    pdir = DATA / "plans"
+    for p in sorted(pdir.glob("*.json")) if pdir.is_dir() else []:
+        try:
+            g = json.loads(p.read_text())
+            core, sc = g.get("core", {}), g.get("core", {}).get("scope", {})
+            if (sc.get("rule") != rule or core.get("requester") != USER or level > core.get("level", 0)
+                    or time.time() > g["expires"] or g["used"] + n > sc.get("max_files", 0)):
+                continue
+            digest = hashlib.sha256(json.dumps(core, sort_keys=True, ensure_ascii=False).encode()).digest()
+            if base64.b64decode(g["digest"]) != digest:
+                continue
+            ok = set()
+            for a in g["approvals"]:
+                try:
+                    pubkey(a["approver"]).verify(base64.b64decode(a["sig"]), digest)
+                    ok.add(a["approver"])
+                except Exception:
+                    pass
+            if len(ok) >= Z.REQUIRED[core["level"]]:
+                g["used"] += n
+                p.write_text(json.dumps(g, ensure_ascii=False, indent=1))
+                log(event="anomaly-permitted", rule=rule, level=level, plan=g["request"], used=g["used"])
+                return True
+        except Exception:
+            continue
+    return False
+
+
+# ---------------- stop and release ----------------
+def quarantine(paths, hid):
+    q = QUAR / hid
+    q.mkdir(parents=True, exist_ok=True)
+    os.chmod(QUAR, 0o700)
+    moved = []
+    for p in paths:
+        p = Path(p)
+        try:
+            if p.exists() and p.parent == USB:
+                os.replace(p, q / p.name)
+                moved.append(p.name)
+        except OSError:
+            try:
+                import shutil
+                shutil.move(str(p), q / p.name)
+                moved.append(p.name)
+            except Exception:
+                pass
+    return moved
+
+
+def halt(rule, paths, level, culprit=None):
+    with lock:
+        if halted():
+            return
+        hid = time.strftime("%Y%m%d-%H%M%S")
+        procs = holders(paths)
+        if culprit and not any(x["pid"] == culprit for x in procs):
+            try:
+                procs.append({"pid": culprit, "comm": Path(f"/proc/{culprit}/comm").read_text().strip(), "cmd": ""})
+            except OSError:
+                pass
+        for pr in procs:                                  # the operation itself first
+            try:
+                os.kill(pr["pid"], signal.SIGSTOP)
+            except OSError:
+                pass
+        frozen = freeze_all()
+        moved = quarantine(paths, hid)
+        r = new_release(level, rule, paths, hid)
+        h = {"id": hid, "status": "halted", "t": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "rule": rule,
+             "rule_text": RULE_TEXT[rule], "level": level, "files": [Path(p).name for p in paths][:20],
+             "quarantined": moved, "pids": procs, "frozen": len(frozen), "request": r["id"], "code": r["code"],
+             "required": r["required"], "by": "zenos-guardd"}
+        write_json(HALT, h)
+        # a desktop lock screen would hide the stop notice (the window manager keeps it on top); the officers must
+        # see who stopped and why, so the session's own lock is lifted. The PC itself stays stopped.
+        # (if the session is not known to logind, the notice shows as soon as the user unlocks their screen)
+        subprocess.run(["loginctl", "unlock-sessions"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        log(event="halt", halt=hid, rule=rule, level=level, files=h["files"], frozen=len(frozen),
+            operation=[f"{p['comm']}:{p['pid']}" for p in procs], quarantined=moved, request=r["id"])
+        ensure_lock()
+
+
+def release(h, r, approvers):
+    with lock:
+        for pr in h.get("pids", []):                      # the stopped operation is cancelled
+            try:
+                os.kill(pr["pid"], signal.SIGKILL)
+            except OSError:
+                pass
+        thaw_all()
+        h.update(status="released", released=time.strftime("%Y-%m-%dT%H:%M:%S%z"), released_by=sorted(approvers))
+        write_json(HALT, h)
+        log(event="release", halt=h["id"], request=r["id"], approvers=sorted(approvers))
+
+
+def enforce_loop():
+    while True:
+        try:
+            h = halted()
+            if h:
+                freeze_all()                               # anything new the user starts stops too
+                ensure_lock()
+                rp = REQ / f"{h['request']}.json"
+                r = json.loads(rp.read_text())
+                if r["status"] == "declined":              # declined: the stop stays and a new request goes out
+                    n = new_release(h["level"], h["rule"], h["files"], h["id"])
+                    h.update(request=n["id"], code=n["code"], required=n["required"])
+                    write_json(HALT, h)
+                    log(event="release-request-renewed", halt=h["id"], request=n["id"])
+                else:
+                    ok = verified(r)
+                    if len(ok) >= r["required"]:
+                        r["status"] = "approved"
+                        write_json(rp, r)
+                        release(h, r, ok)
+        except Exception as e:
+            print("enforce:", e, file=sys.stderr, flush=True)
+        time.sleep(1.0)
+
+
+# ---------------- events ----------------
+def on_open(p, pid):
+    now = time.time()
+    if pid == ME or halted() or Path(p).suffix != ".zen" or not in_security(p):
+        return
+    if now - recent_write.get(p, 0) < 5:                   # the guard sealing a file just saved
+        return
+    with lock:
+        reads.append((now, p))
+        while reads and now - reads[0][0] > BULK_READ_SEC:
+            reads.popleft()
+        distinct = {x for _, x in reads}
+        if len(distinct) >= BULK_READ_N:
+            files = sorted(distinct)
+            lvl = max(level_of(x) for x in files)
+            reads.clear()
+            if not plan_allows("bulk-read", lvl, len(files)):
+                halt("bulk-read", files, lvl, culprit=pid)
+
+
+def on_arrival(p, pid=None):
+    now = time.time()
+    p = str(p)
+    recent_write[p] = now
+    path = Path(p)
+    if path.parent != USB or path.name.startswith(".") or path.suffix in (".part", ".tmp"):
+        return
+    if halted():
+        h = halted()
+        moved = quarantine([path], h["id"])
+        if moved:
+            log(event="quarantine", halt=h["id"], files=moved)
+        return
+    lvl = level_of(path)
+    with lock:
+        while xfers and now - xfers[0][0] > BULK_XFER_SEC:
+            xfers.popleft()
+        if lvl >= 2:
+            if not plan_allows("usb-export", lvl):
+                halt("exfiltration", [x for _, x in xfers if Path(x).exists()] + [p], lvl, culprit=pid)
+            return
+        xfers.append((now, p))
+        if len(xfers) >= BULK_XFER_N:
+            if plan_allows("usb-export", lvl):
+                xfers.pop()
+            else:
+                halt("bulk-transfer", [x for _, x in xfers], max(level_of(x) for _, x in xfers), culprit=pid)
+
+
+def watch():
+    # only folders that exist (they belong to the user; the guard never creates them as root)
+    dirs = [USB] + [DESK / n for n in Z.FOLDERS if (DESK / n).is_dir()]
+    fd = fan_open(dirs)
+    # moves into the exit do not produce a finished write; inotify sees them (without a process id)
+    ino = subprocess.Popen(["inotifywait", "-m", "-q", "-e", "moved_to", "--format", "%w%f", str(USB)],
+                           stdout=subprocess.PIPE, text=True)
+    log(event="guard-start", user=USER, desktop=str(DESK), watching=[str(d) for d in dirs], fanotify=True)
+    while True:
+        rl, _, _ = select.select([fd, ino.stdout], [], [], 5)
+        if fd in rl:
+            for mask, pid, path in fan_events(fd):
+                if not path:
+                    continue
+                try:
+                    if mask & FAN_CLOSE_WRITE:
+                        if pid != ME:
+                            on_arrival(path, pid)
+                    elif mask & FAN_OPEN:
+                        on_open(path, pid)
+                except Exception as e:
+                    print("event:", e, file=sys.stderr, flush=True)
+        if ino.stdout in rl:
+            line = ino.stdout.readline()
+            if line:
+                on_arrival(line.rstrip("\n"))
+
+
+# ---------------- officers' answers ----------------
+def handle(msg):
+    op, rid = msg.get("op"), os.path.basename(str(msg.get("request", "")))
+    if op == "status":
+        return {"ok": True, "halt": halted()}
+    rp = REQ / f"{rid}.json"
+    if not rp.exists():
+        return {"ok": False, "message": "Unknown request."}
+    with lock:
+        r = json.loads(rp.read_text())
+        if r["status"] != "pending":
+            return {"ok": False, "message": "This request is already decided."}
+        who = os.path.basename(str(msg.get("approver", "")))
+        if who not in roster():
+            return {"ok": False, "message": "This officer is not enrolled on this PC."}
+        digest = Z.request_digest(r)
+        try:
+            sig = base64.b64decode(msg.get("sig", ""))
+            pubkey(who).verify(sig, digest if op == "approve" else b"decline:" + digest)
+        except Exception:
+            log(event="approve-refused", request=rid, approver=who, reason="signature")
+            return {"ok": False, "message": "The signature does not verify. Nothing was recorded."}
+        if op == "decline":
+            r["status"] = "declined"
+            r["declined_by"] = who
+            write_json(rp, r)
+            log(event="decline", request=rid, approver=who)
+            return {"ok": True, "message": "Declined. The PC stays stopped and a new request is sent."}
+        if str(msg.get("code", "")).strip() != r["code"]:
+            log(event="approve-refused", request=rid, approver=who, reason="match-code")
+            return {"ok": False, "message": "The match code does not match the requester's screen. Nothing was approved."}
+        if any(a["approver"] == who for a in r["approvals"]):
+            return {"ok": False, "message": "You have already approved this request. Another officer must approve."}
+        r["approvals"].append({"approver": who, "t": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "sig": base64.b64encode(sig).decode()})
+        write_json(rp, r)
+        log(event="approve", request=rid, approver=who, count=len(r["approvals"]), required=r["required"])
+        left = r["required"] - len(verified(r))
+        return {"ok": True, "message": f"Approved ({len(r['approvals'])}/{r['required']})." + (" The stop is released." if left <= 0 else "")}
+
+
+def serve():
+    os.makedirs(os.path.dirname(SOCK), exist_ok=True)
+    try:
+        os.unlink(SOCK)
+    except OSError:
+        pass
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    s.bind(SOCK)
+    os.chmod(SOCK, 0o666)            # anyone may deliver a signature; only valid ones count
+    s.listen(8)
+    while True:
+        c, _ = s.accept()
+        try:
+            c.settimeout(10)
+            buf = b""
+            while not buf.endswith(b"\n") and len(buf) < 65536:
+                chunk = c.recv(4096)
+                if not chunk:
+                    break
+                buf += chunk
+            out = handle(json.loads(buf or b"{}"))
+        except Exception as e:
+            out = {"ok": False, "message": "Bad request."}
+        try:
+            c.sendall((json.dumps(out, ensure_ascii=False) + "\n").encode())
+        except OSError:
+            pass
+        c.close()
+
+
+def enroll_demo():
+    """Developer Preview: install the PoC officers' public keys (generated in the user's key store) as trusted.
+    In production each officer enrolls the key of their own device; this shortcut exists only for demos."""
+    src = DATA / "approvers"
+    PUB.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for p in src.glob("*.pub"):
+        dst = PUB / p.name
+        dst.write_bytes(p.read_bytes())
+        os.chmod(dst, 0o644)
+        n += 1
+    print(f"enrolled {n} officer key(s) into {PUB}")
+
+
+def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "--enroll-demo":
+        init_user()
+        return enroll_demo()
+    for d in (SYSD, REQ):
+        d.mkdir(parents=True, exist_ok=True)
+        os.chmod(d, 0o755)
+    QUAR.mkdir(parents=True, exist_ok=True)
+    os.chmod(QUAR, 0o700)
+    init_user()
+    threading.Thread(target=serve, daemon=True).start()
+    threading.Thread(target=enforce_loop, daemon=True).start()
+    while True:
+        try:
+            watch()
+        except Exception as e:
+            print("watch:", e, file=sys.stderr, flush=True)
+            time.sleep(5)
+
+
+if __name__ == "__main__":
+    main()

@@ -6,7 +6,7 @@ if [ "$1" = "configure" ]; then
     if [ -d /run/systemd/system ]; then
         systemctl daemon-reload || true
     fi
-    systemctl enable zenos-firewall.service zenos-netsentinel.service zenos-heartwatch.service >/dev/null 2>&1 || true
+    systemctl enable zenos-firewall.service zenos-netsentinel.service zenos-heartwatch.service zenos-guardd.service >/dev/null 2>&1 || true
     if [ -d /run/systemd/system ]; then
         # never take the inbound lockdown down during an upgrade: start it if needed, otherwise re-apply the
         # rules in place (the script flushes and refills its own chain), so there is no unprotected window
@@ -15,7 +15,7 @@ if [ "$1" = "configure" ]; then
         else
             systemctl start zenos-firewall.service || true
         fi
-        systemctl restart zenos-netsentinel.service zenos-heartwatch.service || true
+        systemctl restart zenos-netsentinel.service zenos-heartwatch.service zenos-guardd.service || true
     fi
     # per-user endpoint audit, for every user session
     systemctl --global enable zenos-secaudit.service >/dev/null 2>&1 || true

@@ -173,10 +173,13 @@ def on_event(ev, p):
 
 
 def main():
+    if zenos.GUARDD:
+        # installed system: zenos-guardd (root) watches these folders; a user-level watcher would be bypassable
+        return
     zenos.USB.mkdir(parents=True, exist_ok=True)
     d = zenos.USB / ".directory"
     if not d.exists():
-        d.write_text(f"[Desktop Entry]\nIcon={zenos.Z}/icons/zenos-usb.svg\n")
+        d.write_text(f"[Desktop Entry]\nIcon={zenos.ROOT}/icons/zenos-usb.svg\n")
     zenos.audit("sentinel-start")
     if zenos.halted():   # a stop survives a restart: the lock comes back
         subprocess.Popen([sys.executable, "-I", str(BIN / "zenos_lock.py")], start_new_session=True)
