@@ -19,7 +19,9 @@ First public preview. Not for real classified data; see [docs/THREAT_MODEL.md](d
 
 **Apps**
 - ZENOS Browser (WebKitGTK): tabs, bookmarks, persistent sign-in, full-screen video.
-- Documents, Sheets, Slides: sealed files are edited from a RAM copy and sealed again on close; nothing can be
-  copied out of L3+ files.
+- Documents, Sheets, Slides: sealed files are edited from a RAM copy and sealed again on close; text of L3+ files
+  is copied only into windows of the same level or higher (level clipboard in the key agent), never to other
+  programs or the X11 selections; printed pages carry the level and the user, and files above the policy ceiling
+  (default L3) are not printed.
 - PDF, Images, Video viewers; ZENOS file picker for every app.
 - ZENOS Messages (Signal protocol via libsignal): channels, calls (self-hosted LiveKit), calendar, My requests.
