@@ -55,7 +55,7 @@ import sys as _sys
 import os as _os
 for _lib in ("/usr/local/lib/zenos", "/usr/lib/zenos"):   # development, then installed
     if _os.path.isdir(_lib) and _lib not in _sys.path:
-        _sys.path.insert(0, _lib)
+        _sys.path.append(_lib)                       # after anything the caller put first (tests use the repo copy)
 try:
     import zledger as _zledger
 except Exception:

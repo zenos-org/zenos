@@ -25,7 +25,7 @@ ones used in the Developer Preview.
 | @univerjs/presets, preset-docs-core, preset-sheets-core 1.1.0 | Documents, Sheets | Apache-2.0 |
 | mammoth 1.13.0 | Documents | BSD-2-Clause |
 | jszip 3.10.2 | Documents, Slides | MIT (dual MIT / GPL-3.0-or-later; used under MIT) |
-| xlsx 0.18.5 (SheetJS) | Sheets | Apache-2.0 |
+| xlsx 0.20.3 (SheetJS, from cdn.sheetjs.com) | Sheets | Apache-2.0 |
 | vite 8 | build tool | MIT |
 | PyGObject, GTK 3, WebKit2GTK 4.1, GStreamer | core | LGPL-2.1-or-later (WebKit parts also BSD) |
 | cryptography | core | Apache-2.0 OR BSD-3-Clause |

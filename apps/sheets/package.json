@@ -11,7 +11,7 @@
   "dependencies": {
     "@univerjs/preset-sheets-core": "1.1.0",
     "@univerjs/presets": "1.1.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "vite": "8.3.4"

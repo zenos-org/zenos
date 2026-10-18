@@ -38,8 +38,11 @@ def seal(data: bytes, level: int, name: str, keystore: str):
         aad = json.dumps({"file_id": file_id, "index": i, "level": level}, sort_keys=True).encode()
         ct = AESGCM(key).encrypt(nonce, chunk, aad)
         key_id = hashlib.sha256((file_id + ":" + str(i)).encode()).hexdigest()[:16]
-        open(os.path.join(keystore, key_id + ".key"), "wb").write(key)  # off-data key store
-        os.chmod(os.path.join(keystore, key_id + ".key"), 0o600)
+        kp = os.path.join(keystore, key_id + ".key")        # off-data key store, created owner-only
+        fd = os.open(kp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "wb") as f:
+            f.write(key)
+        os.chmod(kp, 0o600)
         frags.append(ct)
         manifest.append({"index": i, "key_id": key_id, "nonce": _b(nonce),
                          "len": len(chunk), "ct_sha256": hashlib.sha256(ct).hexdigest()})
@@ -53,7 +56,8 @@ def _open_fragment(head, ct_b64, m, keystore):
     key_path = os.path.join(keystore, m["key_id"] + ".key")
     if not os.path.exists(key_path):
         raise KeyError("no key issued for fragment %d" % m["index"])
-    key = open(key_path, "rb").read()
+    with open(key_path, "rb") as f:
+        key = f.read()
     aad = json.dumps({"file_id": head["file_id"], "index": m["index"], "level": head["level"]},
                      sort_keys=True).encode()
     return AESGCM(key).decrypt(_ub(m["nonce"]), _ub(ct_b64), aad)

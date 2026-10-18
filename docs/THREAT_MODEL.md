@@ -46,8 +46,13 @@ audit log     ──(shipped to)─────▶  consortium nodes outside the
 
 ## Known weaknesses in dependencies
 
-- `xlsx` 0.18.5 (SheetJS, npm) has published vulnerabilities (prototype pollution, ReDoS) that are fixed only in
-  builds distributed outside npm. To be replaced or upgraded before any production use.
+- `xlsx` (SheetJS) is no longer published on npm; the npm copy (0.18.5) has known vulnerabilities (prototype
+  pollution CVE-2023-30533, ReDoS CVE-2024-22363). ZENOS uses 0.20.3 from SheetJS's own CDN, pinned in
+  `package-lock.json` by its sha512 integrity, so a changed tarball fails the build. The CDN is a single source:
+  watch it for new releases, since `npm audit` cannot see it.
+- `mammoth` (Documents, .docx import) pulls `argparse` 1.x → `sprintf-js`, flagged moderate (GHSA-hp3w-g68c-fv3c).
+  Both belong to mammoth's command-line tool and are not reached from the browser bundle; the only "fix" npm
+  offers is a downgrade to a 2016 mammoth, so it is left until mammoth updates.
 
 ## Principle
 

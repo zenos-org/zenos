@@ -1,0 +1,32 @@
+name: test
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  core:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Python dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-cryptography
+      - name: Unit tests (sealing, request digest, officer enrollment, guard approvals)
+        run: python3 -W error::ResourceWarning -m unittest discover -s tests -v
+      - name: Syntax of every script
+        run: |
+          for f in $(git ls-files '*.py'); do python3 -m py_compile "$f"; done
+          for f in messenger/*.js; do node --check "$f"; done
+  apps:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        app: [docs, sheets, slides]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci && npm audit --omit=dev --audit-level=high && npm run build
+        working-directory: apps/${{ matrix.app }}
