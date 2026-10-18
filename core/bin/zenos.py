@@ -221,11 +221,20 @@ def request_digest(r):
     return hashlib.sha256(json.dumps(request_core(r), sort_keys=True, ensure_ascii=False).encode()).digest()
 
 
+def admin_enrolled():
+    """True once the administrator has enrolled officer keys (installed system). From then on only those count."""
+    try:
+        return any(APPROVER_PUB.glob("*.pub"))
+    except OSError:
+        return False
+
+
 def approver_pub(name):
-    """an officer's public key: the administrator-installed copy when there is one, else the PoC key store"""
+    """an officer's public key. Installed system: only the administrator-installed copy (root-owned) — never a key
+    from the user's own store, which the user could make up. Development preview: the PoC key store."""
     name = os.path.basename(name)
     p = APPROVER_PUB / f"{name}.pub"
-    return p if p.exists() else APPROVER_KEYS / f"{name}.pub"
+    return p if (p.exists() or admin_enrolled()) else APPROVER_KEYS / f"{name}.pub"
 
 
 def request_path(rid):
@@ -373,10 +382,51 @@ def approve(rid, approver, code):
     if any(a["approver"] == approver for a in r["approvals"]):
         return False, "You have already approved this request. Another officer must approve."
     sig = approver_key(approver).sign(request_digest(r))
-    r["approvals"].append({"approver": approver, "t": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-                           "sig": base64.b64encode(sig).decode()})
+    return _apply_approval(p, r, approver, base64.b64encode(sig).decode())
+
+
+def signed_answer(rid, approver, op, sig_b64, code=""):
+    """An officer's answer signed on their own device (carried here by ZENOS Messages). The signature must verify
+    against the administrator-enrolled key for that officer; nothing else is trusted. Returns (ok, message)."""
+    p = REQ / f"{os.path.basename(rid)}.json"
+    if not p.exists():
+        return False, "Unknown request."
+    r = json.loads(p.read_text())
+    if r["status"] != "pending":
+        return False, "This request is already decided."
+    approver = os.path.basename(approver)
+    if not (APPROVER_PUB / f"{approver}.pub").exists():
+        audit("approve-refused", request=r["id"], approver=approver, reason="not-enrolled")
+        return False, "This officer is not enrolled on this PC."
+    digest = request_digest(r)
+    try:
+        Ed25519PublicKey.from_public_bytes((APPROVER_PUB / f"{approver}.pub").read_bytes()).verify(
+            base64.b64decode(sig_b64), digest if op == "approve" else b"decline:" + digest)
+    except Exception:
+        audit("approve-refused", request=r["id"], approver=approver, reason="signature")
+        return False, "The signature does not verify. Nothing was recorded."
+    if op == "decline":
+        r["status"], r["declined_by"] = "declined", approver
+        r["decline_sig"] = sig_b64
+        p.write_text(json.dumps(r, ensure_ascii=False, indent=1))
+        audit("decline", request=r["id"], approver=approver, signed=True)
+        what = {"release": "the emergency release", "plan": "the pre-filed operation"}.get(r.get("kind"), f"\"{r.get('name')}\"")
+        notify("ZENOS · Request declined", f"Your request for {what} (L{r['level']}) was declined.")
+        return True, "Declined."
+    if str(code).strip() != r["code"]:
+        audit("approve-refused", request=r["id"], approver=approver, reason="match-code")
+        return False, "The match code does not match the requester's screen. Nothing was approved."
+    if any(a["approver"] == approver for a in r["approvals"]):
+        return False, "You have already approved this request. Another officer must approve."
+    return _apply_approval(p, r, approver, sig_b64)
+
+
+def _apply_approval(p, r, approver, sig_b64):
+    """record one verified approval; with enough of them, the request takes effect (grant, plan or release)"""
+    rid = r["id"]
+    r["approvals"].append({"approver": approver, "t": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "sig": sig_b64})
     audit("approve", request=rid, approver=approver, count=len(r["approvals"]), required=r["required"])
-    msg = f"Approved by {ROSTER[approver]} ({len(r['approvals'])}/{r['required']})."
+    msg = f"Approved by {ROSTER.get(approver, approver)} ({len(r['approvals'])}/{r['required']})."
     if len(r["approvals"]) >= r["required"] and r.get("kind") == "release":
         r["status"] = "approved"
         h = json.loads(HALT.read_text())
@@ -720,5 +770,13 @@ def cmd_check(path):
 
 if __name__ == "__main__":
     cmd, *args = sys.argv[1:] or ["help"]
+    if cmd == "signed-answer":            # RID APPROVER approve|decline SIG [CODE]  (used by ZENOS Messages)
+        try:
+            ok, message = signed_answer(*args[:5])
+        except Exception as e:
+            ok, message = False, "The answer could not be recorded."
+            audit("signed-answer-error", error=str(e)[:200])
+        print(json.dumps({"ok": ok, "message": message}))
+        sys.exit(0)
     {"new": cmd_new, "open": cmd_open, "plan": cmd_plan, "office": cmd_office, "check": cmd_check, "info": cmd_info,
      "keys": ensure_keys}.get(cmd, lambda *a: print("usage: zenos new|open FILE|check FILE|info FILE|keys"))(*args)

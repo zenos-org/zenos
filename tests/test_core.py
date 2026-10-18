@@ -120,6 +120,67 @@ class Guard(unittest.TestCase):
         self.assertFalse(G.handle({"op": "approve", "request": r["id"], "approver": "sato", "code": r["code"], "sig": sig})["ok"])
 
 
+class AccessRequests(unittest.TestCase):
+    """opening a file above your level: officers sign on their own devices; only enrolled keys count"""
+    @classmethod
+    def setUpClass(cls):
+        cls.pubdir = TMP / "etc-approvers"
+        cls.pubdir.mkdir()
+        zenos.APPROVER_PUB = cls.pubdir
+        cls.keys = {n: Ed25519PrivateKey.generate() for n in ("sato", "tanaka")}
+        for n, k in cls.keys.items():
+            (cls.pubdir / f"{n}.pub").write_bytes(raw_pub(k))
+        zenos.notify = lambda *a, **k: None
+        cls.file = TMP / "secret.zen"
+        cls.file.write_bytes(zenos.seal(b"top", 4, "secret.docx"))
+
+    def new_request(self):
+        zenos.REQ.mkdir(parents=True, exist_ok=True)
+        r = {"id": "r-%s" % os.urandom(3).hex(), "requester": os.environ.get("USER", "zenos"), "file": str(self.file),
+             "name": "secret.docx", "file_hash": zenos.file_hash(self.file), "level": 4, "label": zenos.LABEL[4],
+             "reason": "budget review", "created": "2026-10-19T10:00:00+0900", "required": 2, "code": "4821",
+             "status": "pending", "approvals": []}
+        (zenos.REQ / f"{r['id']}.json").write_text(json.dumps(r))
+        return r
+
+    def sig(self, who, r, decline=False):
+        d = zenos.request_digest(r)
+        return base64.b64encode(self.keys[who].sign(b"decline:" + d if decline else d)).decode()
+
+    def test_two_officer_devices_grant_access(self):
+        r = self.new_request()
+        self.assertFalse(zenos.signed_answer(r["id"], "sato", "approve", self.sig("sato", r), "0000")[0])        # wrong code
+        self.assertFalse(zenos.signed_answer(r["id"], "tanaka", "approve", self.sig("sato", r), "4821")[0])      # someone else's signature
+        self.assertFalse(zenos.signed_answer(r["id"], "mallory", "approve", self.sig("sato", r), "4821")[0])     # not enrolled
+        self.assertTrue(zenos.signed_answer(r["id"], "sato", "approve", self.sig("sato", r), "4821")[0])
+        self.assertIsNone(zenos.valid_grant(self.file))
+        self.assertTrue(zenos.signed_answer(r["id"], "tanaka", "approve", self.sig("tanaka", r), "4821")[0])
+        self.assertIsNotNone(zenos.valid_grant(self.file))
+
+    def test_decline_is_signed(self):
+        r = self.new_request()
+        self.assertFalse(zenos.signed_answer(r["id"], "sato", "decline", self.sig("sato", r))[0])               # an approval is not a decline
+        self.assertTrue(zenos.signed_answer(r["id"], "sato", "decline", self.sig("sato", r, True))[0])
+        self.assertEqual(json.loads((zenos.REQ / f"{r['id']}.json").read_text())["status"], "declined")
+
+    def test_user_cannot_mint_approvers(self):
+        """with enrolled officers, a key the user made in their own store is worthless"""
+        for g in zenos.GRANTS.glob("*.json"):
+            g.unlink()
+        r = self.new_request()
+        forged = []
+        for name in ("mallory", "eve"):
+            zenos.approver_key(name)                                            # user-made keys, in the user's store
+            forged.append({"approver": name, "t": "now", "sig": base64.b64encode(zenos.approver_key(name).sign(zenos.request_digest(r))).decode()})
+        core = {k: r[k] for k in ("id", "requester", "file", "file_hash", "level", "reason", "created")}
+        g = {"request": r["id"], "requester": r["requester"], "file_hash": r["file_hash"], "level": 4, "expires": 4e9,
+             "digest": base64.b64encode(hashlib.sha256(json.dumps(core, sort_keys=True, ensure_ascii=False).encode()).digest()).decode(),
+             "approvals": forged, "core": core}
+        zenos.GRANTS.mkdir(parents=True, exist_ok=True)
+        (zenos.GRANTS / f"{r['file_hash']}.json").write_text(json.dumps(g))
+        self.assertIsNone(zenos.valid_grant(self.file))
+
+
 class AuditShipping(unittest.TestCase):
     """a PC that rewrites its own ledger is caught by the audit node holding the earlier copy"""
     @classmethod

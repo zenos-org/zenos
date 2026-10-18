@@ -411,32 +411,73 @@ function guardd(msg) {
   });
 }
 const officers = () => { try { return fs.readdirSync(APPROVERS).filter((f) => f.endsWith(".pub")).map((f) => f.slice(0, -4)); } catch { return []; } };
-async function watchRelease() {
-  if (ACC !== DESK || !fs.existsSync(GSOCK)) return;
-  let h; try { h = JSON.parse(fs.readFileSync(path.join(GSYS, "halt.json"), "utf8")); } catch { return; }
-  const z0 = h.request && zrel[h.request];
-  if (h.status === "released" && z0 && !z0.done) {            // tell the officers it is over
-    z0.done = true; saveZrel();
-    for (const o of z0.to) await send(o, "", z0.level, { id: zid(), kind: "zrel-st", ev: { id: h.request, status: "released", by: h.released_by || [] } }).catch(() => {});
-    return;
-  }
-  if (h.status !== "halted" || !h.request || z0) return;
-  let r; try { r = JSON.parse(fs.readFileSync(path.join(GSYS, "requests", path.basename(h.request) + ".json"), "utf8")); } catch { return; }
+// the same path carries the requester's own requests: opening a file above their level, and pre-filed operations
+const UREQ = path.join(HOME, ".local/share/zenos/requests");
+const ZENOS_PY = ["/usr/share/zenos/bin/zenos.py", path.join(__dirname, "..", "bin", "zenos.py"), path.join(HOME, ".local/share/zenos/bin/zenos.py")].find((p) => fs.existsSync(p));
+const readJ = (p) => { try { return JSON.parse(fs.readFileSync(p, "utf8")); } catch { return null; } };
+const reqFile = (id) => {
+  const b = path.basename(String(id || "")) + ".json";
+  for (const d of [path.join(GSYS, "requests"), UREQ]) if (fs.existsSync(path.join(d, b))) return path.join(d, b);
+  return null;
+};
+async function offer(r, extra) {
   const core = {}; for (const k of CORE_KEYS) if (k in r) core[k] = r[k];
   const level = Math.min(Number(r.level) || 1, PEOPLE[ACC].level);
   const to = officers().filter((o) => o !== ACC && PEOPLE[o] && PEOPLE[o].level >= r.level);
-  zrel[h.request] = { to: [], level, t: stamp() }; saveZrel();
-  const ev = { core, required: r.required, rule_text: h.rule_text || "", stopped: h.t || "" };
+  zrel[r.id] = { to: [], level, t: stamp() }; saveZrel();
+  const kind = r.kind || "access";
+  const ev = { core, kind, required: r.required, name: r.name || "", ...extra };
+  const what = { release: "Release request", access: "Access request", plan: "Pre-filed operation" }[kind] || "Request";
   for (const o of to) {
-    try { await send(o, `Release request: ${r.reason}`, level, { id: zid(), kind: "zrel", ev }); zrel[h.request].to.push(o); }
+    try { await send(o, `${what}: ${r.reason}`, level, { id: zid(), kind: "zrel", ev }); zrel[r.id].to.push(o); }
     catch (err) { audit("msg-zrel-send-failed", { to: o, error: String(err).slice(0, 80) }); }
   }
-  saveZrel(); audit("msg-zrel-sent", { request: h.request, to: zrel[h.request].to });
+  saveZrel(); audit("msg-zrel-sent", { request: r.id, kind, to: zrel[r.id].to });
+}
+async function watchRelease() {
+  if (ACC !== DESK) return;
+  // a stop of this PC (installed system: the root guard holds it)
+  if (fs.existsSync(GSOCK)) {
+    const h = readJ(path.join(GSYS, "halt.json"));
+    if (h && h.status === "halted" && h.request && !zrel[h.request]) {
+      const r = readJ(path.join(GSYS, "requests", path.basename(h.request) + ".json"));
+      if (r) await offer(r, { rule_text: h.rule_text || "", stopped: h.t || "" });
+    }
+  }
+  // this user's own access requests and pre-filed operations
+  let names = []; try { names = fs.readdirSync(UREQ).filter((f) => f.endsWith(".json")); } catch {}
+  for (const f of names) {
+    const r = readJ(path.join(UREQ, f));
+    if (!r || r.status !== "pending" || zrel[r.id] || (r.kind === "release" && fs.existsSync(GSOCK))) continue;
+    if (Date.now() - (Date.parse(String(r.created || "").replace(/([+-]\d\d)(\d\d)$/, "$1:$2")) || 0) > 24 * 3600e3) continue;
+    await offer(r, {});
+  }
+  // decided or replaced: tell the officers, so the request leaves their screen
+  for (const [id, z] of Object.entries(zrel)) {
+    if (z.done) continue;
+    const p = reqFile(id), r = p && readJ(p);
+    const status = !r ? "gone" : r.status;
+    if (status === "pending") continue;
+    z.done = true; saveZrel();
+    for (const o of z.to) await send(o, "", z.level, { id: zid(), kind: "zrel-st", ev: { id, status } }).catch(() => {});
+  }
+}
+function signedAnswer(args) {
+  return new Promise((resolve) => {
+    if (!ZENOS_PY) return resolve({ ok: false, message: "ZENOS core not found on this PC." });
+    execFile("python3", ["-I", ZENOS_PY, "signed-answer", ...args], { timeout: 20000 }, (err, out) => {
+      try { resolve(JSON.parse(String(out).trim().split("\n").pop())); } catch { resolve({ ok: false, message: "The answer could not be recorded." }); }
+    });
+  });
 }
 async function carryAnswer(from, m) {
-  // the approver is the Signal-authenticated sender; the guard still requires that person's own signature
+  // the approver is the Signal-authenticated sender; the guard (or zenos.py) still requires that person's own
+  // signature, checked against the administrator-enrolled key
   const a = m.ev, op = a.op === "decline" ? "decline" : "approve";
-  const out = await guardd({ op, request: String(a.id || ""), approver: from, sig: String(a.sig || ""), code: String(a.code || "") });
+  const p = reqFile(a.id);
+  const out = !p ? { ok: false, message: "Unknown request." }
+    : p.startsWith(GSYS) ? await guardd({ op, request: String(a.id || ""), approver: from, sig: String(a.sig || ""), code: String(a.code || "") })
+    : await signedAnswer([path.basename(p, ".json"), from, op, String(a.sig || ""), String(a.code || "")]);
   audit("msg-zrel-answer", { request: String(a.id || "").slice(0, 40), from, op, ok: !!out.ok });
   await send(from, "", Math.min(Number(m.level) || 1, PEOPLE[ACC].level), { id: zid(), kind: "zrel-res", ev: { id: a.id, op, ok: !!out.ok, message: String(out.message || "").slice(0, 200) } })
     .catch((err) => audit("msg-zrel-reply-failed", { to: from, error: String(err).slice(0, 80) }));
