@@ -76,7 +76,7 @@ export async function createVault(password: string, config: AiConfig): Promise<v
 
 export async function unlock(password: string): Promise<void> {
   const raw = localStorage.getItem(VKEY)
-  if (!raw) throw new Error('金庫がありません')
+  if (!raw) throw new Error('No vault yet')
   const v = JSON.parse(raw)
   const salt = unb64(v.salt)
   const iv = unb64(v.iv)
@@ -86,7 +86,7 @@ export async function unlock(password: string): Promise<void> {
   try {
     plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct)
   } catch {
-    throw new Error('パスワードが違います')
+    throw new Error('Wrong password')
   }
   memConfig = JSON.parse(new TextDecoder().decode(plain))
   memKey = key
@@ -94,7 +94,7 @@ export async function unlock(password: string): Promise<void> {
 }
 
 export async function saveConfig(config: AiConfig): Promise<void> {
-  if (!memKey || !memSalt) throw new Error('ロックされています')
+  if (!memKey || !memSalt) throw new Error('Locked')
   await persist(config, memKey, memSalt)
   memConfig = config
 }

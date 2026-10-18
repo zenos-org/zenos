@@ -63,6 +63,24 @@ sudo packaging/iso/build-iso.sh build/zenos_*_amd64.deb   # -> build/iso/zenos-a
 
 The image boots as a live session and installs with Calamares.
 
+**Enroll the officers who release a stopped PC**
+
+Each officer opens ZENOS Messages on their own device → Settings → Approval key, makes a key there (it never leaves
+that browser) and gives the shown line to the PC administrator, who runs it:
+
+```
+sudo zenos_guardd.py --enroll <account> <public key>
+```
+
+When the PC stops, the request reaches the enrolled officers in ZENOS Messages. Each one reads the match code off the
+stopped screen, approves or declines, and the device signs the answer.
+
+**Tests**
+
+```
+python3 -m unittest discover -s tests     # sealing, request digests, enrollment, the guard's approval rules
+```
+
 Calls use a self-hosted LiveKit server (pinned release, checksum-verified at build time). Each user gets their own
 keys at first login; nothing secret is shipped in the package.
 

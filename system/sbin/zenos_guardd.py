@@ -528,6 +528,96 @@ def watch():
                 on_arrival(line.rstrip("\n"))
 
 
+# ---------------- terminals ----------------
+# Staff never need a terminal, and a shell bypasses every app-level control. The guard answers each start of a
+# terminal program: the desktop user is refused, root and other accounts (administrators) are not. Only these
+# program files are marked, so nothing else waits for the guard; if the guard stops, the kernel lets them start.
+TERMINALS = ["konsole", "xterm", "uxterm", "gnome-terminal", "gnome-terminal-server", "kgx", "xfce4-terminal",
+             "qterminal", "lxterminal", "mate-terminal", "terminator", "tilix", "kitty", "alacritty", "foot",
+             "wezterm", "wezterm-gui", "urxvt", "rxvt", "st", "sakura", "terminology", "yakuake", "cool-retro-term",
+             "x-terminal-emulator"]
+FAN_CLASS_CONTENT, FAN_OPEN_EXEC_PERM, FAN_ALLOW, FAN_DENY = 0x4, 0x00040000, 0x01, 0x02
+POLICY = Path("/etc/zenos/policy.conf")
+
+
+def policy(key, default):
+    try:
+        for line in POLICY.read_text().splitlines():
+            k, _, v = line.partition("=")
+            if k.strip() == key:
+                return v.strip()
+    except OSError:
+        pass
+    return default
+
+
+def proc_uid(pid):
+    try:
+        for line in open(f"/proc/{pid}/status"):
+            if line.startswith("Uid:"):
+                return int(line.split()[1])
+    except OSError:
+        pass
+    return -1
+
+
+def terminal_guard():
+    if policy("terminal", "blocked") != "blocked":
+        log(event="terminal-guard", state="off (policy)")
+        return
+    paths = set()
+    for d in ("/usr/bin", "/usr/local/bin", "/bin"):
+        for n in TERMINALS:
+            p = os.path.join(d, n)
+            if os.path.exists(p):
+                paths.add(os.path.realpath(p))
+    if not paths:
+        return
+    fd = _libc.fanotify_init(FAN_CLASS_CONTENT | FAN_CLOEXEC, os.O_RDONLY | os.O_LARGEFILE)
+    if fd < 0:
+        log(event="terminal-guard", state="unavailable", errno=ctypes.get_errno())
+        return
+    for p in sorted(paths):
+        if _libc.fanotify_mark(fd, FAN_MARK_ADD, ctypes.c_uint64(FAN_OPEN_EXEC_PERM), AT_FDCWD, os.fsencode(p)) < 0:
+            log(event="terminal-guard", state="mark-failed", path=p, errno=ctypes.get_errno())
+    log(event="terminal-guard", state="on", programs=sorted(paths))
+    last = {}
+    try:                     # every event must be answered, or that program would wait forever
+        while True:
+            try:
+                buf = os.read(fd, 8192)
+            except InterruptedError:
+                continue
+            off = 0
+            while off + META.size <= len(buf):
+                ev_len, vers, _, meta_len, mask, efd, pid = META.unpack_from(buf, off)
+                if ev_len == 0:
+                    break
+                off += ev_len
+                if efd < 0:
+                    continue
+                deny = False
+                try:
+                    deny = PW is not None and proc_uid(pid) == PW.pw_uid
+                finally:
+                    try:
+                        os.write(fd, struct.pack("iI", efd, FAN_DENY if deny else FAN_ALLOW))
+                    except OSError:
+                        pass
+                try:
+                    if deny:
+                        prog = os.readlink(f"/proc/self/fd/{efd}")
+                        if time.time() - last.get(prog, 0) > 10:      # one line per program per 10 s
+                            last[prog] = time.time()
+                            log(event="terminal-blocked", program=prog, pid=pid, user=USER)
+                except Exception:
+                    pass
+                finally:
+                    os.close(efd)
+    finally:
+        os.close(fd)         # if this thread ever ends, the kernel stops asking and allows
+
+
 # ---------------- officers' answers ----------------
 def handle(msg):
     op, rid = msg.get("op"), os.path.basename(str(msg.get("request", "")))
@@ -649,6 +739,7 @@ def main():
     init_user()
     threading.Thread(target=serve, daemon=True).start()
     threading.Thread(target=enforce_loop, daemon=True).start()
+    threading.Thread(target=terminal_guard, daemon=True).start()
     while True:
         try:
             init_user()                                   # again after a change of desktop user

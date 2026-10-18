@@ -4,7 +4,7 @@
 The OS-wide guarantee is "no plaintext leaves". Before any outbound file transfer, this gate verifies:
   - the content is a valid ZENOS sealed blob (MAGIC + signature verifies) -> ok
   - plaintext / unsealed / tampered -> BLOCK
-  - size over the "huge" line -> allowed only with an approved transfer request (申請)
+  - size over the "huge" line -> allowed only with an approved transfer request
 Every decision is written to the tamper-evident ledger. This sits in front of the network sensor as the
 sanctioned path; the sensor still catches anything that tries to bypass it.
 """
@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.join(zconf.root(), "bin"))
 import zenos, zledger
 
 NORMAL_MAX = 50 * 1024 * 1024      # <= this and sealed: allowed
-HUGE_MAX = NORMAL_MAX              # over this: requires an approved 申請
+HUGE_MAX = NORMAL_MAX              # over this: requires an approved transfer request
 LEDGER = str(zenos.Z / "ledger.jsonl")
 
 

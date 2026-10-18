@@ -40,7 +40,7 @@ audit log     ──(shipped to)─────▶  consortium nodes outside the
 | Network sentinel / firewall | Root service with an eBPF (bpftrace) sensor and iptables chains | Not reviewed; outbound policy is per incident. |
 | Tamper-evident ledger | Hash chain + Merkle anchors, verified to detect a self-consistent local rewrite | Consortium tier runs on the same host in the preview. |
 | Distributed storage | Fragments replicated to local test nodes | Nodes are local directories; no network transport or node authentication yet. |
-| Terminal disabled | Hidden from the UI | Not enforced; a determined user can still start a shell. |
+| Terminal disabled | Hidden from the UI. Installed system: `zenos-guardd` answers every start of a terminal program (konsole, xterm, gnome-terminal, kitty, …; fanotify exec permission) and refuses it for the desktop user; root and other accounts are allowed. Tested: the user gets "Operation not permitted", root starts it, other programs are unaffected. Policy `terminal = allowed` in `/etc/zenos/policy.conf` turns it off. | Raises the bar only: a copied terminal binary, an interpreter (python3) or KRunner's command mode still give a shell. Closing that needs `noexec` home/tmp mounts and SELinux confinement of the user. |
 | Messenger E2E | libsignal (Signal protocol) | Relay authentication of devices is not device-bound yet. Test deployments used a Cloudflare quick tunnel, which is for testing only. |
 | Level-gated AI | Policy in the launcher | No enforcement at the network or process level yet. |
 

@@ -59,7 +59,7 @@ let scale = 1
 
 const uid = () => Math.random().toString(36).slice(2, 9)
 
-function defaultSlide(title = 'タイトルを入力', sub = 'サブタイトル'): Slide {
+function defaultSlide(title = 'Click to add title', sub = 'Subtitle'): Slide {
   return {
     id: uid(),
     shapes: [],
@@ -243,7 +243,7 @@ function renderRail() {
     rail.appendChild(t)
   })
   const add = document.createElement('button')
-  add.className = 'addslide'; add.textContent = '＋ スライドを追加'
+  add.className = 'addslide'; add.textContent = '+ Add slide'
   add.addEventListener('click', addSlide)
   rail.appendChild(add)
 }
@@ -344,7 +344,7 @@ stageEl().addEventListener('mousedown', (e) => {
 
 // ---------- actions ----------
 function addTextBox() {
-  const b: TBox = { id: uid(), x: 300, y: 300, w: 680, h: 120, text: 'テキスト', size: 32, bold: false, italic: false, color: '#111111', align: 'left' }
+  const b: TBox = { id: uid(), x: 300, y: 300, w: 680, h: 120, text: 'Text', size: 32, bold: false, italic: false, color: '#111111', align: 'left' }
   curSlide().boxes.push(b)
   selId = b.id
   render()
@@ -468,7 +468,7 @@ $('btn-save').addEventListener('click', async () => {
 function getContext(): string {
   const s = curSlide()
   const txt = s.boxes.map((b) => b.text).filter(Boolean).join('\n')
-  return 'スライド' + (cur + 1) + ' / ' + slides.length + ' の内容:\n' + txt
+  return 'Slide ' + (cur + 1) + ' / ' + slides.length + ' contents:\n' + txt
 }
 $('btn-ai').addEventListener('click', () => openAiPanel(getContext))
 $('btn-settings').addEventListener('click', () => openSettings())
@@ -476,6 +476,6 @@ $('btn-settings').addEventListener('click', () => openSettings())
 window.addEventListener('resize', () => fitScale())
 
 // ---------- init ----------
-slides = [defaultSlide('ZENOS Slides', 'プレゼンテーション')]
+slides = [defaultSlide('ZENOS Slides', 'Presentation')]
 render()
 ;(window as any).__zenosSlides = () => slides

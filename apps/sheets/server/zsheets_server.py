@@ -55,7 +55,7 @@ class Handler(SimpleHTTPRequestHandler):
         model = body.get('model') or ''
         messages = body.get('messages') or []
         if not key:
-            return self._json(400, {'error': 'AIが未設定です（キーを登録してください）'})
+            return self._json(400, {'error': 'No AI is set up yet (register a key first).'})
 
         try:
             if provider == 'anthropic':
@@ -74,7 +74,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _openai(self, base, key, model, messages, body):
         if not base:
-            raise ValueError('OpenAI互換のエンドポイント(/v1)を入力してください')
+            raise ValueError('Enter an OpenAI-compatible endpoint (/v1).')
         payload = json.dumps({
             'model': model or 'gpt-4o-mini',
             'messages': messages,
