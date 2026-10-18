@@ -183,8 +183,10 @@ def safe_name(s):
 UI_ENV = {**os.environ, "LANGUAGE": "en_US:en"}   # the UI is English-first (buttons too)
 
 
-def kd(*args):
-    r = subprocess.run(["kdialog", *args], capture_output=True, text=True, env=UI_ENV)
+def kd(*args, level=0):
+    # level: the sealed level shown in this window (the guard refuses screenshot tools while L3+ is on screen)
+    env = dict(UI_ENV, ZENOS_SEALED_LEVEL=str(level)) if level else UI_ENV
+    r = subprocess.run(["kdialog", *args], capture_output=True, text=True, env=env)
     return r.returncode, r.stdout.rstrip("\n")
 
 
@@ -611,7 +613,7 @@ def cmd_open(path):
         t = d / (p.stem + ".txt")
         t.write_bytes(data)
         try:
-            kd("--title", f"ZENOS · L{lvl} · {h['name']} · {h['created'][:10]}", "--textbox", str(t), "760", "480")
+            kd("--title", f"ZENOS · L{lvl} · {h['name']} · {h['created'][:10]}", "--textbox", str(t), "760", "480", level=lvl)
         finally:
             t.unlink(missing_ok=True)
     finally:

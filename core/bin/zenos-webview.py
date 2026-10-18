@@ -30,7 +30,28 @@ else:
     view = WebKit2.WebView()
 st = view.get_settings()
 st.set_enable_developer_extras(not sealed)
-st.set_javascript_can_access_clipboard(True)
+# from L3 up, nothing is copied out of a sealed file (a copy would land in an unsealed, lower-level place);
+# pasting in stays possible
+NO_COPY = sealed >= 3
+st.set_javascript_can_access_clipboard(not NO_COPY)
+if NO_COPY:
+    ucm = view.get_user_content_manager()
+    ucm.add_script(WebKit2.UserScript.new(
+        "for (const t of ['copy','cut','dragstart']) document.addEventListener(t, e => { e.preventDefault(); e.stopImmediatePropagation();"
+        " window.webkit && window.webkit.messageHandlers.znocopy && window.webkit.messageHandlers.znocopy.postMessage(t); }, true);"
+        "if (navigator.clipboard) { const no = () => { window.webkit && window.webkit.messageHandlers.znocopy && window.webkit.messageHandlers.znocopy.postMessage('api');"
+        " return Promise.reject(new DOMException('Copying out of this sealed file is not allowed.', 'NotAllowedError')); };"
+        " try { Object.defineProperty(navigator.clipboard, 'writeText', {value: no}); Object.defineProperty(navigator.clipboard, 'write', {value: no}); } catch (e) {} }",
+        WebKit2.UserContentInjectedFrames.ALL_FRAMES, WebKit2.UserScriptInjectionTime.START, None, None))
+    _told = [0]
+
+    def on_nocopy(*_a):
+        import time
+        if time.time() - _told[0] > 5:
+            _told[0] = time.time()
+            GLib.idle_add(tell, f'"{name}" is L{sealed}. Copying out of it is not allowed.')
+    ucm.connect('script-message-received::znocopy', on_nocopy)
+    ucm.register_script_message_handler('znocopy')
 
 
 def tell(text):

@@ -1,0 +1,40 @@
+---
+# ZENOS installer branding (Figma: "Installer — welcome image", "Installer — slide while installing")
+componentName:   zenos
+welcomeStyleCalamares: true
+welcomeExpandingLogo: true
+windowExpanding: normal
+windowSize: 860px,600px
+windowPlacement: center
+
+strings:
+    productName:         ZENOS
+    shortProductName:    ZENOS
+    version:             0.1 Developer Preview
+    shortVersion:        0.1
+    versionedName:       ZENOS 0.1 Developer Preview
+    shortVersionedName:  ZENOS 0.1
+    bootloaderEntryName: ZENOS
+    productUrl:          ""
+    supportUrl:          ""
+    knownIssuesUrl:      ""
+    releaseNotesUrl:     ""
+    donateUrl:           ""
+
+sidebar: widget
+navigation: widget
+
+images:
+    productLogo:         "logo.svg"
+    productIcon:         "logo.svg"
+    productWelcome:      "welcome.svg"
+
+slideshow:               "show.qml"
+
+style:
+   SidebarBackground:    "#0E0F13"
+   SidebarText:          "#D2D5DC"
+   SidebarTextCurrent:   "#F2F4F6"
+   SidebarBackgroundCurrent: "#2A2D37"
+
+slideshowAPI: 2

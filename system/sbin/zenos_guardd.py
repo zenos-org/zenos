@@ -561,17 +561,40 @@ def proc_uid(pid):
     return -1
 
 
-def terminal_guard():
-    if policy("terminal", "blocked") != "blocked":
-        log(event="terminal-guard", state="off (policy)")
-        return
-    paths = set()
+# screen capture tools: refused while a sealed file of L3 or above is on the desktop user's screen
+SCREENSHOTS = ["spectacle", "ksnip", "flameshot", "gnome-screenshot", "scrot", "maim", "import", "xwd", "grim",
+               "shutter", "kazam", "simplescreenrecorder", "obs", "peek", "vokoscreenNG", "recordmydesktop"]
+
+
+def sealed_on_screen():
+    """the highest sealed level any of the user's windows shows (zenos.py marks every viewer it starts)"""
+    top = 0
+    for pid, comm, cmd in user_procs():
+        try:
+            for kv in Path(f"/proc/{pid}/environ").read_bytes().split(b"\0"):
+                if kv.startswith(b"ZENOS_SEALED_LEVEL="):
+                    top = max(top, int(kv.split(b"=", 1)[1] or 0))
+        except (OSError, ValueError):
+            continue
+    return top
+
+
+def program_paths(names):
+    out = set()
     for d in ("/usr/bin", "/usr/local/bin", "/bin"):
-        for n in TERMINALS:
+        for n in names:
             p = os.path.join(d, n)
             if os.path.exists(p):
-                paths.add(os.path.realpath(p))
+                out.add(os.path.realpath(p))
+    return out
+
+
+def terminal_guard():
+    terms = program_paths(TERMINALS) if policy("terminal", "blocked") == "blocked" else set()
+    shots = program_paths(SCREENSHOTS) if policy("screenshots", "blocked-while-sealed") == "blocked-while-sealed" else set()
+    paths = terms | shots
     if not paths:
+        log(event="terminal-guard", state="off (policy or nothing to guard)")
         return
     fd = _libc.fanotify_init(FAN_CLASS_CONTENT | FAN_CLOEXEC, os.O_RDONLY | os.O_LARGEFILE)
     if fd < 0:
@@ -596,9 +619,15 @@ def terminal_guard():
                 off += ev_len
                 if efd < 0:
                     continue
-                deny = False
+                deny, why = False, ""
                 try:
-                    deny = PW is not None and proc_uid(pid) == PW.pw_uid
+                    if PW is not None and proc_uid(pid) == PW.pw_uid:
+                        prog = os.readlink(f"/proc/self/fd/{efd}")
+                        if prog in terms:
+                            deny, why = True, "terminal"
+                        elif prog in shots:
+                            lvl = sealed_on_screen()
+                            deny, why = lvl >= 3, f"screenshot while L{lvl} is on screen"
                 finally:
                     try:
                         os.write(fd, struct.pack("iI", efd, FAN_DENY if deny else FAN_ALLOW))
@@ -609,7 +638,7 @@ def terminal_guard():
                         prog = os.readlink(f"/proc/self/fd/{efd}")
                         if time.time() - last.get(prog, 0) > 10:      # one line per program per 10 s
                             last[prog] = time.time()
-                            log(event="terminal-blocked", program=prog, pid=pid, user=USER)
+                            log(event="program-blocked", program=prog, reason=why, pid=pid, user=USER)
                 except Exception:
                     pass
                 finally:
