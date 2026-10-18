@@ -35,33 +35,119 @@ st.set_enable_developer_extras(not sealed)
 NO_COPY = sealed >= 3
 st.set_javascript_can_access_clipboard(not NO_COPY)
 if NO_COPY:
+    # Copy and paste between sealed windows of the same level: what is copied goes to the key agent (RAM, per user),
+    # never to the X11 clipboard; it pastes into windows of the same level or higher. Copying out to anything else
+    # stays impossible. Pasting in from ordinary programs works as before.
     ucm = view.get_user_content_manager()
-    ucm.add_script(WebKit2.UserScript.new(
-        "for (const t of ['copy','cut','dragstart']) document.addEventListener(t, e => { e.preventDefault(); e.stopImmediatePropagation();"
-        " window.webkit && window.webkit.messageHandlers.znocopy && window.webkit.messageHandlers.znocopy.postMessage(t); }, true);"
-        "if (navigator.clipboard) { const no = () => { window.webkit && window.webkit.messageHandlers.znocopy && window.webkit.messageHandlers.znocopy.postMessage('api');"
-        " return Promise.reject(new DOMException('Copying out of this sealed file is not allowed.', 'NotAllowedError')); };"
-        " try { Object.defineProperty(navigator.clipboard, 'writeText', {value: no}); Object.defineProperty(navigator.clipboard, 'write', {value: no}); } catch (e) {} }",
-        WebKit2.UserContentInjectedFrames.ALL_FRAMES, WebKit2.UserScriptInjectionTime.START, None, None))
+    ucm.add_script(WebKit2.UserScript.new(r"""(() => {
+const post = (h, m) => { try { window.webkit.messageHandlers[h].postMessage(m); } catch (x) {} };
+const plain = t => /^(text(\/plain)?|Text)$/i.test(t);
+const keep = t => { window.__zclip = t; post('zclip', t); };
+window.__zclip = null;
+for (const t of ['copy', 'cut']) {
+  window.addEventListener(t, e => {
+    e.__zt = null;
+    const dt = e.clipboardData;
+    if (dt) try { Object.defineProperty(dt, 'setData', { configurable: true, value: (type, v) => { if (plain(type) || e.__zt === null) e.__zt = String(v); } }); } catch (x) {}
+  }, true);
+  window.addEventListener(t, e => {
+    const handled = e.defaultPrevented;
+    e.preventDefault();
+    let text = e.__zt;
+    if (text == null && !handled && window.getSelection) text = String(window.getSelection());
+    if (text) keep(text);
+    if (t === 'cut' && !handled && text) document.execCommand('delete');
+  }, false);
+}
+document.addEventListener('dragstart', e => { e.preventDefault(); e.stopImmediatePropagation(); post('znocopy', 'drag'); }, true);
+window.addEventListener('paste', e => {
+  const z = window.__zclip;
+  if (z == null) return;
+  e.__zp = z;
+  const dt = e.clipboardData;
+  const item = { kind: 'string', type: 'text/plain', getAsString: cb => cb && cb(z), getAsFile: () => null };
+  if (dt) try {
+    Object.defineProperty(dt, 'getData', { configurable: true, value: type => plain(type) ? z : '' });
+    Object.defineProperty(dt, 'types', { configurable: true, get: () => ['text/plain'] });
+    Object.defineProperty(dt, 'items', { configurable: true, get: () => Object.assign([item], { add() {}, remove() {}, clear() {} }) });
+    Object.defineProperty(dt, 'files', { configurable: true, get: () => [] });
+  } catch (x) {}
+}, true);
+window.addEventListener('paste', e => {
+  if (e.__zp == null || e.defaultPrevented) return;
+  e.preventDefault();
+  document.execCommand('insertText', false, e.__zp);
+}, false);
+if (navigator.clipboard) try {
+  const readText = navigator.clipboard.readText && navigator.clipboard.readText.bind(navigator.clipboard);
+  Object.defineProperty(navigator.clipboard, 'writeText', { value: t => { keep(String(t)); return Promise.resolve(); } });
+  Object.defineProperty(navigator.clipboard, 'write', { value: () => { post('znocopy', 'api');
+    return Promise.reject(new DOMException('Copying out of this sealed file is not allowed.', 'NotAllowedError')); } });
+  Object.defineProperty(navigator.clipboard, 'readText', { value: () => window.__zclip != null ? Promise.resolve(window.__zclip) : (readText ? readText() : Promise.resolve('')) });
+} catch (x) {}
+})();""", WebKit2.UserContentInjectedFrames.ALL_FRAMES, WebKit2.UserScriptInjectionTime.START, None, None))
     _told = [0]
 
     def on_nocopy(*_a):
         import time
         if time.time() - _told[0] > 5:
             _told[0] = time.time()
-            GLib.idle_add(tell, f'"{name}" is L{sealed}. Copying out of it is not allowed.')
+            GLib.idle_add(tell, f'"{name}" is L{sealed}. It can only be copied into other L{sealed} (or higher) files.')
     ucm.connect('script-message-received::znocopy', on_nocopy)
     ucm.register_script_message_handler('znocopy')
 
+    import threading, time as _time
+    _sys_clip_t = [0.0]          # last time another program put something on the clipboard
+
+    def _keyd(msg):
+        try:
+            import zenos
+            return zenos.keyd(msg) if zenos.use_keyd() else {}
+        except Exception:
+            return {}
+
+    def on_zclip(_ucm, res):
+        try:
+            text = res.get_js_value().to_string()
+        except AttributeError:
+            text = res.to_string()
+        threading.Thread(target=_keyd, args=({"op": "clip-put", "level": sealed, "text": text},), daemon=True).start()
+    ucm.connect('script-message-received::zclip', on_zclip)
+    ucm.register_script_message_handler('zclip')
+
+    def _set_zclip(text):
+        view.evaluate_javascript("window.__zclip = %s;" % json.dumps(text), -1, None, None, None, None, None)
+        return False
+
+    def on_focus(*_a):          # a copy made in another L{sealed}+ window becomes pasteable here
+        def work():
+            r = _keyd({"op": "clip-get", "level": sealed})
+            if r.get("text") is not None and float(r.get("t", 0)) > _sys_clip_t[0]:
+                GLib.idle_add(_set_zclip, r["text"])
+        threading.Thread(target=work, daemon=True).start()
+        return False
+    win.connect('focus-in-event', on_focus)
+
+    from gi.repository import Gdk
+    _clip = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+
+    def _ours(ev):              # X11 reports another program's selection owner as a FOREIGN window
+        return ev.owner is not None and ev.owner.get_window_type() != Gdk.WindowType.FOREIGN
+
+    def on_clipboard(clip, ev):
+        if not _ours(ev):       # another program copied: a paste here takes that from now on
+            _sys_clip_t[0] = _time.time()
+            GLib.idle_add(_set_zclip, None)
+        elif clip.wait_for_text():   # safety net: this window never leaves anything on the X11 clipboard
+            clip.set_text('', 0)
+    _clip.connect('owner-change', on_clipboard)
+
     # X11 also hands out the selected text itself (the PRIMARY selection, pasted with a middle click in any
     # program). Whenever this window takes PRIMARY, it is emptied again.
-    from gi.repository import Gdk
     _prim = Gtk.Clipboard.get(Gdk.SELECTION_PRIMARY)
 
     def on_primary(clip, ev):
-        if ev.owner is None:                     # another program owns it now
-            return
-        if clip.wait_for_text():
+        if _ours(ev) and clip.wait_for_text():
             clip.set_text('', 0)
     _prim.connect('owner-change', on_primary)
 

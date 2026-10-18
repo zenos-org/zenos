@@ -197,7 +197,31 @@ def handle(msg, uid):
         data = unseal(h, hb, ct)
         log(event="unseal", user=user, level=level, by=how, name=h.get("name"), sha256=fh[:16])
         return {"ok": True, "header": h, "data": base64.b64encode(data).decode()}
+    if op == "clip-put":       # copy inside sealed L3+ windows: held here in RAM, never on the X11 clipboard
+        level = int(msg.get("level", 0))
+        text = str(msg.get("text", ""))
+        if level not in LABEL or len(text) > CLIP_MAX:
+            return {"ok": False, "error": "bad clip"}
+        with CLIP_LOCK:
+            CLIPS[uid] = {"level": level, "text": text, "t": time.time()}
+        log(event="clip-put", user=user, level=level, chars=len(text))
+        return {"ok": True}
+    if op == "clip-get":       # paste: only into a window of the same level or higher, for a while
+        level = int(msg.get("level", 0))
+        with CLIP_LOCK:
+            c = CLIPS.get(uid)
+            if c and time.time() - c["t"] > CLIP_TTL:
+                CLIPS.pop(uid, None)
+                c = None
+        if not c or c["level"] > level:
+            return {"ok": True, "text": None}
+        return {"ok": True, "text": c["text"], "level": c["level"], "t": c["t"]}
     return {"ok": False, "error": "unknown op"}
+
+
+CLIPS, CLIP_LOCK = {}, threading.Lock()
+CLIP_MAX = 2_000_000
+CLIP_TTL = 30 * 60
 
 
 def client(c):

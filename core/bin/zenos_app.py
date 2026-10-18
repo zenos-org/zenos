@@ -93,7 +93,7 @@ class App(Gtk.Window):
             self.view.connect("context-menu", lambda *a: True)
             # and selected text (a PDF's text layer) never stays in the X11 PRIMARY selection (middle-click paste)
             def on_primary(clip, ev):
-                if ev.owner is not None and clip.wait_for_text():
+                if ev.owner is not None and ev.owner.get_window_type() != Gdk.WindowType.FOREIGN and clip.wait_for_text():
                     clip.set_text("", 0)
             Gtk.Clipboard.get(Gdk.SELECTION_PRIMARY).connect("owner-change", on_primary)
         self.view.set_background_color(Gdk.RGBA(0.08, 0.08, 0.09, 1))

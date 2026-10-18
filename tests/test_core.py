@@ -236,6 +236,14 @@ class KeyAgent(unittest.TestCase):
         blob[-1] ^= 1
         self.assertEqual(self.call(op="open", blob=base64.b64encode(bytes(blob)).decode())["error"], "signature")
 
+    def test_level_clipboard(self):
+        self.assertTrue(self.call(op="clip-put", level=4, text="L4 words")["ok"])
+        self.assertIsNone(self.call(op="clip-get", level=3)["text"])            # never into a lower level
+        self.assertEqual(self.call(op="clip-get", level=4)["text"], "L4 words")
+        self.assertEqual(self.call(op="clip-get", level=5)["text"], "L4 words")
+        self.assertIsNone(self.K.handle({"op": "clip-get", "level": 5}, 0 if os.getuid() else 65534)["text"])   # not another user's
+        self.assertFalse(self.call(op="clip-put", level=9, text="x")["ok"])
+
 
 class AuditShipping(unittest.TestCase):
     """a PC that rewrites its own ledger is caught by the audit node holding the earlier copy"""
