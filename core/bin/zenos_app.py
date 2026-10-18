@@ -106,6 +106,14 @@ class App(Gtk.Window):
         s.set_enable_write_console_messages_to_stdout(True)
         s.set_javascript_can_access_clipboard(SEALED < 3)
         self.view.connect("decide-policy", self.on_decide)
+        if SEALED:          # printing: level banner on every page; above the policy ceiling (default L3) refused
+            self.view.connect("print", self._on_print)
+            import getpass, time as _t
+            mark = "L%d · %s · printed by %s · %s" % (SEALED, os.path.basename(start_file), getpass.getuser(), _t.strftime("%Y-%m-%d %H:%M"))
+            ucm.add_style_sheet(WebKit2.UserStyleSheet.new(
+                "@media print { body::after { content: %s; position: fixed; left: 0; right: 0; top: 0; padding: 4px 8px;"
+                " font: 600 9pt sans-serif; color: #b00020; background: #fff; border-bottom: 1px solid #b00020; z-index: 2147483647; } }"
+                % json.dumps(mark), WebKit2.UserContentInjectedFrames.ALL_FRAMES, WebKit2.UserStyleLevel.USER, None, None))
         self.view.connect("enter-fullscreen", lambda *a: (self.fullscreen(), False)[1])
         self.view.connect("leave-fullscreen", lambda *a: (self.unfullscreen(), False)[1])
         # WebKit hides dropped file paths from pages; hand them over from here (the page still gets its own drop event)
@@ -115,6 +123,29 @@ class App(Gtk.Window):
         self.view.load_uri(GLib.filename_to_uri(os.path.abspath(html), None))
 
     # links inside the app never navigate the app window away
+    def _on_print(self, view, op):
+        ceiling = 3
+        try:
+            for line in open("/etc/zenos/policy.conf"):
+                k, _, v = line.partition("=")
+                if k.strip() == "print_max_level":
+                    ceiling = int(v.strip())
+        except (OSError, ValueError):
+            pass
+        allowed = SEALED <= ceiling
+        try:
+            import zenos
+            zenos.audit("print" if allowed else "print-refused", file=os.path.basename(start_file), level=SEALED)
+        except Exception:
+            pass
+        if allowed:
+            return False
+        d = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK,
+                              text="This file is L%d. Files above L%d cannot be printed from this PC." % (SEALED, ceiling))
+        d.run()
+        d.destroy()
+        return True
+
     def on_decide(self, web, decision, dtype):
         if dtype == WebKit2.PolicyDecisionType.NAVIGATION_ACTION:
             uri = decision.get_navigation_action().get_request().get_uri() or ""
