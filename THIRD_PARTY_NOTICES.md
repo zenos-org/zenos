@@ -34,9 +34,12 @@ ones used in the Developer Preview.
 | KDE Plasma 6, fcitx5, Anthy | desktop | GPL / LGPL (system packages) |
 | BIZ UDPGothic (system font) | PDF export | SIL Open Font License 1.1 |
 
-## Note on the messenger and AGPL
+## The messenger is AGPL-3.0
 
-libsignal is licensed AGPL-3.0-only. Apache-2.0 code may be combined with it, but the messenger as distributed
-(and when offered over a network) must then meet the AGPL's terms, including making its source available to its
-users. The project's decision on how to license the `messenger/` component is pending; until then, treat
-`messenger/` as subject to AGPL-3.0 obligations.
+libsignal is licensed AGPL-3.0-only, so the `messenger/` component is distributed under the GNU Affero General
+Public License v3.0 (see `messenger/LICENSE`). Everything outside `messenger/` remains Apache-2.0. The core does
+not link the messenger; they talk over local HTTP, so the rest of ZENOS keeps its Apache-2.0 terms.
+
+| Component | Used by | License |
+|---|---|---|
+| LibreOffice (system package) | opening sealed office files (until the ZENOS office apps take this over) | MPL-2.0 |

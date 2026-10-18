@@ -30,7 +30,8 @@ fs.mkdirSync(DIR, { recursive: true, mode: 0o700 });
 const STATE = path.join(DIR, "state.json");
 const HIST = path.join(DIR, "history.json");
 // ---------- selectable relay: each profile carries the highest level it may carry (a cloud test relay: L2; a ministry-run relay: L5)
-const RELAYS_F = path.join(__dirname, "relays.json");
+const MDATA = path.join(HOME, ".local/share/zenos/msg");   // per-user messenger data (the code may be read-only)
+const RELAYS_F = fs.existsSync(path.join(MDATA, "relays.json")) ? path.join(MDATA, "relays.json") : path.join(__dirname, "relays.json");
 const RCHOICE = path.join(DIR, "relay.json");
 const relayList = () => { try { return JSON.parse(fs.readFileSync(RELAYS_F, "utf8")); } catch { return [{ id: "local", name: "This PC (local test relay)", url: "http://127.0.0.1:8095", maxLevel: 5, kind: "local" }]; } };
 let RELAYCFG = (() => { let c = {}; try { c = JSON.parse(fs.readFileSync(RCHOICE, "utf8")); } catch {} return relayList().find((r) => r.id === c.id) || relayList()[0]; })();
@@ -288,7 +289,7 @@ const VF = path.join(DIR, "vapid.json");
 let vapid = load(VF, null);
 if (!vapid) { vapid = webpush.generateVAPIDKeys(); fs.writeFileSync(VF, JSON.stringify(vapid), { mode: 0o600 }); }
 webpush.setVapidDetails("mailto:security@zenos.example", vapid.publicKey, vapid.privateKey);
-const TUNNEL = path.join(__dirname, "tunnel-url." + ACC);
+const TUNNEL = path.join(MDATA, "tunnel-url." + ACC);
 async function pushTo(keys, payload, opt) {
   opt = opt || {}; let sent = 0;
   for (const k of keys) {
@@ -340,7 +341,7 @@ const { execFile } = require("child_process");
 const LEDGER = path.join(HOME, ".local/share/zenos/ledger.jsonl");
 const DEVID = crypto.createHash("sha256").update("msg-" + ACC).digest("hex").slice(0, 16);
 function ledger(event, kw) {
-  execFile("python3", ["-c", "import sys,json;sys.path.insert(0,'/usr/local/lib/zenos');import zledger;a=json.loads(sys.argv[1]);zledger.append(a.pop('_p'),a.pop('_e'),a.pop('_a'),a.pop('_d'),**a)",
+  execFile("python3", ["-c", "import sys,json;sys.path[0:0]=[p for p in ('/usr/local/lib/zenos','/usr/lib/zenos')];import zledger;a=json.loads(sys.argv[1]);zledger.append(a.pop('_p'),a.pop('_e'),a.pop('_a'),a.pop('_d'),**a)",
     JSON.stringify({ _p: LEDGER, _e: event, _a: ACC, _d: DEVID, ...kw })], (err) => { if (err) audit("msg-ledger-failed", { error: String(err).slice(0, 80) }); });
 }
 const recordMsg = (m) => ledger("msg-record", { id: m.id || null, dir: m.dir, peer: m.ch ? "#" + m.ch : m.peer, level: m.level,

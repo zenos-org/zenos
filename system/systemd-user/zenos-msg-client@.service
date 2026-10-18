@@ -1,0 +1,11 @@
+[Unit]
+Description=ZENOS Messages client (%i)
+After=zenos-msg-relay.service
+Requires=zenos-msg-relay.service
+[Service]
+WorkingDirectory=%h/.local/share/zenos/msg
+ExecStart=/bin/bash -c 'P=$(grep ^%i= ports.env 2>/dev/null | cut -d= -f2); exec /usr/bin/node /usr/share/zenos/msg/client.js %i ${P:-8096}'
+Restart=on-failure
+RestartSec=2
+[Install]
+WantedBy=default.target

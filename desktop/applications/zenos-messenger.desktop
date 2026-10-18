@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
 Name=Messenger
-Icon=/home/zenos/.local/share/zenos/icons/zenos-messenger.svg
-Exec=/home/zenos/.local/share/zenos/msg/open.sh zenos
+Icon=/usr/share/zenos/icons/zenos-messenger.svg
+Exec=/usr/share/zenos/msg/open.sh zenos
 Categories=Office;

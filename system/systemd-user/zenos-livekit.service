@@ -1,0 +1,8 @@
+[Unit]
+Description=ZENOS call server (LiveKit, self-hosted; forwards end-to-end encrypted media only)
+ConditionPathExists=%h/.config/zenos/livekit.yaml
+[Service]
+ExecStart=/usr/lib/zenos/livekit/livekit-server --config %h/.config/zenos/livekit.yaml
+Restart=on-failure
+[Install]
+WantedBy=default.target

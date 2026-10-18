@@ -3,11 +3,11 @@ Type=Application
 Name=Vault
 GenericName=Ministry grid storage
 Comment=Every sealed file is stored across five ministries. Restore any version you are cleared to see.
-Exec=python3 -I /home/zenos/.local/share/zenos/bin/zenos_p2p.py vault
-Icon=/home/zenos/.local/share/zenos/icons/zenos-vault.svg
+Exec=python3 -I /usr/share/zenos/bin/zenos_p2p.py vault
+Icon=/usr/share/zenos/icons/zenos-vault.svg
 Categories=Office;System;
 Actions=Status;
 
 [Desktop Action Status]
 Name=Grid status
-Exec=python3 -I /home/zenos/.local/share/zenos/bin/zenos_p2p.py status
+Exec=python3 -I /usr/share/zenos/bin/zenos_p2p.py status

@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
 Name=External Mail
-Icon=/home/zenos/.local/share/zenos/icons/zenos-mail.svg
+Icon=/usr/share/zenos/icons/zenos-mail.svg
 Exec=kdialog --title "ZENOS External Mail" --msgbox "External Mail is in development for the ZENOS preview."
 Categories=Network;

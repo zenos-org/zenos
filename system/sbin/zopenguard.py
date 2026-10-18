@@ -8,7 +8,7 @@ fetched BEFORE the cut; on close the file is re-sealed and the network is restor
 written to the tamper-evident ledger.
 """
 import subprocess, sys
-sys.path.insert(0, "/usr/local/lib/zenos")
+import os as _os; sys.path.insert(0, _os.path.normpath(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "lib", "zenos")))
 import zledger
 
 CHAIN = "ZENOS_OPEN"

@@ -1,0 +1,10 @@
+[Unit]
+Description=ZENOS Messenger relay (ciphertext-only)
+[Service]
+WorkingDirectory=%h/.local/share/zenos
+ExecStartPre=/bin/mkdir -p %h/.local/share/zenos/msg
+ExecStart=/usr/bin/node /usr/share/zenos/msg/relay.js
+Restart=always
+RestartSec=2
+[Install]
+WantedBy=default.target

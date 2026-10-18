@@ -12,7 +12,7 @@ Verdict: trusted | SUSPECT(reasons). Any hard check failing => the endpoint's OS
 The audit first anchors new local edits (the scheduler), then reconciles. Verdict is logged.
 """
 import json, os, socket, subprocess, sys, time
-sys.path.insert(0, "/usr/local/lib/zenos")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import zledger, zanchor, zalarm
 
 HB = "/run/zenos-sensor.hb"

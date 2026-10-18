@@ -9,8 +9,9 @@ Every decision is written to the tamper-evident ledger. This sits in front of th
 sanctioned path; the sensor still catches anything that tries to bypass it.
 """
 import os, sys
-sys.path.insert(0, "/home/zenos/.local/share/zenos/bin")
-sys.path.insert(0, "/usr/local/lib/zenos")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import zconf
+sys.path.insert(0, os.path.join(zconf.root(), "bin"))
 import zenos, zledger
 
 NORMAL_MAX = 50 * 1024 * 1024      # <= this and sealed: allowed

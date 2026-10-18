@@ -1,0 +1,8 @@
+[Unit]
+Description=ZENOS periodic endpoint audit (Security Note)
+[Service]
+ExecStart=/usr/bin/python3 -I /usr/sbin/zsecaudit_loop.py
+Restart=always
+RestartSec=5
+[Install]
+WantedBy=default.target

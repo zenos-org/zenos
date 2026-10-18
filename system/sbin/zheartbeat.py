@@ -7,7 +7,7 @@ watcher: stands in for ANOTHER node. If the heartbeat goes stale past TIMEOUT, i
          loudest event, and the alarm lives on a different node than the one being attacked.
 """
 import os, sys, time
-sys.path.insert(0, "/usr/local/lib/zenos")
+import os as _os; sys.path.insert(0, _os.path.normpath(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "lib", "zenos")))
 import zledger
 try:
     import zalarm

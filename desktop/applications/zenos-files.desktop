@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
 Name=Files
-Icon=/home/zenos/.local/share/zenos/icons/zenos-files.svg
+Icon=/usr/share/zenos/icons/zenos-files.svg
 Exec=dolphin
 Categories=Office;

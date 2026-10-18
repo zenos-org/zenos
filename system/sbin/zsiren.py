@@ -8,16 +8,17 @@ the siren. Singleton via a pid file, so repeated red alerts keep one siren and r
 import json, os, subprocess, sys, threading, time
 import tkinter as tk
 
-Z = os.path.expanduser("~/.local/share/zenos")
+sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib", "zenos")))
+import zconf
+Z = zconf.data()
 STATE = os.path.join(Z, "redalert.json")
 PID = os.path.join(Z, "redalert.pid")
-WAV = "/usr/local/lib/zenos/alarm.wav"
-PULSE = os.environ.get("PULSE_SERVER", "unix:/mnt/wslg/PulseServer")
+WAV = os.path.join(zconf.LIB, "alarm.wav")
 _stop = threading.Event()
 
 
 def _siren_loop():
-    env = {**os.environ, "PULSE_SERVER": PULSE}
+    env = zconf.pulse_env()
     while not _stop.is_set():
         try:
             subprocess.run(["paplay", WAV], env=env, timeout=15)

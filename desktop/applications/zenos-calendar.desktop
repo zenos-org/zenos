@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
 Name=Calendar
-Icon=/home/zenos/.local/share/zenos/icons/zenos-calendar.svg
+Icon=/usr/share/zenos/icons/zenos-calendar.svg
 Exec=kdialog --title "ZENOS Calendar" --msgbox "Calendar is in development for the ZENOS preview."
 Categories=Office;

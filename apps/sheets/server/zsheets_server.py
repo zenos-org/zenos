@@ -2,12 +2,12 @@
 # ZENOS Sheets local server: serves the built app and relays AI calls to the
 # user's own provider (OpenAI-compatible or Anthropic). Same-origin for the app,
 # so no CORS issues; the API key stays on this machine and is never stored here.
-import json
+import os, json
 import urllib.request
 import urllib.error
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-DIST = '/home/zenos/.local/share/zenos/apps/sheets/dist'
+DIST = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dist')
 HOST = '127.0.0.1'
 PORT = 5174
 

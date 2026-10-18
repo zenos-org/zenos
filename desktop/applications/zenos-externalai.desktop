@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
 Name=External AI
-Icon=/home/zenos/.local/share/zenos/icons/zenos-externalai.svg
+Icon=/usr/share/zenos/icons/zenos-externalai.svg
 Exec=kdialog --title "ZENOS External AI" --msgbox "External AI is in development for the ZENOS preview."
 Categories=Utility;

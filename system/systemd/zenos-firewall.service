@@ -6,8 +6,8 @@ Wants=network.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/local/sbin/zenos-firewall
-ExecStop=/usr/local/sbin/zenos-firewall-off
+ExecStart=/usr/sbin/zenos-firewall
+ExecStop=/usr/sbin/zenos-firewall-off
 
 [Install]
 WantedBy=multi-user.target

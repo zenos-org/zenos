@@ -14,7 +14,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 from cryptography.hazmat.primitives import serialization
 
 H = Path.home()
-Z = H / ".local/share/zenos"
+Z = H / ".local/share/zenos"                     # per-user data
+ROOT = Path(__file__).resolve().parent.parent      # program files (icons, apps, launchers)
 K = Z / "keys"
 CFG = H / ".config/zenos"
 DESK = H / "Desktop"
@@ -42,8 +43,10 @@ PLAN_RULES = {"usb-export": "Copy files to the USB Drive", "bulk-read": "Open ma
 CORE_KEYS = ("id", "kind", "requester", "file", "file_hash", "level", "reason", "created", "scope")
 
 import sys as _sys
-if "/usr/local/lib/zenos" not in _sys.path:
-    _sys.path.insert(0, "/usr/local/lib/zenos")
+import os as _os
+for _lib in ("/usr/local/lib/zenos", "/usr/lib/zenos"):   # development, then installed
+    if _os.path.isdir(_lib) and _lib not in _sys.path:
+        _sys.path.insert(0, _lib)
 try:
     import zledger as _zledger
 except Exception:
@@ -116,7 +119,7 @@ def folder_for(level):
             if not d.exists():
                 d.mkdir(parents=True)
                 (d / ".directory").write_text(
-                    f"[Desktop Entry]\nIcon={Z}/icons/zenos-folder-{FOLDER_ICON[name]}.svg\n")
+                    f"[Desktop Entry]\nIcon={ROOT}/icons/zenos-folder-{FOLDER_ICON[name]}.svg\n")
             return d
 
 
@@ -643,7 +646,7 @@ def vault_after_check(path):
         h, *_ = parse(p.read_bytes())
         if h["level"] > rng[1]:
             return
-        b = Z / "bin" / "zenos_p2p.py"
+        b = ROOT / "bin" / "zenos_p2p.py"
         if b.exists():
             subprocess.Popen([sys.executable, "-I", str(b), "backup", str(p), "--quiet", "1"],
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,

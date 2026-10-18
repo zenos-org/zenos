@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
 Name=Documents
-Icon=/home/zenos/.local/share/zenos/icons/zenos-documents.svg
-Exec=python3 -I /home/zenos/.local/share/zenos/bin/zenos.py office docx
+Icon=/usr/share/zenos/icons/zenos-documents.svg
+Exec=python3 -I /usr/share/zenos/bin/zenos.py office docx
 Categories=Office;

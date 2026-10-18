@@ -1,5 +1,5 @@
 [Desktop Entry]
 Type=Application
 Name=Pre-file an operation
-Icon=/home/zenos/.local/share/zenos/icons/zenos-settings.svg
-Exec=python3 -I /home/zenos/.local/share/zenos/bin/zenos.py plan
+Icon=/usr/share/zenos/icons/zenos-settings.svg
+Exec=python3 -I /usr/share/zenos/bin/zenos.py plan

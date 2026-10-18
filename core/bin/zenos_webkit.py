@@ -10,11 +10,12 @@ gi.require_version("Gdk", "3.0")
 from gi.repository import Gtk, WebKit2, Gdk, GLib
 
 HOME = os.path.expanduser("~")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # program files
 DOWNLOADS = os.path.join(HOME, "Downloads")
-TOOLBAR = os.path.join(HOME, ".local/share/zenos/shell/toolbar.html")
-ICON = os.path.join(HOME, ".local/share/zenos/icons/zenos-browser.svg")
-PANEL = os.path.join(HOME, ".local/share/zenos/shell/bmpanel.html")
-MANAGER = os.path.join(HOME, ".local/share/zenos/shell/bookmarks.html")
+TOOLBAR = os.path.join(ROOT, "shell/toolbar.html")
+ICON = os.path.join(ROOT, "icons/zenos-browser.svg")
+PANEL = os.path.join(ROOT, "shell/bmpanel.html")
+MANAGER = os.path.join(ROOT, "shell/bookmarks.html")
 PREFS = os.path.join(HOME, ".config/zenos/browser.json")
 BAR_H, BMBAR_H = 76, 28
 PAD = 26          # transparent margin around popovers for their shadow

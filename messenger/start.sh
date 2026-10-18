@@ -1,7 +1,8 @@
 #!/bin/bash
 # start the relay and the demo devices if they are not running
-M=$HOME/.local/share/zenos/msg
-cd $M
+M="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+mkdir -p "$HOME/.local/share/zenos/msg"
+cd "$HOME/.local/share/zenos/msg"
 pgrep -f "node $M/relay.js" >/dev/null || setsid /usr/bin/node $M/relay.js >/tmp/zenos-relay.log 2>&1 < /dev/null &
 sleep 1
 P=8096

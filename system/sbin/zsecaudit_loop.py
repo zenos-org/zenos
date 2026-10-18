@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import sys, time
-sys.path.insert(0, "/usr/local/lib/zenos")
-import zsecnote
+import os as _os; sys.path.insert(0, _os.path.normpath(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "lib", "zenos")))
+import zsecnote, zconf
 
-LOCAL = "/home/zenos/.local/share/zenos/ledger.jsonl"
-CON = "/home/zenos/.local/share/zenos/consortium.jsonl"
+LOCAL = _os.path.join(zconf.data(), "ledger.jsonl")
+CON = _os.path.join(zconf.data(), "consortium.jsonl")
 INTERVAL = 300   # periodic endpoint audit: anchor new edits, reconcile, verdict
 
 while True:

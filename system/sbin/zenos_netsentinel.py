@@ -11,7 +11,8 @@ Agent   : after containment, judges the incident and picks the next step. With a
 import ipaddress, json, os, signal, subprocess, sys, threading, time, urllib.request
 from collections import defaultdict, deque
 
-sys.path.insert(0, '/usr/local/lib/zenos')
+import os as _os; sys.path.insert(0, _os.path.normpath(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "lib", "zenos")))
+import zconf
 try:
     import zalarm
 except Exception:
@@ -19,9 +20,9 @@ except Exception:
 CFG_PATH = "/etc/zenos/netsentinel.json"
 AGENT_CFG = "/etc/zenos/agent.json"
 LOG = "/var/log/zenos/incidents.jsonl"
-BT = "/usr/local/sbin/zenos-netsense.bt"
+BT = os.path.join(zconf.SBIN, "zenos-netsense.bt")
 DEFAULT = {"allow_cidrs": [], "threshold_bytes": 1048576, "window_sec": 3.0,
-           "trusted_exe_prefixes": ["/home/zenos/.local/share/zenos/"]}
+           "trusted_exe_prefixes": [zconf.root().rstrip("/") + "/", zconf.data().rstrip("/") + "/"]}
 ACTIONS = ("terminate", "keep_contained", "escalate")
 
 cfg = dict(DEFAULT)
@@ -109,7 +110,7 @@ def firewall_watch():
     while True:
         if sh("iptables", "-C", "INPUT", "-j", "ZENOS_IN").returncode != 0:
             t0 = now()
-            sh("/usr/local/sbin/zenos-firewall")
+            sh(os.path.join(zconf.SBIN, "zenos-firewall"))
             ok = sh("iptables", "-C", "INPUT", "-j", "ZENOS_IN").returncode == 0
             inc = {"t": time.strftime("%Y-%m-%dT%H:%M:%S"), "type": "firewall-tamper",
                    "contain_ms": round((now() - t0) * 1000, 1), "restored": ok, "reflex": ["reapply-firewall"]}
@@ -193,11 +194,11 @@ def _heartbeat():
 
 
 
-OPEN_FLAG = "/home/zenos/.local/share/zenos/open.flag"
+OPEN_FLAG = os.path.join(zconf.data(), "open.flag")
 def open_flag_watch():
     import importlib
-    if "/usr/local/sbin" not in sys.path:
-        sys.path.insert(0, "/usr/local/sbin")
+    if zconf.SBIN not in sys.path:
+        sys.path.insert(0, zconf.SBIN)
     import zopenguard
     cut = False
     while True:

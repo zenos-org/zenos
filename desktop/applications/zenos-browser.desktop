@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
 Name=Browser
-Icon=/home/zenos/.local/share/zenos/icons/zenos-browser.svg
-Exec=/home/zenos/.local/share/zenos/bin/zenos-browser.sh %u
+Icon=/usr/share/zenos/icons/zenos-browser.svg
+Exec=/usr/share/zenos/bin/zenos-browser.sh %u
 Categories=Network;
 StartupWMClass=zenos-browser
 MimeType=x-scheme-handler/http;x-scheme-handler/https;text/html;

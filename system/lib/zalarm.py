@@ -8,14 +8,15 @@ severity "low": on-screen notice only.
 """
 import json, os, subprocess, sys, time
 
-Z = os.path.expanduser("~/.local/share/zenos")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import zconf
+Z = zconf.data()
 STATE = os.path.join(Z, "redalert.json")
 PID = os.path.join(Z, "redalert.pid")
 RECIPIENTS = os.path.join(Z, "alert-recipients.json")
 INBOX = os.path.join(Z, "alerts-outbox")          # per-recipient fan-out (reaches their device via the grid)
 LEDGER = os.path.join(Z, "ledger.jsonl")
-SIREN = "/usr/local/sbin/zsiren.py"
-PULSE = os.environ.get("PULSE_SERVER", "unix:/mnt/wslg/PulseServer")
+SIREN = os.path.join(zconf.SBIN, "zsiren.py")
 
 
 def _alive(pid):
@@ -33,10 +34,11 @@ def _ensure_siren(text):
             return                                   # already ringing; message refreshed via STATE
     except Exception:
         pass
-    env = {**os.environ, "DISPLAY": os.environ.get("DISPLAY", ":1"), "PULSE_SERVER": PULSE}
-    if os.geteuid() == 0:
-        cmd = ["runuser", "-u", "zenos", "--", "env", "DISPLAY=:1", "PULSE_SERVER=" + PULSE,
-               "HOME=/home/zenos", "python3", "-I", SIREN]
+    env = zconf.pulse_env()
+    env.setdefault("DISPLAY", ":0" if not os.path.exists("/tmp/.X11-unix/X1") else ":1")
+    if os.geteuid() == 0:     # a root service rings the siren on the desktop user's screen
+        cmd = ["runuser", "-u", zconf.user(), "--", "env", "DISPLAY=" + env["DISPLAY"],
+               "PULSE_SERVER=" + env.get("PULSE_SERVER", ""), "HOME=" + zconf.home(), "python3", "-I", SIREN]
     else:
         cmd = ["python3", "-I", SIREN]
     try:
@@ -85,7 +87,6 @@ def dispatch(title, text, reasons):
     except Exception:
         pass
     try:
-        sys.path.insert(0, "/usr/local/lib/zenos")
         import zledger
         dev = __import__("hashlib").sha256(b"node-A").hexdigest()[:16]
         zledger.append(LEDGER, "red-dispatch", "alarm", dev, recipients=sent, reasons=reasons, text=text)

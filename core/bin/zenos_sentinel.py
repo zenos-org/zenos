@@ -57,7 +57,7 @@ def holders(paths):
             if comm in SPARE:
                 # python3/bash are spared only when they are ZENOS itself or the desktop
                 cmd = (d / "cmdline").read_bytes().replace(b"\0", b" ").decode(errors="ignore")
-                if comm not in ("python3", "bash", "sh") or "/.local/share/zenos/bin/" in cmd:
+                if comm not in ("python3", "bash", "sh") or (str(BIN) + "/") in cmd:
                     continue
             hit = False
             for fd in (d / "fd").iterdir():

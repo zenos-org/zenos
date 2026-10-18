@@ -8,7 +8,7 @@ any local rewrite. Idempotent (re-anchoring the same batch yields the same root)
 CloudTrail-digest pattern.
 """
 import hashlib, json, os, sys
-sys.path.insert(0, "/usr/local/lib/zenos")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import zledger
 
 

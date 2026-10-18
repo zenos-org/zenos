@@ -10,7 +10,7 @@ import org.kde.plasma.plasma5support as P5Support
 // ZENOS Launcher: Windows-style Start menu anchored bottom-left. Apps in a vertical list grouped by section.
 PlasmoidItem {
     id: root
-    readonly property string base: "/home/zenos/.local/share/zenos/icons/"
+    readonly property string base: "/usr/share/zenos/icons/"
     property string query: ""
     property int level: 1
     // AI allowed per level (design: L1-L2 all registered, L3 Gov AI + domestic, L4-L5 in-ministry only)
@@ -40,7 +40,7 @@ PlasmoidItem {
         onNewData: (source, data) => { const n = parseInt(data["stdout"]); if (n >= 1 && n <= 5) root.level = n; disconnectSource(source); }
     }
     function launch(id) {
-        runner.connectSource("setsid -f kioclient exec /home/zenos/.local/share/applications/zenos-" + id + ".desktop >> /tmp/zenos-launch.log 2>&1");
+        runner.connectSource("setsid -f kioclient exec /usr/share/applications/zenos-" + id + ".desktop >> /tmp/zenos-launch.log 2>&1");
         menu.close();
     }
 

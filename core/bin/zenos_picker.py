@@ -13,7 +13,7 @@ gi.require_version("WebKit2", "4.1")
 from gi.repository import Gtk, WebKit2, Gdk, GLib
 
 HOME = os.path.expanduser("~")
-HTML = os.path.join(HOME, ".local/share/zenos/shell/picker.html")
+HTML = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "shell", "picker.html")
 DESK = os.path.join(HOME, "Desktop")
 LEVEL_NAMES = {"Basic · L1": 1, "Green · L2-L3": 2, "Red · L4": 4, "Black · L5": 5}
 PLACES = [("Home", HOME, True), ("Desktop", DESK, False), ("Documents", os.path.join(HOME, "Documents"), False),

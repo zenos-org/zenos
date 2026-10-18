@@ -67,9 +67,9 @@ Editions (Government, Academy, Creator, Educational, Hobby) will be configuratio
 
 ## License
 
-ZENOS is licensed under the [Apache License 2.0](LICENSE). Third-party components keep their own licenses; see
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The messenger links libsignal, which is AGPL-3.0 — see the note
-there.
+ZENOS is licensed under the [Apache License 2.0](LICENSE). The messenger (`messenger/`) links libsignal and is
+therefore licensed under the [AGPL-3.0](messenger/LICENSE). Third-party components keep their own licenses; see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Security
 
