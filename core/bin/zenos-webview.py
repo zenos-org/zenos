@@ -276,7 +276,12 @@ def on_load(wv, ev):
         b64 = base64.b64encode(f.read()).decode()
     args = GLib.Variant('a{sv}', {'b64': GLib.Variant('s', b64), 'name': GLib.Variant('s', name),
                                   'mime': GLib.Variant('s', mimetypes.guess_type(name)[0] or 'application/octet-stream')})
-    wv.call_async_javascript_function(LOAD_JS, -1, args, None, None, None, lambda v, r: v.call_async_javascript_function_finish(r))
+    def done(v, r):
+        try:
+            v.call_async_javascript_function_finish(r)
+        except GLib.Error:
+            pass                                  # the result value itself is not needed
+    wv.call_async_javascript_function(LOAD_JS, -1, args, None, None, None, done)
 
 
 view.connect('load-changed', on_load)
