@@ -8,4 +8,4 @@ if ! pgrep -f zdocs_server.py >/dev/null 2>&1; then
   setsid python3 "$APP/server/zdocs_server.py" >/tmp/zdocs_srv.log 2>&1 < /dev/null &
   sleep 1
 fi
-exec python3 "$R/bin/zenos-webview.py" "http://127.0.0.1:5175/" "ZENOS Docs"
+exec python3 "$R/bin/zenos-webview.py" "http://127.0.0.1:5175/" "ZENOS Docs" "$@"

@@ -8,4 +8,4 @@ if ! pgrep -f zslides_server.py >/dev/null 2>&1; then
   setsid python3 "$APP/server/zslides_server.py" >/tmp/zslides_srv.log 2>&1 < /dev/null &
   sleep 1
 fi
-exec python3 "$R/bin/zenos-webview.py" "http://127.0.0.1:5176/" "ZENOS Slides"
+exec python3 "$R/bin/zenos-webview.py" "http://127.0.0.1:5176/" "ZENOS Slides" "$@"

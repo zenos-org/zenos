@@ -12,7 +12,7 @@ Z="$P/usr/share/zenos"
 
 echo "== core"
 mkdir -p "$Z/apps"
-cp -a "$SRC/core/bin" "$SRC/core/shell" "$SRC/core/icons" "$Z/"
+cp -a "$SRC/core/bin" "$SRC/core/shell" "$SRC/core/icons" "$SRC/core/templates" "$Z/"
 cp "$SRC"/core/wallpaper.* "$Z/"
 chmod 755 "$Z"/bin/*.sh "$Z"/bin/*.py
 

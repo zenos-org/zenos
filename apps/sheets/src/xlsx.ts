@@ -5,7 +5,8 @@ import { liftRibbonTabs } from './ribbon'
 // --- Open an .xlsx/.xls/.csv file into a new Univer workbook (values + formulas) ---
 export async function openXlsxFile(univerAPI: any, file: File) {
   const buf = await file.arrayBuffer()
-  const wb = XLSX.read(new Uint8Array(buf), { type: 'array', cellFormula: true })
+  // sheetStubs: a formula saved without a cached value (openpyxl, scripts) is otherwise dropped entirely
+  const wb = XLSX.read(new Uint8Array(buf), { type: 'array', cellFormula: true, sheetStubs: true })
   const sheets: Record<string, any> = {}
   const sheetOrder: string[] = []
 
@@ -24,9 +25,9 @@ export async function openXlsxFile(univerAPI: any, file: File) {
           const cell = (ws as any)[addr]
           if (!cell) continue
           if (!cellData[r]) cellData[r] = {}
-          if (cell.f) cellData[r][c] = { f: '=' + String(cell.f) }
-          else if (cell.v !== undefined && cell.v !== null) cellData[r][c] = { v: cell.v }
-          else continue
+          if (cell.f) cellData[r][c] = { f: '=' + String(cell.f) }          // recalculated by the formula engine
+          else if (cell.t !== 'z' && cell.v !== undefined && cell.v !== null) cellData[r][c] = { v: cell.v }
+          else { if (!Object.keys(cellData[r]).length) delete cellData[r]; continue }
           if (r > maxR) maxR = r
           if (c > maxC) maxC = c
         }
@@ -65,24 +66,25 @@ export function saveXlsx(univerAPI: any) {
     const s = snap.sheets[sid]
     if (!s) return
     const cd = s.cellData || {}
-    const rows = Object.keys(cd).map(Number)
-    const maxR = rows.length ? Math.max(...rows) : 0
-    const aoa: any[][] = []
-    for (let r = 0; r <= maxR; r++) {
-      const rowObj = cd[r] || {}
-      const cols = Object.keys(rowObj).map(Number)
-      const maxC = cols.length ? Math.max(...cols) : 0
-      const arr: any[] = []
-      for (let c = 0; c <= maxC; c++) {
-        const cell = rowObj[c]
-        if (!cell) { arr.push(null); continue }
-        if (cell.v !== undefined && cell.v !== null) arr.push(cell.v)
-        else if (cell.f) arr.push(String(cell.f))
-        else arr.push(null)
+    // cell by cell, so formulas stay formulas (with their last computed value) instead of becoming text
+    const ws: any = {}
+    let maxR = 0, maxC = 0
+    for (const rk of Object.keys(cd)) {
+      const r = Number(rk)
+      for (const ck of Object.keys(cd[rk] || {})) {
+        const c = Number(ck), cell = cd[rk][ck]
+        if (!cell) continue
+        const v = cell.v, f = cell.f ? String(cell.f).replace(/^=/, '') : ''
+        if (!f && (v === undefined || v === null || v === '')) continue
+        const o: any = typeof v === 'number' ? { t: 'n', v } : typeof v === 'boolean' ? { t: 'b', v }
+          : v === undefined || v === null ? { t: 'n' } : { t: 's', v: String(v) }
+        if (f) o.f = f
+        ws[XLSX.utils.encode_cell({ r, c })] = o
+        if (r > maxR) maxR = r
+        if (c > maxC) maxC = c
       }
-      aoa.push(arr)
     }
-    const ws = XLSX.utils.aoa_to_sheet(aoa)
+    ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: maxR, c: maxC } })
     const nm = String(s.name || sid).replace(/[\\/?*\[\]:]/g, '_').substring(0, 31)
     XLSX.utils.book_append_sheet(out, ws, nm || 'Sheet')
   })

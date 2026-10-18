@@ -598,6 +598,7 @@ def media_view(p, name, data, lvl):
 # ---------------- office files (Documents / Sheets / Slides) ----------------
 OFFICE_EXT = {".docx": "Documents", ".xlsx": "Sheets", ".pptx": "Slides",
               ".odt": "Documents", ".ods": "Sheets", ".odp": "Slides"}
+OFFICE_APPS = {".docx": "zenos-docs.sh", ".xlsx": "zenos-sheets.sh", ".pptx": "zenos-slides.sh"}
 
 
 def office_edit(p, name, data, lvl):
@@ -611,8 +612,12 @@ def office_edit(p, name, data, lvl):
     app = OFFICE_EXT[Path(name).suffix.lower()]
     audit("office-open", file=p.name, level=lvl, app=app)
     try:
-        subprocess.run(["soffice", f"-env:UserInstallation=file://{d}/profile", "--norestore", "--nologo", str(t)],
-                       env=UI_ENV, capture_output=True)
+        launcher = Path(__file__).parent / OFFICE_APPS.get(Path(name).suffix.lower(), "")
+        if launcher.name and launcher.exists():          # the ZENOS app, in sealed mode (saves only to the RAM copy)
+            subprocess.run([str(launcher), str(t)], env=dict(UI_ENV, ZENOS_SEALED_LEVEL=str(lvl)), capture_output=True)
+        else:                                            # OpenDocument files: LibreOffice with its profile in RAM
+            subprocess.run(["soffice", f"-env:UserInstallation=file://{d}/profile", "--norestore", "--nologo", str(t)],
+                           env=UI_ENV, capture_output=True)
         new = t.read_bytes() if t.exists() else data
         if hashlib.sha256(new).hexdigest() != before:
             tmp = p.with_name("." + p.name + ".tmp")
@@ -635,21 +640,11 @@ def cmd_office(kind):
     if rc != 0 or not title.strip():
         return
     name = safe_name(title) + "." + kind
-    import io
-    buf = io.BytesIO()
-    if kind == "docx":
-        import docx
-        docx.Document().save(buf)
-    elif kind == "xlsx":
-        import openpyxl
-        openpyxl.Workbook().save(buf)
-    else:
-        import pptx
-        pptx.Presentation().save(buf)
+    blank = (ROOT / "templates" / f"blank.{kind}").read_bytes()     # empty files shipped with ZENOS
     dest = folder_for(s) / (name + ".zen")
-    dest.write_bytes(seal(buf.getvalue(), s, name))
+    dest.write_bytes(seal(blank, s, name))
     audit("create", file=dest.name, level=s, folder=dest.parent.name, app=app)
-    office_edit(dest, name, buf.getvalue(), s)
+    office_edit(dest, name, blank, s)
 
 
 def _cmd_check_before_vault(path):

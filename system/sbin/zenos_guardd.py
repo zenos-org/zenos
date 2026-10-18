@@ -496,7 +496,19 @@ def watch():
     ino = subprocess.Popen(["inotifywait", "-m", "-q", "-e", "moved_to", "--format", "%w%f", str(USB)],
                            stdout=subprocess.PIPE, text=True)
     log(event="guard-start", user=USER, desktop=str(DESK), watching=[str(d) for d in dirs], fanotify=True)
+    checked = time.time()
     while True:
+        if time.time() - checked > 15:                    # another person signed in: watch their folders instead
+            checked = time.time()
+            try:
+                now_user = zconf.user()
+            except Exception:
+                now_user = USER
+            if now_user != USER and not halted():
+                log(event="guard-user-changed", old=USER, new=now_user)
+                ino.kill()
+                os.close(fd)
+                return
         rl, _, _ = select.select([fd, ino.stdout], [], [], 5)
         if fd in rl:
             for mask, pid, path in fan_events(fd):
@@ -639,6 +651,7 @@ def main():
     threading.Thread(target=enforce_loop, daemon=True).start()
     while True:
         try:
+            init_user()                                   # again after a change of desktop user
             watch()
         except Exception as e:
             print("watch:", e, file=sys.stderr, flush=True)
