@@ -20,8 +20,9 @@ lb config \
   --apt-recommends false \
   --memtest none
 
-mkdir -p config/package-lists config/packages.chroot config/includes.chroot/etc/sddm.conf.d config/hooks/live
+mkdir -p config/package-lists config/packages.chroot config/includes.chroot/etc/sddm.conf.d config/hooks/live config/bootloaders
 cp "$DEB" config/packages.chroot/
+cp "$SRC/packaging/iso/splash.svg" config/bootloaders/splash.svg      # ZENOS boot screen (BIOS and UEFI menus)
 cat > config/package-lists/zenos.list.chroot <<'EOF'
 # desktop
 kde-plasma-desktop
