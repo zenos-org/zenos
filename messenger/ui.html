@@ -1125,7 +1125,16 @@ function zrelPending(){const done=new Set(all.filter(x=>x.kind==="zrel-st"&&x.ev
 async function zrelUI(force){
   let el=$("zrel");if(!el){el=document.createElement("div");el.id="zrel";document.body.appendChild(el);}
   const p=zrelPending()[0];
-  if(!p){el.style.display="none";el.innerHTML="";zrelSig="";return;}
+  if(!p){
+    // a request above what this phone may show: say where to answer it
+    const done=new Set(all.filter(x=>x.kind==="zrel-st"&&x.ev).map(x=>x.ev.id));
+    const lk=all.filter(m=>m.kind==="zrel"&&m.locked&&m.ev&&m.ev.lockedId&&!done.has(m.ev.lockedId)&&!zrelGone.has(m.ev.lockedId)).pop();
+    if(lk){const s2="locked|"+lk.ev.lockedId;if(s2===zrelSig&&!force)return;zrelSig=s2;el.style.display="block";
+      el.innerHTML=`<div class="zh"><i></i><b>Request waiting</b><span class="lv" style="background:${LC[lk.level]}33;color:${LC[lk.level]}">L${lk.level}</span></div>
+        <div class="zr">${esc(split(P(lk.from||lk.peer).name).name)} needs an officer's answer. This phone is a personal device, so it cannot show or sign L${lk.level}. Answer it on a government-issued device.</div>
+        <div class="zb"><button id="zclose">Close</button></div>`;
+      $("zclose").onclick=()=>{zrelGone.add(lk.ev.lockedId);zrelUI(true);};return;}
+    el.style.display="none";el.innerHTML="";zrelSig="";return;}
   const c=p.ev.core,id=c.id,sc=c.scope||{},files=sc.files||[];
   const res=[...all].reverse().find(x=>x.kind==="zrel-res"&&x.ev&&x.ev.id===id);
   const sent=[...all].reverse().find(x=>x.kind==="zrel-sig"&&x.dir==="out"&&x.ev&&x.ev.id===id);

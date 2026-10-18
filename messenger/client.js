@@ -358,7 +358,8 @@ const official = (req) => !!(req.dev && devices[req.dev] && devices[req.dev].off
 const restrict = (arr, remote, req) => {
   const cl = PEOPLE[ACC].level;
   const a = arr.filter((m) => (m.level || 1) <= cl);
-  return (remote && !official(req)) ? a.map((m) => (m.level > 2 && ["msg", "event", "call", "callkey", "share", "callsig", "zrel"].includes(m.kind || "msg")) ? { ...m, text: "", att: null, ev: null, locked: true } : m) : a;
+  return (remote && !official(req)) ? a.map((m) => (m.level > 2 && ["msg", "event", "call", "callkey", "share", "callsig", "zrel"].includes(m.kind || "msg"))
+    ? { ...m, text: "", att: null, ev: m.kind === "zrel" && m.ev && m.ev.core ? { lockedId: m.ev.core.id } : null, locked: true } : m) : a;
 };
 // ---------- attachments (Signal model): AES-256-GCM with a fresh key per file; ciphertext to the relay, key only inside the E2E message
 const ATT = path.join(DIR, "att"); fs.mkdirSync(ATT, { recursive: true, mode: 0o700 });
