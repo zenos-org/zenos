@@ -25,3 +25,4 @@ First public preview. Not for real classified data; see [docs/THREAT_MODEL.md](d
   (default L3) are not printed.
 - PDF, Images, Video viewers; ZENOS file picker for every app.
 - ZENOS Messages (Signal protocol via libsignal): channels, calls (self-hosted LiveKit), calendar, My requests.
+  Accounts are bound to the device that registered them; moving to a new device needs the account's own number.

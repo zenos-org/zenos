@@ -114,10 +114,22 @@ async function senderCert() {
 }
 async function trustRoot() { if (!TRUST) { const r = await rq("GET", "/trust"); TRUST = S.PublicKey.deserialize(ub(r.trust)); } return TRUST; }
 
-async function rq(method, p, obj) {
-  const r = await fetch(RELAY + p, { method, headers: { "Content-Type": "application/json" }, body: obj ? JSON.stringify(obj) : undefined });
-  return r.json();
+// Every request made for this account is signed with the account's identity key: the relay binds an account to
+// the device that registered it and refuses requests (and key changes) from anywhere else.
+function authHdr(method, p, raw) {
+  if (!st || !st.idkp) return {};
+  const ts = String(Date.now());
+  const sig = S.IdentityKeyPair.deserialize(ub(st.idkp)).privateKey.sign(Buffer.from(`${method} ${p} ${ts} ${sha(raw || "")}`));
+  const h = { "X-Zenos-Auth": `${ACC} ${ts} ${b64(sig)}` };
+  if (p.startsWith("/call/servers")) { const t = adminToken(); if (t) h["X-Zenos-Admin"] = t; }
+  return h;
 }
+const adminToken = () => { try { return fs.readFileSync(path.join(HOME, ".local/share/zenos/msg/relay/admin.token"), "utf8").trim(); } catch { return ""; } };
+async function rqr(method, p, obj) {
+  const raw = obj ? JSON.stringify(obj) : "";
+  return fetch(RELAY + p, { method, headers: { "Content-Type": "application/json", ...authHdr(method, p, raw) }, body: raw || undefined });
+}
+async function rq(method, p, obj) { return (await rqr(method, p, obj)).json(); }
 
 // ---------- first start: make this device's keys and publish the public halves ----------
 async function setup() {
@@ -522,27 +534,28 @@ async function handle(req, res, remote) {
       audit("msg-push-alert", { sent: n }); return json(res, 200, { ok: true, sent: n });
     }
     if (!remote && u.pathname === "/api/register/start" && req.method === "POST") {
-      const r = await fetch(RELAY + "/register/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone: PEOPLE[ACC].phone, id: ACC }) });
+      const r = await rqr("POST", "/register/start", { phone: PEOPLE[ACC].phone, id: ACC });
       return json(res, 200, await r.json());
     }
     if (!remote && u.pathname === "/api/register/verify" && req.method === "POST") {
       const { code } = await readBody(req);
-      const r = await fetch(RELAY + "/register/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone: PEOPLE[ACC].phone, id: ACC, code }) });
-      return json(res, 200, await r.json());
+      const r = await rqr("POST", "/register/verify", { phone: PEOPLE[ACC].phone, id: ACC, code });
+      const j = await r.json();
+      if (j.ok && j.rebind) await setup().catch(() => {});      // a new device verified with the account's number: publish its keys now
+      return json(res, 200, j);
     }
     if (u.pathname.startsWith("/api/channel/") && req.method === "POST") {
       const act = u.pathname.split("/")[3]; const b = await readBody(req);
       const nm = (id) => String((PEOPLE[id] || { name: id }).name).split(" · ")[0];
       const sys = (ch, text, target) => sendChannel(ch, text, 1, null, { kind: "system", target: target || null }).catch(() => {});
       if (act === "create") {
-        const r = await (await fetch(RELAY + "/channels", { method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: String(b.id || ""), name: "#" + b.id, level: Math.min(Number(b.level) || 1, PEOPLE[ACC].level), members: [ACC], by: ACC }) })).json();
+        const r = await rq("POST", "/channels", { id: String(b.id || ""), name: "#" + b.id, level: Math.min(Number(b.level) || 1, PEOPLE[ACC].level), members: [ACC], by: ACC });
         if (!r.error) { await sys(b.id, `${nm(ACC)} created #${b.id} (L${Math.min(Number(b.level) || 1, PEOPLE[ACC].level)}).`); audit("msg-channel-created", { ch: b.id }); }
         return json(res, 200, r);
       }
       if (["invite", "approve", "deny", "remove"].includes(act)) {
         if (act === "remove") await sys(b.ch, `${nm(ACC)} removed ${nm(b.target)}.`, b.target);
-        const rr = await fetch(RELAY + `/channels/${encodeURIComponent(b.ch)}/${act}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ by: ACC, target: b.target }) });
+        const rr = await rqr("POST", `/channels/${encodeURIComponent(b.ch)}/${act}`, { by: ACC, target: b.target });
         const r = await rr.json();
         if (!r.error) {
           const ext = r.external ? ` — outside the organisation (${r.org})` : "";
@@ -553,7 +566,7 @@ async function handle(req, res, remote) {
         }
         return json(res, 200, r);
       }
-      if (act === "invite-sms") return json(res, 200, await (await fetch(RELAY + "/invite-sms", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ by: ACC, phone: b.phone }) })).json());
+      if (act === "invite-sms") return json(res, 200, await rq("POST", "/invite-sms", { by: ACC, phone: b.phone }));
       return json(res, 404, { error: "unknown action" });
     }
     if (u.pathname === "/api/myrequests") {
@@ -746,7 +759,7 @@ async function handle(req, res, remote) {
         return json(res, 200, { ok: true });
       } catch (err) { return json(res, 200, { error: err.message }); }
     }
-    if (u.pathname === "/api/lookup") { u.searchParams.set("by", ACC); return json(res, 200, await (await fetch(RELAY + "/lookup?" + u.searchParams.toString())).json()); }
+    if (u.pathname === "/api/lookup") { u.searchParams.set("by", ACC); return json(res, 200, await rq("GET", "/lookup?" + u.searchParams.toString())); }
     if (u.pathname === "/api/push/key") return json(res, 200, { key: vapid.publicKey });
     if (u.pathname === "/api/push/subscribe" && req.method === "POST") {
       if (!remote) return json(res, 200, { error: "Use a linked phone for push." });

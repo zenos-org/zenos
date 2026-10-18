@@ -1,7 +1,8 @@
 // ZENOS Messages relay (PoC).
 // It only ever sees ciphertext: it stores public key bundles and queues encrypted envelopes.
 // It records metadata (who, to whom, when, size) to the audit log, never the content.
-// Production: run by each ministry on its own server, with device-bound authentication of every client.
+// Production: run by each ministry on its own server. Every request made for an account is signed by the device the
+// account is registered on (see "device binding" below).
 "use strict";
 const http = require("http");
 const fs = require("fs");
@@ -101,8 +102,33 @@ function audit(event, kw) {
   fs.appendFileSync(AUDIT, JSON.stringify(rec) + "\n");
 }
 function body(req) {
-  return new Promise((res) => { let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => res(b ? JSON.parse(b) : {})); });
+  return new Promise((res) => { let b = ""; req.on("data", (c) => (b += c)); req.on("end", () => { req.raw = b; res(b ? JSON.parse(b) : {}); }); });
 }
+// ---------- device binding: an account belongs to the identity key it first registered with ----------
+// Requests made for an account carry "X-Zenos-Auth: <account> <ms> <sig>", the identity key's signature over
+// "<METHOD> <path> <ms> <sha256(body)>". Requests older than five minutes, or seen before, are refused.
+// A new device takes an account over only after verifying the number already registered to it (Signal model).
+const SEEN = new Map();
+const rebind = {};                                   // account -> until (ms): a new device may publish a new identity key
+function authed(req, acc) {
+  const [a, ts, sig] = String(req.headers["x-zenos-auth"] || "").split(" ");
+  const b = bundles[acc];
+  if (!acc || a !== acc || !b || !b.identity || !sig || Math.abs(Date.now() - Number(ts)) > 300e3 || SEEN.has(sig)) return false;
+  try {
+    const ok = SS.PublicKey.deserialize(Buffer.from(b.identity, "base64")).verify(Buffer.from(`${req.method} ${req.url} ${ts} ${H(req.raw || "")}`), Buffer.from(sig, "base64"));
+    if (ok) { const now = Date.now(); SEEN.set(sig, now); for (const [k, t] of SEEN) if (now - t > 600e3) SEEN.delete(k); }
+    return ok;
+  } catch { return false; }
+}
+function refuse(res, acc, what) {
+  audit("msg-auth-refused", { account: acc || null, what });
+  return send(res, 403, { error: "This request is not signed by the device this account is registered on." });
+}
+// relay administration (call servers, channel seeding): a token kept next to the relay's data, readable only on its host
+const ADMINF = path.join(DIR, "admin.token");
+if (!fs.existsSync(ADMINF)) fs.writeFileSync(ADMINF, crypto.randomBytes(24).toString("hex"), { mode: 0o600 });
+const ADMIN = (process.env.ZENOS_RELAY_ADMIN || fs.readFileSync(ADMINF, "utf8")).trim();
+const isAdmin = (req) => !!ADMIN && req.headers["x-zenos-admin"] === ADMIN;
 function send(res, code, obj) {
   const b = JSON.stringify(obj);
   res.writeHead(code, { "Content-Type": "application/json" });
@@ -131,6 +157,7 @@ http.createServer(async (req, res) => {
       // management is only reachable from this PC (client.js forwards it for the local, non-remote UI only)
       if (req.method === "GET") return send(res, 200, callPub());
       const b = await body(req);
+      if (!isAdmin(req)) { audit("msg-auth-refused", { what: "call-servers" }); return send(res, 403, { error: "Call servers are managed on the relay's own host." }); }
       if (b.select) { if (!callcfg.servers[b.select]) return send(res, 404, { error: "Unknown call server." }); callcfg.selected = b.select; saveCall(); audit("msg-callserver-selected", { id: b.select }); return send(res, 200, callPub()); }
       if (b.add) {
         const a = b.add; if (!/^wss:\/\/[a-z0-9.-]+(:\d+)?\/?$/i.test(a.url || "")) return send(res, 400, { error: "The address must start with wss://" });
@@ -145,6 +172,7 @@ http.createServer(async (req, res) => {
     if (req.method === "POST" && parts[0] === "call" && parts[1] === "token") {
       const { ch, acc, peer } = await body(req);
       const me = bundles[acc]; if (!me) return send(res, 403, { error: "Unknown account." });
+      if (!authed(req, acc)) return refuse(res, acc, "call-token");
       const srv = callcfg.servers[callcfg.selected];
       if (!srv || !srv.key || !srv.secret) return send(res, 503, { error: "No call server is set up. Add one in Settings → Call server." });
       let room, level = 1;
@@ -168,12 +196,15 @@ http.createServer(async (req, res) => {
     if (req.method === "POST" && parts[0] === "register" && parts[1] === "start") {
       const { phone, id } = await body(req);
       if (!E164.test(phone || "")) return send(res, 400, { error: "Use the international format, e.g. +81 90 1234 5678." });
+      const own = authed(req, id);
+      const cur = Object.keys(phones).find((k) => phones[k].verified && phones[k].id === id);
+      if (bundles[id] && !own && cur !== phone) return refuse(res, id, "register");   // only the device, or the account's own number
       if (phones[phone] && phones[phone].verified && phones[phone].id !== id) {
         audit("msg-register-conflict", { account: id });
         return send(res, 409, { error: "This number is already registered to another account." });
       }
       const code = String(crypto.randomInt(0, 1e6)).padStart(6, "0");
-      pending[phone] = { id, hash: crypto.createHash("sha256").update(code).digest("hex"), exp: Date.now() + 10 * 60e3, tries: 0 };
+      pending[phone] = { id, hash: crypto.createHash("sha256").update(code).digest("hex"), exp: Date.now() + 10 * 60e3, tries: 0, own };
       try {
         const via = await deliverSms(phone, `ZENOS code: ${code}. Do not share this code with anyone.`);
         pending[phone].via = via;
@@ -190,11 +221,14 @@ http.createServer(async (req, res) => {
       for (const k of Object.keys(phones)) if (phones[k].id === id && k !== phone) delete phones[k];
       phones[phone] = { id, verified: true, via: p.via, at: stamp() };
       delete pending[phone]; savePhones();
-      audit("msg-register-verified", { account: id, via: p.via });
-      return send(res, 200, { ok: true, via: p.via });
+      const moving = !!bundles[id] && !p.own;              // verified from a new device with the account's own number
+      if (moving) rebind[id] = Date.now() + 10 * 60e3;
+      audit("msg-register-verified", { account: id, via: p.via, newDevice: moving });
+      return send(res, 200, { ok: true, via: p.via, rebind: moving });
     }
     if (req.method === "GET" && parts[0] === "lookup") {           // same answer for "no such number" and "not findable"
       const caller = u.searchParams.get("by") || "?"; const now = Date.now();
+      if (!authed(req, caller)) return refuse(res, caller, "lookup");
       lookups[caller] = (lookups[caller] || []).filter((x) => now - x < 10 * 60e3);
       if (lookups[caller].length >= 20) { audit("msg-lookup-throttled", { by: caller }); return send(res, 429, { error: "Too many lookups. Try again in a few minutes." }); }
       lookups[caller].push(now);
@@ -206,6 +240,7 @@ http.createServer(async (req, res) => {
       return id ? send(res, 200, pub(id)) : send(res, 404, { error: "No one found. Check the number or username." });
     }
     if (req.method === "GET" && parts[0] === "phone") {             // the owner's own registration status
+      if (!authed(req, parts[1])) return refuse(res, parts[1], "phone");
       const ph = Object.keys(phones).find((k) => phones[k].id === parts[1]);
       return send(res, 200, ph ? { phone: ph, ...phones[ph] } : { phone: null, verified: false });
     }
@@ -213,6 +248,13 @@ http.createServer(async (req, res) => {
       const nb = await body(req);
       if (nb.username && !UNAME.test(nb.username)) return send(res, 400, { error: "bad username" });
       if (nb.username && Object.keys(bundles).some((k) => k !== parts[1] && bundles[k].username === nb.username)) return send(res, 409, { error: "username taken" });
+      const old = bundles[parts[1]];
+      if (old && old.identity) {
+        if (nb.identity === old.identity) { if (!authed(req, parts[1])) return refuse(res, parts[1], "keys"); }
+        else if ((rebind[parts[1]] || 0) > Date.now()) { delete rebind[parts[1]]; audit("msg-device-moved", { account: parts[1] }); }
+        else { audit("msg-keys-refused", { account: parts[1], reason: "bound" });
+               return send(res, 409, { error: "This account is registered on another device. Verify with the account's number to move it here." }); }
+      }
       bundles[parts[1]] = nb;
       save();
       audit("msg-keys-published", { account: parts[1] });
@@ -279,6 +321,7 @@ http.createServer(async (req, res) => {
     if (req.method === "POST" && parts[0] === "send") {          // queue an encrypted envelope
       const e = await body(req);
       if (!bundles[e.to]) return send(res, 404, { error: "unknown account" });
+      if (!authed(req, e.from)) return refuse(res, e.from, "send");
       sweep();
       (queue[e.to] = queue[e.to] || []).push({ from: e.from, type: e.type, body: e.body, level: e.level, t: stamp() });
       save();
@@ -286,6 +329,7 @@ http.createServer(async (req, res) => {
       return send(res, 200, { ok: true });
     }
     if (req.method === "GET" && parts[0] === "recv") {           // hand over and forget
+      if (!authed(req, parts[1])) return refuse(res, parts[1], "recv");
       const q = queue[parts[1]] || [];
       queue[parts[1]] = [];
       if (q.length) { save(); audit("msg-delivered", { to: parts[1], count: q.length }); }
@@ -297,6 +341,7 @@ http.createServer(async (req, res) => {
     if (req.method === "POST" && parts[0] === "channels" && parts[2] === "invite") {
       const c = channels[parts[1]]; const { by, target } = await body(req);
       if (!c) return send(res, 404, { error: "Unknown channel." });
+      if (!authed(req, by)) return refuse(res, by, "invite");
       if (!c.members.includes(by)) return send(res, 403, { error: "Only members can add people." });
       const t = bundles[target]; if (!t) return send(res, 404, { error: "No such account." });
       if (c.members.includes(target)) return send(res, 409, { error: "Already a member." });
@@ -318,6 +363,7 @@ http.createServer(async (req, res) => {
     }
     if (req.method === "POST" && parts[0] === "channels" && (parts[2] === "approve" || parts[2] === "deny")) {
       const c = channels[parts[1]]; const { by, target } = await body(req);
+      if (!authed(req, by)) return refuse(res, by, "approve");
       const pd = c && (c.pending || []).find((x) => x.target === target);
       if (!pd) return send(res, 404, { error: "No such request." });
       if (pd.by === by) return send(res, 403, { error: "A second person must approve. You made this request." });
@@ -330,18 +376,21 @@ http.createServer(async (req, res) => {
     }
     if (req.method === "GET" && parts[0] === "approvals") {
       const who = u.searchParams.get("who"); const out = [];
+      if (!authed(req, who)) return refuse(res, who, "approvals");
       for (const c of Object.values(channels)) for (const pd of (c.pending || [])) if (canApprove(c, who, pd))
         out.push({ ch: c.id, level: c.level, target: pd.target, by: pd.by, t: pd.t });
       return send(res, 200, out);
     }
     if (req.method === "POST" && parts[0] === "channels" && parts[2] === "remove") {
       const c = channels[parts[1]]; const { by, target } = await body(req);
+      if (!authed(req, by)) return refuse(res, by, "remove");
       if (!c || !c.members.includes(by)) return send(res, 403, { error: "Only members can remove people." });
       c.members = c.members.filter((m) => m !== target); (c.log = c.log || []).push({ t: stamp(), by, target, act: "removed" }); save();
       audit("msg-member-removed", { channel: c.id, by, target }); return send(res, 200, { ok: true });
     }
     if (req.method === "POST" && parts[0] === "invite-sms") {     // invite someone who is not on ZENOS yet
       const { by, phone } = await body(req);
+      if (!authed(req, by)) return refuse(res, by, "invite-sms");
       if (!E164.test(phone || "")) return send(res, 400, { error: "Use the international format, e.g. +81 90 1234 5678." });
       if (phones[phone] && phones[phone].verified) return send(res, 409, { error: "This number is already on ZENOS. Search for them instead." });
       try { const via = await deliverSms(phone, `${(bundles[by] || {}).name || "A colleague"} invited you to ZENOS Messages. Install from your ministry's portal and register with this number.`);
@@ -350,6 +399,7 @@ http.createServer(async (req, res) => {
     }
     if (req.method === "POST" && parts[0] === "channels") {        // create/update a channel (metadata only; messages stay E2E, fanned out per member)
       const c = await body(req);
+      if (c.by ? !authed(req, c.by) : !isAdmin(req)) return refuse(res, c.by, "channel-upsert");   // without "by": relay administration only
       const prev = channels[c.id] || {};
       if (prev.id && c.by && !prev.members.includes(c.by)) return send(res, 403, { error: "Only members can change a channel." });
       if (!prev.id && c.by && !/^[a-z0-9][a-z0-9-]{1,40}$/.test(c.id)) return send(res, 400, { error: "Use lowercase letters, numbers and dashes." });
@@ -361,6 +411,7 @@ http.createServer(async (req, res) => {
     }
     if (req.method === "GET" && parts[0] === "channels") {          // list channels a member belongs to
       const m = u.searchParams.get("member");
+      if (!isAdmin(req) && !authed(req, m)) return refuse(res, m, "channels");    // a member sees their own channels only
       return send(res, 200, Object.values(channels).filter((c) => !m || c.members.includes(m)));
     }
     send(res, 404, { error: "not found" });
