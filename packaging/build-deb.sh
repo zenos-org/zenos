@@ -51,6 +51,15 @@ cat > "$P/etc/zenos/zenos.conf" <<'EOF'
 ZENOS_ROOT=/usr/share/zenos
 EOF
 
+echo "== LiveKit call server (Apache-2.0): pinned release, checksum verified"
+LK_VER=1.13.10
+LK_SHA=c25a3e45fb922e9a93c6443d10c0ed041ba64342097e38632331736630283165
+curl -fsSL -o "$B/livekit.tgz" "https://github.com/livekit/livekit/releases/download/v$LK_VER/livekit_${LK_VER}_linux_amd64.tar.gz"
+echo "$LK_SHA  $B/livekit.tgz" | sha256sum -c --quiet -
+mkdir -p "$P/usr/lib/zenos/livekit"
+tar -xzf "$B/livekit.tgz" -C "$P/usr/lib/zenos/livekit" livekit-server LICENSE
+chmod 755 "$P/usr/lib/zenos/livekit/livekit-server"
+
 echo "== desktop"
 mkdir -p "$P/usr/share/applications" "$P/etc/xdg/autostart" "$P/usr/share/plasma/plasmoids" "$P/usr/share/plasma/desktoptheme"
 cp "$SRC"/desktop/applications/*.desktop "$P/usr/share/applications/"

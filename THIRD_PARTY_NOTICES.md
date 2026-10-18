@@ -18,7 +18,7 @@ ones used in the Developer Preview.
 |---|---|---|
 | @signalapp/libsignal-client 0.105.1 | messenger | **AGPL-3.0-only** — see the note below |
 | livekit-client 2.23.0, livekit-server-sdk 2.19.1 | messenger | Apache-2.0 |
-| LiveKit server (downloaded at install) | messenger calls | Apache-2.0 |
+| LiveKit server 1.13.10 (bundled in the package, `/usr/lib/zenos/livekit`) | messenger calls | Apache-2.0 |
 | pdfjs-dist 6.4.299 | messenger | Apache-2.0 |
 | qrcode 1.5.4 | messenger | MIT |
 | web-push 3.6.7 | messenger | MPL-2.0 |

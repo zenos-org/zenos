@@ -18,7 +18,7 @@ if [ "$1" = "configure" ]; then
         systemctl restart zenos-netsentinel.service zenos-heartwatch.service zenos-guardd.service || true
     fi
     # per-user endpoint audit, for every user session
-    systemctl --global enable zenos-secaudit.service >/dev/null 2>&1 || true
+    systemctl --global enable zenos-secaudit.service zenos-livekit.service >/dev/null 2>&1 || true
     update-desktop-database -q /usr/share/applications 2>/dev/null || true
 fi
 exit 0

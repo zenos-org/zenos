@@ -5,6 +5,6 @@ if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
         if [ -d /run/systemd/system ]; then systemctl stop "$u.service" 2>/dev/null || true; fi
         systemctl disable "$u.service" >/dev/null 2>&1 || true
     done
-    systemctl --global disable zenos-secaudit.service >/dev/null 2>&1 || true
+    systemctl --global disable zenos-secaudit.service zenos-livekit.service >/dev/null 2>&1 || true
 fi
 exit 0

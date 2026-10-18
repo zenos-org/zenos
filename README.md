@@ -63,8 +63,8 @@ sudo packaging/iso/build-iso.sh build/zenos_*_amd64.deb   # -> build/iso/zenos-a
 
 The image boots as a live session and installs with Calamares.
 
-Calls need the self-hosted LiveKit server, which is not bundled yet: put `livekit-server` in
-`/usr/lib/zenos/livekit/` and a config based on `config/examples/livekit.example.yaml` in `~/.config/zenos/livekit.yaml`.
+Calls use a self-hosted LiveKit server (pinned release, checksum-verified at build time). Each user gets their own
+keys at first login; nothing secret is shipped in the package.
 
 The development machine runs ZENOS inside WSL2 for convenience; `dev/` holds the pieces that only make sense there
 (VNC desktop service, input-method autostart for WSLg).
