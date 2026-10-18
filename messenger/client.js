@@ -132,6 +132,8 @@ async function rqr(method, p, obj) {
 async function rq(method, p, obj) { return (await rqr(method, p, obj)).json(); }
 
 // ---------- first start: make this device's keys and publish the public halves ----------
+// one-time enrollment code from the administrator, for relays that register new accounts only that way
+const enrollCode = () => { try { return process.env.ZENOS_ENROLL_CODE || fs.readFileSync(path.join(MDATA, "enroll-code"), "utf8").trim(); } catch { return undefined; } };
 async function setup() {
   if (st) await ensureMailboxes();
   if (!st) {
@@ -157,6 +159,7 @@ async function setup() {
   await rq("POST", `/keys/${ACC}`, {
     name: PEOPLE[ACC].name, level: PEOPLE[ACC].level, regId: st.regId, username: PEOPLE[ACC].username, org: PEOPLE[ACC].org, findByPhone: true, intro: st.mb ? st.mb.intro.id : null,
     identity: b64(idkp.publicKey.serialize()),
+    enroll: enrollCode(),
     signed: { id: 1, pub: b64(s.publicKey().serialize()), sig: b64(s.signature()) },
     kyber: { id: 1, pub: b64(k.publicKey().serialize()), sig: b64(k.signature()) },
     preKeys: Object.keys(st.preKeys).map((id) => ({ id: Number(id), pub: b64(S.PreKeyRecord.deserialize(ub(st.preKeys[id])).publicKey().serialize()) })),

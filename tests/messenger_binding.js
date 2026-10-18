@@ -37,5 +37,21 @@ let fail = 0; const check = (name, cond, got) => { console.log((cond ? "ok   " :
   const once = async () => (await fetch(R + `/phone/${acc}`, { headers: { "X-Zenos-Auth": `${acc} ${ts} ${sig}` } })).status;
   const s1 = await once(), s2 = await once(); check("replayed request refused", s1 === 200 && s2 === 403, [s1, s2]);
   r = await rq(null, acc, "POST", `/keys/${acc}`, bundle(A, "back")); check("old key cannot come back", r[0] === 409, r);
+  // a relay that registers new accounts only with an administrator's enrollment code
+  const port2 = PORT + 1, R2 = `http://127.0.0.1:${port2}`, HOME2 = fs.mkdtempSync(path.join(os.tmpdir(), "zbind-"));
+  const relay2 = spawn(process.execPath, [path.join(MSG, "relay.js")], { env: { ...process.env, HOME: HOME2, ZENOS_RELAY_PORT: String(port2), ZENOS_RELAY_ENROLL: "1" }, stdio: "ignore" });
+  for (let i = 0; i < 50; i++) { try { await fetch(R2 + "/trust"); break; } catch { await new Promise((r) => setTimeout(r, 100)); } }
+  const post = async (p, obj, hdr) => { const r = await fetch(R2 + p, { method: "POST", headers: { "Content-Type": "application/json", ...(hdr || {}) }, body: JSON.stringify(obj) }); return [r.status, await r.json()]; };
+  const admin = fs.readFileSync(path.join(HOME2, ".local/share/zenos/msg/relay/admin.token"), "utf8").trim();
+  const C = S.IdentityKeyPair.generate(), cb = { name: "New", identity: b64(C.publicKey.serialize()) };
+  r = await post("/keys/newbie", cb); check("enrolling relay: no code, refused", r[0] === 403, r);
+  r = await post("/enroll", { account: "newbie" }); check("code not issued without admin token", r[0] === 403, r);
+  r = await post("/enroll", { account: "newbie" }, { "X-Zenos-Admin": admin }); const code = r[1].code; check("admin issues a code", r[0] === 200 && !!code, r);
+  r = await post("/keys/newbie", { ...cb, enroll: "0000000000" }); check("wrong code refused", r[0] === 403, r);
+  r = await post("/keys/other", { ...cb, enroll: code }); check("code only for its account", r[0] === 403, r);
+  r = await post("/keys/newbie", { ...cb, enroll: code }); check("right code registers", r[0] === 200, r);
+  const kept = JSON.parse(fs.readFileSync(path.join(HOME2, ".local/share/zenos/msg/relay/bundles.json"), "utf8")).newbie;
+  check("code is not stored with the bundle", kept && kept.enroll === undefined, kept);
+  relay2.kill(); fs.rmSync(HOME2, { recursive: true, force: true });
   console.log(fail ? `${fail} FAILED` : "ALL OK"); finish(fail ? 1 : 0);
 })().catch((e) => { console.error(e); finish(2); });

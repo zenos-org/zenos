@@ -129,6 +129,10 @@ const ADMINF = path.join(DIR, "admin.token");
 if (!fs.existsSync(ADMINF)) fs.writeFileSync(ADMINF, crypto.randomBytes(24).toString("hex"), { mode: 0o600 });
 const ADMIN = (process.env.ZENOS_RELAY_ADMIN || fs.readFileSync(ADMINF, "utf8")).trim();
 const isAdmin = (req) => !!ADMIN && req.headers["x-zenos-admin"] === ADMIN;
+// enrollment: with ZENOS_RELAY_ENROLL=1 a new account needs a one-time code the administrator issued for that name
+const ENROLL_REQUIRED = process.env.ZENOS_RELAY_ENROLL === "1";
+const ENROLLF = path.join(DIR, "enroll.json"); let enrolls = load(ENROLLF, {});   // account -> { hash, exp }
+const saveEnroll = () => fs.writeFileSync(ENROLLF, JSON.stringify(enrolls), { mode: 0o600 });
 function send(res, code, obj) {
   const b = JSON.stringify(obj);
   res.writeHead(code, { "Content-Type": "application/json" });
@@ -244,11 +248,28 @@ http.createServer(async (req, res) => {
       const ph = Object.keys(phones).find((k) => phones[k].id === parts[1]);
       return send(res, 200, ph ? { phone: ph, ...phones[ph] } : { phone: null, verified: false });
     }
+    if (req.method === "POST" && parts[0] === "enroll") {        // administrator: issue a one-time code for a new account
+      const { account } = await body(req);
+      if (!isAdmin(req)) { audit("msg-auth-refused", { what: "enroll" }); return send(res, 403, { error: "Enrollment codes are issued on the relay's own host." }); }
+      if (!/^[a-z0-9_.-]{2,40}$/.test(account || "")) return send(res, 400, { error: "bad account name" });
+      if (bundles[account]) return send(res, 409, { error: "This account is already registered." });
+      const code = crypto.randomBytes(5).toString("hex");
+      enrolls[account] = { hash: H(code), exp: Date.now() + 7 * 24 * 3600e3 }; saveEnroll();
+      audit("msg-enroll-issued", { account });
+      return send(res, 200, { account, code, expires: new Date(enrolls[account].exp).toISOString() });
+    }
     if (req.method === "POST" && parts[0] === "keys") {          // publish a public key bundle
       const nb = await body(req);
       if (nb.username && !UNAME.test(nb.username)) return send(res, 400, { error: "bad username" });
       if (nb.username && Object.keys(bundles).some((k) => k !== parts[1] && bundles[k].username === nb.username)) return send(res, 409, { error: "username taken" });
       const old = bundles[parts[1]];
+      if (!old && ENROLL_REQUIRED) {
+        const e = enrolls[parts[1]];
+        if (!e || e.exp < Date.now() || H(nb.enroll || "") !== e.hash) { audit("msg-keys-refused", { account: parts[1], reason: "not-enrolled" });
+          return send(res, 403, { error: "This relay registers new accounts only with an enrollment code from the administrator." }); }
+        delete enrolls[parts[1]]; saveEnroll(); audit("msg-enrolled", { account: parts[1] });
+      }
+      delete nb.enroll;
       if (old && old.identity) {
         if (nb.identity === old.identity) { if (!authed(req, parts[1])) return refuse(res, parts[1], "keys"); }
         else if ((rebind[parts[1]] || 0) > Date.now()) { delete rebind[parts[1]]; audit("msg-device-moved", { account: parts[1] }); }
