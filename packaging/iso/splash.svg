@@ -1,1 +1,15 @@
-Æioz»"¢
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" fill="none">
+  <!-- Figma: Boot splash (30:2). The boot menu is drawn below the rule. -->
+  <defs>
+    <linearGradient id="zg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6E5BFF"/><stop offset="0.38" stop-color="#9B3BEF"/><stop offset="0.7" stop-color="#D83AB0"/><stop offset="1" stop-color="#FF6A8B"/></linearGradient>
+  </defs>
+  <rect width="640" height="480" fill="#0E0F13"/>
+  <g transform="translate(46 44) scale(0.85)" stroke="url(#zg)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M78 16 a46 46 0 1 0 20 30"/>
+    <path d="M38 40 H72 L38 70 H74"/>
+  </g>
+  <text x="170" y="88" font-family="Inter, Noto Sans, DejaVu Sans, sans-serif" font-size="38" font-weight="700" fill="#FFFFFF">ZENOS</text>
+  <text x="170" y="116" font-family="Inter, Noto Sans, DejaVu Sans, sans-serif" font-size="16" fill="#A9ADB8">Developer Preview Â· Debian 13 Â· amd64</text>
+  <text x="170" y="138" font-family="Inter, Noto Sans, DejaVu Sans, sans-serif" font-size="12" fill="#6F7380">Not yet for classified data</text>
+  <rect x="48" y="176" width="544" height="1" fill="#26282F"/>
+</svg>

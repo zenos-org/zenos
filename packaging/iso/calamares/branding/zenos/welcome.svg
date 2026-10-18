@@ -1,1 +1,14 @@
-²ø1šYì
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="300" viewBox="0 0 600 300" fill="none">
+  <!-- Figma: Installer â€” welcome image (31:2) -->
+  <defs>
+    <linearGradient id="zg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6E5BFF"/><stop offset="0.38" stop-color="#9B3BEF"/><stop offset="0.7" stop-color="#D83AB0"/><stop offset="1" stop-color="#FF6A8B"/></linearGradient>
+  </defs>
+  <rect width="600" height="300" fill="#0E0F13"/>
+  <g transform="translate(256 40) scale(0.8)" stroke="url(#zg)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M78 16 a46 46 0 1 0 20 30"/>
+    <path d="M38 40 H72 L38 70 H74"/>
+  </g>
+  <text x="300" y="185" text-anchor="middle" font-family="Inter, Noto Sans, sans-serif" font-size="36" font-weight="700" fill="#FFFFFF">ZENOS</text>
+  <text x="300" y="215" text-anchor="middle" font-family="Inter, Noto Sans, sans-serif" font-size="16" fill="#B8BCC8">A desktop for levelled, sealed work</text>
+  <text x="300" y="245" text-anchor="middle" font-family="Inter, Noto Sans, sans-serif" font-size="12" fill="#6F7380">Developer Preview â€” not yet for classified data</text>
+</svg>

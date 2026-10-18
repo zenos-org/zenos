@@ -23,6 +23,7 @@ jobs:
         run: |
           for f in $(git ls-files '*.py'); do python3 -m py_compile "$f"; done
           for f in messenger/*.js; do node --check "$f"; done
+          for f in $(git ls-files '*.svg'); do python3 -c 'import sys, xml.dom.minidom as m; m.parse(sys.argv[1])' "$f"; done
   apps:
     runs-on: ubuntu-24.04
     strategy:
