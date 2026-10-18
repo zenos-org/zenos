@@ -85,5 +85,38 @@ im-config -n fcitx5 || true
 EOF
 chmod +x config/hooks/live/*.hook.chroot
 
+# installer: ZENOS branding and the Plasma X11 session for Calamares (Debian's settings package names Debian and Wayland)
+mkdir -p config/includes.chroot/etc/calamares/branding config/includes.chroot/etc/calamares/modules
+cp -r "$SRC/packaging/iso/calamares/branding/zenos" config/includes.chroot/etc/calamares/branding/
+cp "$SRC/packaging/iso/calamares/modules/displaymanager.conf" config/includes.chroot/etc/calamares/modules/
+cat > config/hooks/live/0110-zenos-installer.hook.chroot <<'EOF'
+#!/bin/sh
+set -e
+sed -i 's/^branding:.*/branding: zenos/' /etc/calamares/settings.conf
+for f in /usr/share/applications/calamares-install-debian.desktop; do
+  [ -f "$f" ] || continue
+  sed -i -e 's/^Name\(\[[^]]*\]\)\?=.*/Name=Install ZENOS/' -e 's/^GenericName\(\[[^]]*\]\)\?=.*/GenericName=Install ZENOS on this PC/' \
+         -e 's/^Comment\(\[[^]]*\]\)\?=.*/Comment=Install ZENOS on this PC/' -e 's|^Icon=.*|Icon=/etc/calamares/branding/zenos/logo.svg|' "$f"
+  awk '!seen[$0]++ || !/^(Name|GenericName|Comment)=/' "$f" > "$f.n" && mv "$f.n" "$f"
+done
+EOF
+chmod +x config/hooks/live/*.hook.chroot
+# live session: the live user may open files up to L4 (a fresh install starts with no clearance), and an
+# "Install ZENOS" icon on the desktop
+cat > config/includes.chroot/usr/lib/live/config/0087-zenos-live <<'EOF'
+#!/bin/sh
+. /usr/lib/live/config.sh
+for p in ${LIVE_CONFIG_CMDLINE}; do case "$p" in live-config.username=*|username=*) LIVE_USERNAME="${p#*username=}";; esac; done
+[ -n "${LIVE_USERNAME}" ] || exit 0
+[ -x /usr/sbin/zenos_keyd.py ] && /usr/sbin/zenos_keyd.py --clearance "${LIVE_USERNAME}" 4 >/dev/null 2>&1 || true
+D="/home/${LIVE_USERNAME}/Desktop"
+if [ -f /usr/share/applications/calamares-install-debian.desktop ]; then
+  mkdir -p "$D"
+  install -m 755 /usr/share/applications/calamares-install-debian.desktop "$D/install-zenos.desktop"
+  chown -R "${LIVE_USERNAME}:" "$D"
+fi
+EOF
+chmod 755 config/includes.chroot/usr/lib/live/config/0087-zenos-live
+
 lb build 2>&1 | tee build.log
 ls -la "$W"/*.iso
