@@ -7,7 +7,9 @@ set -euo pipefail
 DEB="$(readlink -f "${1:?path to zenos_*.deb}")"
 SRC="$(cd "$(dirname "$(readlink -f "$0")")/../.." && pwd)"
 W="${WORK:-$SRC/build/iso}"
+[ -d "$W/cache" ] && mv "$W/cache" "$W.cache"                 # keep downloaded packages between builds
 rm -rf "$W"; mkdir -p "$W"; cd "$W"
+[ -d "$W.cache" ] && mv "$W.cache" "$W/cache"
 
 lb config \
   --mode debian --distribution trixie --architectures amd64 \
@@ -58,11 +60,23 @@ firmware-iwlwifi
 firmware-realtek
 EOF
 cat > config/includes.chroot/etc/sddm.conf.d/zenos.conf <<'EOF'
+[General]
+DefaultSession=plasmax11.desktop
 [Theme]
 Current=breeze
-[Autologin]
-Session=plasmax11.desktop
 EOF
+# live session: log the live user straight into Plasma (X11). live-config's own sddm step names the Wayland session
+# (plasma.desktop, in Plasma 6) or none at all, and its /etc/sddm.conf overrides the conf.d files. This runs at
+# live boot only, so nothing of it reaches an installed system (Calamares copies the image, not the running system).
+mkdir -p config/includes.chroot/usr/lib/live/config
+cat > config/includes.chroot/usr/lib/live/config/0086-zenos-sddm <<'EOF'
+#!/bin/sh
+. /usr/lib/live/config.sh
+for p in ${LIVE_CONFIG_CMDLINE}; do case "$p" in live-config.username=*|username=*) LIVE_USERNAME="${p#*username=}";; noautologin|live-config.noautologin) exit 0;; esac; done
+[ -n "${LIVE_USERNAME}" ] || exit 0
+printf '[Autologin]\nUser=%s\nSession=plasmax11.desktop\n' "${LIVE_USERNAME}" > /etc/sddm.conf
+EOF
+chmod 755 config/includes.chroot/usr/lib/live/config/0086-zenos-sddm
 cat > config/hooks/live/0100-zenos.hook.chroot <<'EOF'
 #!/bin/sh
 set -e
