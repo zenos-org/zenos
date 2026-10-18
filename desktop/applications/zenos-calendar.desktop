@@ -2,5 +2,5 @@
 Type=Application
 Name=Calendar
 Icon=/usr/share/zenos/icons/zenos-calendar.svg
-Exec=kdialog --title "ZENOS Calendar" --msgbox "Calendar is in development for the ZENOS preview."
-Categories=Office;
+Exec=/usr/share/zenos/msg/open.sh zenos calendar
+Categories=Office;Calendar;

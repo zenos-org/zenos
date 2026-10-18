@@ -1206,7 +1206,8 @@ async function boot(){
   if(mobile())document.body.classList.add("list");
   if("serviceWorker" in navigator){try{await navigator.serviceWorker.register("/sw.js");}catch(e){}}
   if("Notification" in window&&Notification.permission==="default"){try{Notification.requestPermission();}catch(e){}}
-  await slow();await pull();render(true);
+  await slow();await pull();
+  if(location.hash==="#calendar"){document.body.classList.remove("list");setView("calendar");}else render(true);   // opened as ZENOS Calendar
   setInterval(pull,1000);setInterval(slow,5000);
 }
 $("attbtn").onclick=e=>{e.stopPropagation();$("filein").click();};

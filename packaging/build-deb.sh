@@ -7,6 +7,9 @@ SRC="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 VER="${VER:-0.1.0~preview$(date +%Y%m%d)}"
 OUT="${OUT:-$SRC/build}"
 B="$OUT/work"; P="$OUT/pkg"
+mkdir -p "$OUT"
+exec 9>"$OUT/.build.lock"
+flock -n 9 || { echo "another build is running in $OUT" >&2; exit 1; }   # two builds would delete each other's files
 rm -rf "$B" "$P"; mkdir -p "$B" "$P"
 Z="$P/usr/share/zenos"
 
