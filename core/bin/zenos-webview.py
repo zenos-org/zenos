@@ -80,10 +80,17 @@ window.addEventListener('paste', e => {
 }, false);
 if (navigator.clipboard) try {
   const readText = navigator.clipboard.readText && navigator.clipboard.readText.bind(navigator.clipboard);
+  const read = navigator.clipboard.read && navigator.clipboard.read.bind(navigator.clipboard);
   Object.defineProperty(navigator.clipboard, 'writeText', { value: t => { keep(String(t)); return Promise.resolve(); } });
-  Object.defineProperty(navigator.clipboard, 'write', { value: () => { post('znocopy', 'api');
-    return Promise.reject(new DOMException('Copying out of this sealed file is not allowed.', 'NotAllowedError')); } });
+  // apps that copy with ClipboardItems (rich text + plain text): the plain text goes to the level clipboard
+  Object.defineProperty(navigator.clipboard, 'write', { value: async items => {
+    for (const it of items || []) if (it && it.types && it.types.includes('text/plain')) { keep(await (await it.getType('text/plain')).text()); return; }
+    post('znocopy', 'api');
+    throw new DOMException('Copying out of this sealed file is not allowed.', 'NotAllowedError'); } });
   Object.defineProperty(navigator.clipboard, 'readText', { value: () => window.__zclip != null ? Promise.resolve(window.__zclip) : (readText ? readText() : Promise.resolve('')) });
+  Object.defineProperty(navigator.clipboard, 'read', { value: () => window.__zclip != null && typeof ClipboardItem === 'function'
+    ? Promise.resolve([new ClipboardItem({ 'text/plain': new Blob([window.__zclip], { type: 'text/plain' }) })])
+    : (read ? read() : Promise.resolve([])) });
 } catch (x) {}
 })();""", WebKit2.UserContentInjectedFrames.ALL_FRAMES, WebKit2.UserScriptInjectionTime.START, None, None))
     _told = [0]
@@ -127,6 +134,10 @@ if (navigator.clipboard) try {
         threading.Thread(target=work, daemon=True).start()
         return False
     win.connect('focus-in-event', on_focus)
+    # also when the page has loaded and, while this window is the active one, every two seconds (a window that was
+    # already focused gets no focus event, and a page load forgets what was handed to it)
+    view.connect('load-changed', lambda _v, ev: ev == WebKit2.LoadEvent.FINISHED and on_focus())
+    GLib.timeout_add(2000, lambda: (win.is_active() and on_focus(), True)[1])
 
     from gi.repository import Gdk
     _clip = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
