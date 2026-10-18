@@ -672,7 +672,12 @@ def cmd_open(path):
         t = d / (p.stem + ".txt")
         t.write_bytes(data)
         try:
-            kd("--title", f"ZENOS · L{lvl} · {h['name']} · {h['created'][:10]}", "--textbox", str(t), "760", "480", level=lvl)
+            ttl = f"ZENOS · L{lvl} · {h['name']} · {h['created'][:10]}"
+            if lvl >= 3:                              # L3+: a viewer that cannot copy, select or drag
+                subprocess.run([sys.executable, "-I", str(Path(__file__).parent / "zenos_textview.py"), ttl, str(t)],
+                               env=dict(UI_ENV, ZENOS_SEALED_LEVEL=str(lvl)))
+            else:
+                kd("--title", ttl, "--textbox", str(t), "760", "480", level=lvl)
         finally:
             t.unlink(missing_ok=True)
     finally:

@@ -82,7 +82,15 @@ class App(Gtk.Window):
             "window.zenos={init:window.__zinit,call:function(c,a){return new Promise(function(res){var i=++n;p[i]=res;"
             "window.webkit.messageHandlers.zenos.postMessage(JSON.stringify({id:i,cmd:c,args:a||{}}));});}};})();" % json.dumps(init),
             WebKit2.UserContentInjectedFrames.TOP_FRAME, WebKit2.UserScriptInjectionTime.START, None, None))
+        if SEALED >= 3:     # nothing is copied out of an L3+ sealed picture, video or PDF (same rule as the office apps)
+            ucm.add_script(WebKit2.UserScript.new(
+                "for (const t of ['copy','cut','dragstart']) document.addEventListener(t, e => { e.preventDefault(); e.stopImmediatePropagation(); }, true);"
+                "if (navigator.clipboard) { const no = () => Promise.reject(new DOMException('Copying out of this sealed file is not allowed.', 'NotAllowedError'));"
+                " try { Object.defineProperty(navigator.clipboard, 'writeText', {value: no}); Object.defineProperty(navigator.clipboard, 'write', {value: no}); } catch (e) {} }",
+                WebKit2.UserContentInjectedFrames.ALL_FRAMES, WebKit2.UserScriptInjectionTime.START, None, None))
         self.view = WebKit2.WebView.new_with_user_content_manager(ucm)
+        if SEALED >= 3:     # and no right-click "Copy Image" / "Save Image As"
+            self.view.connect("context-menu", lambda *a: True)
         self.view.set_background_color(Gdk.RGBA(0.08, 0.08, 0.09, 1))
         s = self.view.get_settings()
         s.set_allow_file_access_from_file_urls(True)
@@ -91,7 +99,7 @@ class App(Gtk.Window):
         s.set_media_playback_requires_user_gesture(False)
         s.set_enable_developer_extras(False)
         s.set_enable_write_console_messages_to_stdout(True)
-        s.set_javascript_can_access_clipboard(True)
+        s.set_javascript_can_access_clipboard(SEALED < 3)
         self.view.connect("decide-policy", self.on_decide)
         self.view.connect("enter-fullscreen", lambda *a: (self.fullscreen(), False)[1])
         self.view.connect("leave-fullscreen", lambda *a: (self.unfullscreen(), False)[1])
