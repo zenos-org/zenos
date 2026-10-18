@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+if [ "$1" = "purge" ]; then
+    # the audit and incident logs are evidence: they are kept unless the administrator removes them
+    rm -f /etc/zenos/zenos.conf
+fi
+if [ -d /run/systemd/system ]; then systemctl daemon-reload || true; fi
+exit 0

@@ -1,0 +1,24 @@
+[Default Applications]
+image/tiff=zenos-images.desktop
+image/avif=zenos-images.desktop
+image/svg+xml=zenos-images.desktop
+image/bmp=zenos-images.desktop
+image/gif=zenos-images.desktop
+image/webp=zenos-images.desktop
+image/png=zenos-images.desktop
+image/jpeg=zenos-images.desktop
+text/html=zenos-browser.desktop
+x-scheme-handler/https=zenos-browser.desktop
+x-scheme-handler/http=zenos-browser.desktop
+application/x-zenos=zenos-viewer.desktop
+application/pdf=zenos-pdf.desktop
+video/mp4=zenos-video.desktop
+video/x-matroska=zenos-video.desktop
+video/webm=zenos-video.desktop
+video/quicktime=zenos-video.desktop
+video/x-msvideo=zenos-video.desktop
+video/ogg=zenos-video.desktop
+video/mpeg=zenos-video.desktop
+video/mp2t=zenos-video.desktop
+[Added Associations]
+application/x-zenos=zenos-viewer.desktop;

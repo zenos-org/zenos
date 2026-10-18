@@ -1,0 +1,14 @@
+[Desktops]
+Number=1
+Rows=1
+
+[Plugins]
+blurEnabled=true
+contrastEnabled=true
+
+[Tiling]
+padding=4
+
+[org.kde.kdecoration2]
+ButtonsOnLeft=
+ShowToolTips=false

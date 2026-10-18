@@ -1,12 +1,15 @@
 #!/bin/bash
-# start the relay and the demo devices if they are not running
+# start the relay and this desk's messenger client(s) if they are not running.
+# Accounts and ports come from ~/.local/share/zenos/msg/ports.env (one line per account: name=port).
+# In development the file also lists the demo devices (sato, tanaka, suzuki, press).
 M="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
-mkdir -p "$HOME/.local/share/zenos/msg"
-cd "$HOME/.local/share/zenos/msg"
-pgrep -f "node $M/relay.js" >/dev/null || setsid /usr/bin/node $M/relay.js >/tmp/zenos-relay.log 2>&1 < /dev/null &
+DATA="$HOME/.local/share/zenos/msg"
+mkdir -p "$DATA"
+cd "$DATA"
+[ -f ports.env ] || echo "zenos=8096" > ports.env
+pgrep -f "node $M/relay.js" >/dev/null || setsid /usr/bin/node "$M/relay.js" >/tmp/zenos-relay.log 2>&1 < /dev/null &
 sleep 1
-P=8096
-for a in zenos sato tanaka suzuki; do
-  pgrep -f "node $M/client.js $a " >/dev/null || setsid /usr/bin/node $M/client.js $a $P >/tmp/zenos-msg-$a.log 2>&1 < /dev/null &
-  P=$((P+1))
-done
+while IFS='=' read -r a p; do
+  if [ -z "$a" ] || [ "${a#\#}" != "$a" ]; then continue; fi
+  pgrep -f "node $M/client.js $a " >/dev/null || setsid /usr/bin/node "$M/client.js" "$a" "$p" >"/tmp/zenos-msg-$a.log" 2>&1 < /dev/null &
+done < ports.env

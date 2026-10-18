@@ -18,3 +18,4 @@ halt.json
 cloud.json
 alert-recipients.json
 tunnel-url.*
+build/

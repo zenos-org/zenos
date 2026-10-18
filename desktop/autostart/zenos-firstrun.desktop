@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=ZENOS user setup
+Exec=/usr/share/zenos/bin/zenos-firstrun.sh
+X-KDE-autostart-phase=0
+NoDisplay=true
