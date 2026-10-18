@@ -5,7 +5,7 @@ zenos-webview.py URL TITLE [FILE]
 With FILE and ZENOS_SEALED_LEVEL set (zenos.py opening a sealed file), the window is in sealed mode: FILE is the
 plaintext working copy in RAM (/dev/shm); it is loaded into the app, Save writes back to it only, nothing else may be
 saved or opened from this window, and the web storage is ephemeral. zenos.py seals the file again when it closes."""
-import base64, mimetypes, os, sys, gi
+import base64, json, mimetypes, os, sys, gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('WebKit2', '4.1')
 from gi.repository import Gtk, WebKit2, GLib
@@ -52,6 +52,51 @@ if NO_COPY:
             GLib.idle_add(tell, f'"{name}" is L{sealed}. Copying out of it is not allowed.')
     ucm.connect('script-message-received::znocopy', on_nocopy)
     ucm.register_script_message_handler('znocopy')
+
+
+# printing a sealed file: every page carries the level, the user and the time; above the policy's ceiling
+# (default L3, /etc/zenos/policy.conf "print_max_level = N") printing is refused. Each attempt is recorded.
+def _policy(key, default):
+    try:
+        for line in open('/etc/zenos/policy.conf'):
+            k, _, v = line.partition('=')
+            if k.strip() == key:
+                return v.strip()
+    except OSError:
+        pass
+    return default
+
+
+PRINT_MAX = int(_policy('print_max_level', '3') or 3)
+if sealed:
+    import getpass, time as _t
+    _mark = f"L{sealed} · {name} · printed by {getpass.getuser()} · {_t.strftime('%Y-%m-%d %H:%M')}"
+    view.get_user_content_manager().add_style_sheet(WebKit2.UserStyleSheet.new(
+        "@media print { body::after { content: %s; position: fixed; left: 0; right: 0; top: 0; padding: 4px 8px;"
+        " font: 600 9pt sans-serif; color: #b00020; background: #fff; border-bottom: 1px solid #b00020; z-index: 2147483647; } }"
+        % json.dumps(_mark), WebKit2.UserContentInjectedFrames.TOP_FRAME, WebKit2.UserStyleLevel.USER, None, None))
+
+
+def _audit_print(allowed):
+    try:
+        import zenos
+        zenos.audit("print" if allowed else "print-refused", file=name, level=sealed)
+    except Exception:
+        pass
+
+
+def on_print(wv, op):
+    if not sealed:
+        return False
+    if sealed > PRINT_MAX:
+        _audit_print(False)
+        GLib.idle_add(tell, f'"{name}" is L{sealed}. Files above L{PRINT_MAX} cannot be printed from this PC.')
+        return True                                  # handled: nothing is printed
+    _audit_print(True)
+    return False
+
+
+view.connect('print', on_print)
 
 
 def tell(text):
