@@ -113,14 +113,21 @@ The development machine runs ZENOS inside WSL2 for convenience; `dev/` holds the
 
 ## Roadmap
 
-1. **Foundations**: one repository, secrets removed, licences documented.
-2. **Installable OS**: an ISO for existing PCs, packaged components, signed updates. WSL stays as a trial image.
-3. **Real enforcement**: sentinel as a root service with fanotify, keys in TPM and FIDO2 devices, approvals on
-   approvers' own devices, signed audit log shipped off the machine, networked storage nodes and a multi-party
-   consortium ledger, full-disk encryption unlocked by fingerprint + TPM. Enforcement will build on existing
-   Linux security (SELinux multi-level security, TPM) instead of reinventing it.
-4. **Everyday apps**: Files, Settings, Calendar, notifications, printing with level watermarks, cross-level
-   clipboard and screenshot control, Office format compatibility.
+Done in this preview: one repository with secrets removed and licences documented; a Debian package, a signed apt
+repository and an installer ISO (full-disk encryption checked by default); the guard as a root service with
+fanotify; a root key agent with per-user clearance; approvals signed on officers' own devices; ledgers shipped to
+audit nodes; messenger accounts bound to their devices; printing with level watermarks and a ceiling; a level
+clipboard between sealed windows; screenshot and terminal control.
+
+Still ahead:
+
+1. **Hardware keys**: level keys sealed to the TPM, officer and user keys on FIDO2 devices, disk unlock by TPM +
+   fingerprint.
+2. **Mandatory access control**: SELinux multi-level security, so no program can write a copy of an open sealed
+   file to a lower level.
+3. **Shared infrastructure**: networked storage nodes for fragments, a key service so sealed files open on any
+   cleared PC, a multi-party consortium ledger.
+4. **Everyday apps**: Files, Settings, notifications, better Office format compatibility.
 5. **External security audit** before any claim of production readiness.
 
 Editions (Government, Academy, Creator, Educational, Hobby) will be configurations of one shared core.
