@@ -13,7 +13,8 @@ informed, and credit you in the release notes unless you prefer otherwise.
 
 ## Scope
 
-In scope: everything in this repository — sealing and key handling, approvals, the sentinel and lock screen, the
-ledger, storage nodes, the messenger and relay, the browser shell and apps.
+In scope: everything in this repository — sealing and the root key agent, approvals and officer-device signing,
+the guard (stop, terminal and screen-capture refusal) and lock screen, the ledger and audit nodes, storage nodes,
+the messenger and relay, the browser shell and apps, the update repository and installer image.
 Out of scope: vulnerabilities in upstream projects (report those upstream), and attacks that require physical
 access to a running machine.
