@@ -14,6 +14,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y python3-cryptography
       - name: Unit tests (sealing, request digest, officer enrollment, guard approvals)
         run: python3 -W error::ResourceWarning -m unittest discover -s tests -v
+      - name: No secrets or real phone numbers
+        run: packaging/check-secrets.sh
       - name: Syntax of every script
         run: |
           for f in $(git ls-files '*.py'); do python3 -m py_compile "$f"; done
