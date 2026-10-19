@@ -113,10 +113,17 @@ chmod +x config/hooks/live/*.hook.chroot
 mkdir -p config/includes.chroot/etc/calamares/branding config/includes.chroot/etc/calamares/modules
 cp -r "$SRC/packaging/iso/calamares/branding/zenos" config/includes.chroot/etc/calamares/branding/
 cp "$SRC"/packaging/iso/calamares/modules/*.conf config/includes.chroot/etc/calamares/modules/   # X11 session, disk encryption on by default
+# flush the target before Calamares unmounts it: its umount step gives up after 10 s, and on a slow disk
+# the writeback of a fresh install takes longer than that ("Could not unmount the root of the target system")
+mkdir -p config/includes.chroot/usr/lib/calamares/modules/zenos-sync
+printf -- '---\ntype:       "job"\nname:       "zenos-sync"\ninterface:  "process"\ncommand:    "/bin/sync"\ntimeout:    1800\n' \
+  > config/includes.chroot/usr/lib/calamares/modules/zenos-sync/module.desc
 cat > config/hooks/live/0110-zenos-installer.hook.chroot <<'EOF'
 #!/bin/sh
 set -e
 sed -i 's/^branding:.*/branding: zenos/' /etc/calamares/settings.conf
+grep -q 'zenos-sync' /etc/calamares/settings.conf || sed -i 's/^\(  *\)- umount$/\1- zenos-sync\n&/' /etc/calamares/settings.conf
+grep -q 'zenos-sync' /etc/calamares/settings.conf
 for f in /usr/share/applications/calamares-install-debian.desktop; do
   [ -f "$f" ] || continue
   sed -i -e 's/^Name\(\[[^]]*\]\)\?=.*/Name=Install ZENOS/' -e 's/^GenericName\(\[[^]]*\]\)\?=.*/GenericName=Install ZENOS on this PC/' \

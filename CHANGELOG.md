@@ -7,6 +7,8 @@ First public preview. Not for real classified data; see [docs/THREAT_MODEL.md](d
 **System**
 - Debian 13 package and a live/installer image (Calamares) for ordinary PCs; KDE Plasma (X11) desktop with the
   ZENOS layout, security folders (L1–L5), level bar and launcher.
+- Installer flushes the new system to disk before unmounting it, so a slow disk no longer ends the install with
+  "Could not unmount the root of the target system".
 - Root key agent (`zenos-keyd`): level keys belong to root; files open up to the user's clearance or with an
   officer-signed grant for that exact file; every unseal is recorded.
 - Root guard (`zenos-guardd`): bulk reads, transfers to removable media and similar stop the whole session until
