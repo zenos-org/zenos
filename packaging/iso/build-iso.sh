@@ -54,6 +54,8 @@ live-boot
 live-config
 live-config-systemd
 user-setup
+# the installer's password check needs the cracklib dictionary
+cracklib-runtime
 # hardware
 firmware-linux-free
 firmware-misc-nonfree
@@ -102,20 +104,14 @@ for f in /usr/share/applications/calamares-install-debian.desktop; do
 done
 EOF
 chmod +x config/hooks/live/*.hook.chroot
-# live session: the live user may open files up to L4 (a fresh install starts with no clearance), and an
-# "Install ZENOS" icon on the desktop
+# live session: the live user may open files up to L4 (a fresh install starts with no clearance). The
+# "Install ZENOS" desktop icon comes from Debian's installer settings (renamed by the hook above).
 cat > config/includes.chroot/usr/lib/live/config/0087-zenos-live <<'EOF'
 #!/bin/sh
 . /usr/lib/live/config.sh
 for p in ${LIVE_CONFIG_CMDLINE}; do case "$p" in live-config.username=*|username=*) LIVE_USERNAME="${p#*username=}";; esac; done
 [ -n "${LIVE_USERNAME}" ] || exit 0
 [ -x /usr/sbin/zenos_keyd.py ] && /usr/sbin/zenos_keyd.py --clearance "${LIVE_USERNAME}" 4 >/dev/null 2>&1 || true
-D="/home/${LIVE_USERNAME}/Desktop"
-if [ -f /usr/share/applications/calamares-install-debian.desktop ]; then
-  mkdir -p "$D"
-  install -m 755 /usr/share/applications/calamares-install-debian.desktop "$D/install-zenos.desktop"
-  chown -R "${LIVE_USERNAME}:" "$D"
-fi
 EOF
 chmod 755 config/includes.chroot/usr/lib/live/config/0087-zenos-live
 
