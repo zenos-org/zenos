@@ -56,11 +56,32 @@ live-config-systemd
 user-setup
 # the installer's password check needs the cracklib dictionary
 cracklib-runtime
+# the installer copies the image with unsquashfs and formats with these
+squashfs-tools
+dosfstools
+btrfs-progs
+xfsprogs
 # hardware
 firmware-linux-free
 firmware-misc-nonfree
 firmware-iwlwifi
 firmware-realtek
+EOF
+# packages the installer puts on the target from the image itself (Debian's Calamares helpers install the boot
+# loader and the encrypted-root unlock with apt from the image's own pool, offline). live-build resolves each list
+# on its own, so the BIOS and UEFI boot loaders, which conflict, sit in separate lists.
+cat > config/package-lists/zenos-bios.list.binary <<'EOF'
+grub-pc
+cryptsetup
+cryptsetup-initramfs
+keyutils
+EOF
+cat > config/package-lists/zenos-efi.list.binary <<'EOF'
+grub-efi
+grub-efi-amd64
+grub-efi-amd64-signed
+shim-signed
+efibootmgr
 EOF
 cat > config/includes.chroot/etc/sddm.conf.d/zenos.conf <<'EOF'
 [General]
