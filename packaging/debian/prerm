@@ -7,5 +7,8 @@ if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
     done
     systemctl --global disable zenos-secaudit.service zenos-livekit.service >/dev/null 2>&1 || true
     dpkg-divert --package zenos --rename --quiet --remove /usr/share/wayland-sessions/plasma.desktop || true
+    if [ -f /etc/xdg/kdeglobals ]; then
+        sed -i '/^# zenos: begin/,/^# zenos: end/d' /etc/xdg/kdeglobals || true
+    fi
 fi
 exit 0

@@ -34,5 +34,11 @@ if [ "$1" = "configure" ]; then
     dpkg-divert --package zenos --rename --quiet \
         --divert /usr/share/zenos/plasma-wayland.desktop.disabled --add /usr/share/wayland-sessions/plasma.desktop || true
     rm -f /var/lib/sddm/state.conf 2>/dev/null || true      # forget a Wayland session chosen earlier
+    # KRunner's command line: without this, Alt+Space runs any shell command as the user, past the terminal
+    # control. KDE's Kiosk "shell_access" restriction turns that runner off; [$i] keeps users from overriding it.
+    mkdir -p /etc/xdg
+    if ! grep -q '^# zenos: begin' /etc/xdg/kdeglobals 2>/dev/null; then
+        printf '\n# zenos: begin (removed when the zenos package is removed)\n[KDE Action Restrictions][$i]\nshell_access=false\n# zenos: end\n' >> /etc/xdg/kdeglobals
+    fi
 fi
 exit 0
