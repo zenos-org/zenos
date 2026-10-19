@@ -29,5 +29,10 @@ if [ "$1" = "configure" ]; then
     # per-user endpoint audit, for every user session
     systemctl --global enable zenos-secaudit.service zenos-livekit.service >/dev/null 2>&1 || true
     update-desktop-database -q /usr/share/applications 2>/dev/null || true
+    # ZENOS runs in the Plasma X11 session (the guard's screen and terminal controls and the apps need X11).
+    # SDDM in Debian 13 has no setting for a default session, so the Wayland session is moved out of its list.
+    dpkg-divert --package zenos --rename --quiet \
+        --divert /usr/share/zenos/plasma-wayland.desktop.disabled --add /usr/share/wayland-sessions/plasma.desktop || true
+    rm -f /var/lib/sddm/state.conf 2>/dev/null || true      # forget a Wayland session chosen earlier
 fi
 exit 0

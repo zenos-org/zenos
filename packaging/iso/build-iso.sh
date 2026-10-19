@@ -18,7 +18,7 @@ lb config \
   --binary-images iso-hybrid --bootloaders "grub-efi,syslinux" \
   --iso-application "ZENOS" --iso-volume "ZENOS" --iso-publisher "The ZENOS Authors" \
   --image-name zenos \
-  --bootappend-live "boot=live components quiet splash username=zenos hostname=zenos locales=en_US.UTF-8" \
+  --bootappend-live "boot=live components quiet splash username=zenos user-fullname=ZENOS hostname=zenos locales=en_US.UTF-8" \
   --apt-recommends false \
   --memtest none
 
@@ -133,6 +133,10 @@ cat > config/includes.chroot/usr/lib/live/config/0087-zenos-live <<'EOF'
 for p in ${LIVE_CONFIG_CMDLINE}; do case "$p" in live-config.username=*|username=*) LIVE_USERNAME="${p#*username=}";; esac; done
 [ -n "${LIVE_USERNAME}" ] || exit 0
 [ -x /usr/sbin/zenos_keyd.py ] && /usr/sbin/zenos_keyd.py --clearance "${LIVE_USERNAME}" 4 >/dev/null 2>&1 || true
+# no screen lock in the live session: nobody knows the live user's password, and an install takes a while
+H="/home/${LIVE_USERNAME}"; mkdir -p "$H/.config"
+printf '[Daemon]\nAutolock=false\nLockOnResume=false\n' > "$H/.config/kscreenlockerrc"
+chown -R "${LIVE_USERNAME}:" "$H/.config"
 EOF
 chmod 755 config/includes.chroot/usr/lib/live/config/0087-zenos-live
 
