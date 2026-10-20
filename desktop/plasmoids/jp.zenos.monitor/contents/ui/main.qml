@@ -82,7 +82,7 @@ PlasmoidItem {
         let s
         try { s = JSON.parse(out) } catch (e) { return }
         const now = Date.now() / 1000
-        let lvl = s.firewall ? "ok" : "red"
+        let lvl = (s.firewall && !(s.remote && s.remote.length)) ? "ok" : "red"
         const seen = Object.assign({}, secSeen)
         for (const a of (s.alerts || [])) {
             if (now - a.t < 600) lvl = (a.sev === "red" || lvl === "red") ? "red" : "amber"
@@ -158,7 +158,7 @@ PlasmoidItem {
                         ["MEM", root.human(root.memTotal - root.memAvail) + " / " + root.human(root.memTotal), "#30D158"],
                         ["NET", "↓ " + root.rate(root.rxRate) + "  ↑ " + root.rate(root.txRate), "#BF5AF2"],
                         ["DISK", root.rate(root.rdRate + root.wrRate), "#FF9F0A"],
-                        ["SEC", !root.sec.firewall ? "Firewall off" : root.secLevel === "ok" ? root.sec.inbound_blocked + " blocked" : "Alert", root.secColor]
+                        ["SEC", (root.sec.remote && root.sec.remote.length) ? "Remote control" : !root.sec.firewall ? "Firewall off" : root.secLevel === "ok" ? root.sec.inbound_blocked + " blocked" : "Alert", root.secColor]
                     ]
                     delegate: RowLayout {
                         required property var modelData
@@ -261,8 +261,9 @@ PlasmoidItem {
                             Text { text: "Security"; color: "#8E8E93"; font.pixelSize: 12; font.weight: Font.DemiBold; font.family: "Inter" }
                             Item { Layout.fillWidth: true }
                             Text {
-                                text: !root.sec.firewall ? "Firewall off" : root.sec.inbound_blocked + " blocked"
-                                color: root.sec.firewall ? "white" : "#FF453A"; font.pixelSize: 12; font.weight: Font.Medium; font.family: "Inter"
+                                readonly property bool remoteOn: !!(root.sec.remote && root.sec.remote.length)
+                                text: remoteOn ? "Remote control from " + root.sec.remote[0].peer : !root.sec.firewall ? "Firewall off" : root.sec.inbound_blocked + " blocked"
+                                color: (root.sec.firewall && !remoteOn) ? "white" : "#FF453A"; font.pixelSize: 12; font.weight: Font.Medium; font.family: "Inter"
                             }
                         }
                         Graph { Layout.fillWidth: true; Layout.preferredHeight: 44; tint: "#FF375F"; values: root.scaledN(root.sec.h_in || []) }

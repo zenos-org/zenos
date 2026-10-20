@@ -22,7 +22,77 @@ QUIET = 600                            # the same alert is not repeated for 10 m
 # the summaries sudo/sshd add on top ("incorrect password attempts", "Failed password") would count it twice
 AUTH_RE = re.compile(r"pam_\w+\([\w-]+:auth\): authentication failure", re.I)
 DROP_RE = re.compile(r"ZENOS_IN_DROP .*?SRC=(\S+) .*?PROTO=(\S+)(?: .*?DPT=(\d+))?")
-SAFE = re.compile(r"[^0-9A-Za-z.:_ -]")
+SAFE = re.compile(r"[^0-9A-Za-z.,:_ -]")             # alert text goes into a shell-quoted notify-send
+
+# ---- remote operation (Tk 2026-10-21 00:50): the PC is driven from somewhere other than where it is -> RED ----
+# Signals: a login session the system marks as remote, an established connection on a remote-desktop/ssh port
+# whose peer is another machine, or a remote-control program holding a connection to another machine
+# (these relay through the vendor's servers, so they get past the inbound lockdown).
+REMOTE_PORTS = {22, 3389, 5938, 6568, 7070, 21115, 21116, 21117, 21118, 21119} | set(range(5900, 6000))
+REMOTE_TOOLS = re.compile(r"^(anydesk|teamviewer\w*|TeamViewer\w*|rustdesk|x11vnc|x0vncserver|Xvnc|vncserver|krfb\w*|"
+                          r"xrdp\w*|chrome-remote\w*|remoting_host|parsecd|splashtop\w*|meshagent|tacticalrmm|sshd\S*)$")
+ALLOW_REMOTE = "/etc/zenos/remote-allow.json"      # ["10.1.2.0/24", ...] approved admin consoles (officer-set)
+import ipaddress, sys
+sys.path.insert(0, "/usr/lib/zenos"); sys.path.insert(0, "/usr/local/lib/zenos")
+try:
+    import zalarm
+except Exception:
+    zalarm = None
+
+
+def own_addrs():
+    out = set()
+    for l in sh("ip", "-o", "addr").splitlines():
+        f = l.split()
+        if len(f) > 3:
+            out.add(f[3].split("/")[0])
+    return out
+
+
+def allow_nets():
+    try:
+        return [ipaddress.ip_network(c) for c in json.load(open(ALLOW_REMOTE))]
+    except Exception:
+        return []
+
+
+def other_machine(ip, mine, allow):
+    ip = ip.strip("[]").split("%")[0]
+    if ip.startswith("::ffff:"):
+        ip = ip[7:]
+    try:
+        a = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    return not (a.is_loopback or ip in mine or any(a in n for n in allow))
+
+
+def remote_operators():
+    """[(what, peer)] for everything currently driving this PC from another machine"""
+    mine, allow, found = own_addrs(), allow_nets(), []
+    for sid in sh("loginctl", "list-sessions", "--no-legend").split("\n"):
+        sid = sid.split()[0] if sid.split() else ""
+        if not sid:
+            continue
+        p = dict(l.split("=", 1) for l in sh("loginctl", "show-session", sid, "-p", "Remote", "-p", "RemoteHost",
+                                              "-p", "Service").splitlines() if "=" in l)
+        if p.get("Remote") == "yes" and p.get("RemoteHost") and other_machine(p["RemoteHost"], mine, allow):
+            found.append((p.get("Service") or "remote login", p["RemoteHost"]))
+    for l in sh("ss", "-Htnp", "state", "established").splitlines():
+        f = l.split()
+        if len(f) < 4:
+            continue
+        local, peer = f[2], f[3]
+        lport = int(local.rsplit(":", 1)[1]) if local.rsplit(":", 1)[-1].isdigit() else 0
+        m = re.search(r'users:\(\("([^"]+)"', l)
+        comm = m.group(1) if m else ""
+        pip = peer.rsplit(":", 1)[0]
+        if not other_machine(pip, mine, allow):
+            continue
+        if lport in REMOTE_PORTS or REMOTE_TOOLS.match(comm):
+            found.append((comm or ("port %d" % lport), pip.strip("[]")))
+    return sorted(set(found))
+
 
 lock = threading.Lock()
 drops = deque(maxlen=2000)             # (t, src, port) from the kernel log
@@ -122,6 +192,17 @@ def main():
             base_in, blocked = tin, 0
         if not fw_ok:
             alert("fw", "red", "Firewall is off", "The inbound lockdown chain ZENOS_IN is missing.")
+        remote = remote_operators()
+        for what, peer in remote:
+            if now - last_alert.get("remote:%s:%s" % (what, peer), 0) >= QUIET:
+                alert("remote:%s:%s" % (what, peer), "red", "Remote control from another machine",
+                      "%s is driving this PC from %s, not from where the PC is." % (what, peer))
+                if zalarm is not None:
+                    try:
+                        zalarm.raise_alert("red", "ZENOS RED ALERT",
+                                           "This PC is being operated from another machine (%s, %s)." % (peer, what))
+                    except Exception:
+                        pass
         pos, inc = incidents_since(pos)
         for r in inc:
             ty = r.get("type", "")
@@ -159,6 +240,7 @@ def main():
         hist_in.append(0 if prev_in is None else max(0, blocked - prev_in)); prev_in = blocked
         hist_auth.append(max(0, at - prev_auth)); prev_auth = at
         state = {"t": int(now), "since": int(start), "firewall": fw_ok,
+                 "remote": [{"what": w, "peer": p} for w, p in remote],
                  "inbound_blocked": blocked, "outbound_contained": max(0, tout - base_out) + contained_total,
                  "auth_failed": at, "h_in": list(hist_in), "h_auth": list(hist_auth),
                  "top_sources": [{"src": s, "n": n} for s, n in top], "recent": recent, "alerts": al}
