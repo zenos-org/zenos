@@ -78,6 +78,8 @@ cp -a "$SRC/third_party/kde-plasma-theme/zenos" "$P/usr/share/plasma/desktopthem
 mkdir -p "$P/etc/skel/.local/share/plasma/plasmoids"
 cp -a "$SRC/desktop/skel/.config" "$P/etc/skel/"
 cp -a "$SRC"/third_party/kde-plasmoids/* "$P/etc/skel/.local/share/plasma/plasmoids/"
+mkdir -p "$P/usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates"
+cp -a "$SRC"/desktop/plasma-updates/*.js "$P/usr/share/plasma/shells/org.kde.plasma.desktop/contents/updates/"
 
 echo "== docs"
 mkdir -p "$P/usr/share/doc/zenos"
