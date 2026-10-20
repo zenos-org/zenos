@@ -62,7 +62,7 @@ PlasmoidItem {
             width: 44
             hoverEnabled: true
             onClicked: menu.visible ? menu.close() : menu.open()
-            Rectangle { anchors.centerIn: parent; width: 36; height: 36; radius: 6; color: Qt.rgba(1, 1, 1, startBtn.containsMouse ? 0.10 : 0) }
+            Rectangle { anchors.centerIn: parent; width: 36; height: 36; radius: 8; color: Qt.rgba(1, 1, 1, startBtn.containsMouse ? 0.07 : 0) }
             Kirigami.Icon {
                 anchors.centerIn: parent
                 width: 24; height: 24
@@ -126,14 +126,24 @@ PlasmoidItem {
                 width: menu.panelW
                 height: menu.panelH
                 radius: 14
-                // the ZENOS Browser window: graphite, black outline, light inner edge on top
+                // mirror glass in the ZENOS Browser window tone (Figma 35:22): graphite at 92 %,
+                // a specular sheen across the top, black outline, light inner edge
                 gradient: Gradient {
-                    GradientStop { position: 0; color: "#2C2C31" }
-                    GradientStop { position: 1; color: "#1E1E23" }
+                    GradientStop { position: 0; color: Qt.rgba(0x2C / 255, 0x2C / 255, 0x31 / 255, 0.92) }
+                    GradientStop { position: 1; color: Qt.rgba(0x1E / 255, 0x1E / 255, 0x23 / 255, 0.92) }
                 }
                 border.color: Qt.rgba(0, 0, 0, 0.6)
                 border.width: 1
-                Rectangle { x: 10; y: 1; width: parent.width - 20; height: 1; color: Qt.rgba(1, 1, 1, 0.18) }
+                Rectangle {   // the mirror sheen
+                    anchors.fill: parent; anchors.margins: 1
+                    radius: parent.radius - 1
+                    gradient: Gradient {
+                        GradientStop { position: 0.00; color: Qt.rgba(1, 1, 1, 0.16) }
+                        GradientStop { position: 0.18; color: Qt.rgba(1, 1, 1, 0.06) }
+                        GradientStop { position: 0.42; color: Qt.rgba(1, 1, 1, 0.0) }
+                    }
+                }
+                Rectangle { x: 10; y: 1; width: parent.width - 20; height: 1; color: Qt.rgba(1, 1, 1, 0.28) }
                 // swallow clicks inside the panel so it doesn't close
                 MouseArea { anchors.fill: parent }
 
@@ -220,7 +230,7 @@ PlasmoidItem {
                                             Layout.fillWidth: true
                                             height: 42
                                             radius: 8
-                                            color: rowHover.containsMouse ? Qt.rgba(1, 1, 1, 0.10) : "transparent"
+                                            color: rowHover.containsMouse ? Qt.rgba(1, 1, 1, 0.07) : "transparent"   // the browser tab hover
                                             RowLayout {
                                                 anchors.fill: parent
                                                 anchors.leftMargin: 8
