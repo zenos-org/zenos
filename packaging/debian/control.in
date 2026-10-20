@@ -8,7 +8,7 @@ Maintainer: The ZENOS Authors <zenos-authors@users.noreply.invalid>
 Depends: python3 (>= 3.11), python3-gi, python3-gi-cairo, gir1.2-gtk-3.0, gir1.2-webkit2-4.1, gir1.2-gstreamer-1.0,
  gstreamer1.0-plugins-base, gstreamer1.0-plugins-good, gstreamer1.0-plugins-bad, gstreamer1.0-libav,
  python3-cryptography, python3-numpy, python3-opencv, python3-fonttools, python3-tk,
- nodejs (>= 20), kdialog, kde-cli-tools, inotify-tools, xdg-user-dirs, iptables, pulseaudio-utils,
+ nodejs (>= 20), kdialog, kde-cli-tools, inotify-tools, xdg-user-dirs, xdotool, x11-utils, iptables, pulseaudio-utils,
  plasma-desktop, plasma-workspace, kwin-x11, fcitx5, fcitx5-anthy, fonts-inter, fonts-morisawa-bizud-gothic, bpftrace
 Recommends: libreoffice-writer, libreoffice-calc, libreoffice-impress, sddm
 Description: ZENOS desktop for classified work (Developer Preview)

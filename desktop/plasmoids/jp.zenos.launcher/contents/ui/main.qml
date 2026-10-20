@@ -98,6 +98,7 @@ PlasmoidItem {
     // full-screen transparent layer catches outside-clicks; the menu panel sits bottom-left
     Window {
         id: menu
+        title: "ZENOS Start menu"
         flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool | Qt.X11BypassWindowManagerHint
         color: "transparent"
         visible: false
@@ -109,6 +110,9 @@ PlasmoidItem {
             root.query = ""; search.text = "";
             x = 0; y = 0; width = Screen.width; height = Screen.height;
             show(); raise(); requestActivate(); search.forceActiveFocus();
+            // frosted glass: ask KWin to blur what is behind the panel (only the panel, not the whole layer)
+            const r = [8, Screen.height - taskbar - panelH - 8, panelW, panelH].join(",");
+            runner.connectSource("sh -c 'sleep 0.2; for w in $(xdotool search --name \"^ZENOS Start menu$\"); do xprop -id $w -f _KDE_NET_WM_BLUR_BEHIND_REGION 32c -set _KDE_NET_WM_BLUR_BEHIND_REGION " + r + "; done' >/dev/null 2>&1");
         }
         function close() { visible = false; }
 
@@ -126,11 +130,11 @@ PlasmoidItem {
                 width: menu.panelW
                 height: menu.panelH
                 radius: 14
-                // mirror glass in the ZENOS Browser window tone (Figma 35:22): graphite at 92 %,
+                // mirror glass in the ZENOS Browser window tone (Figma 35:22): graphite at 70 %, blurred behind,
                 // a specular sheen across the top, black outline, light inner edge
                 gradient: Gradient {
-                    GradientStop { position: 0; color: Qt.rgba(0x2C / 255, 0x2C / 255, 0x31 / 255, 0.92) }
-                    GradientStop { position: 1; color: Qt.rgba(0x1E / 255, 0x1E / 255, 0x23 / 255, 0.92) }
+                    GradientStop { position: 0; color: Qt.rgba(0x2C / 255, 0x2C / 255, 0x31 / 255, 0.70) }
+                    GradientStop { position: 1; color: Qt.rgba(0x1E / 255, 0x1E / 255, 0x23 / 255, 0.70) }
                 }
                 border.color: Qt.rgba(0, 0, 0, 0.6)
                 border.width: 1
