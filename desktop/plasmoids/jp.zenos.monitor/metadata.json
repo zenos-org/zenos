@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Id": "jp.zenos.monitor",
+        "Name": "ZENOS System Monitor",
+        "Description": "CPU, memory, network and disk at a glance in the top bar; click for graphs",
+        "Icon": "utilities-system-monitor",
+        "Version": "0.1",
+        "License": "Apache-2.0",
+        "Category": "System Information"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

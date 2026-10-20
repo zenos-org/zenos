@@ -45,8 +45,12 @@ plugin=jp.zenos.level
 immutability=1
 plugin=org.kde.plasma.panelspacer
 
+[Containments][90][Applets][111]
+immutability=1
+plugin=jp.zenos.monitor
+
 [Containments][90][General]
-AppletOrder=91;92;93
+AppletOrder=91;92;93;111
 
 [Containments][94]
 activityId=
