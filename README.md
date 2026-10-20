@@ -127,7 +127,7 @@ Still ahead:
 2. **Mandatory access control**: SELinux multi-level security, so no program can write a copy of an open sealed
    file to a lower level.
 3. **Shared infrastructure**: a key service so sealed files open on any cleared PC and capabilities are issued
-   through the approval flow; audit nodes that agree on one order of records.
+   through the approval flow.
 4. **Everyday apps**: Files, Settings, notifications, better Office format compatibility.
 5. **External security audit** before any claim of production readiness.
 

@@ -113,6 +113,46 @@ class Consortium(unittest.TestCase):
         f = an.cross_check(self.a, impostor, self.fetch)
         self.assertEqual(f[0]["state"], "unreachable")
 
+    def members(self):
+        return self.peers("https://a", "https://b", "https://c")
+
+    def test_majority_decides_the_history(self):
+        t = Path(self.tmp.name)
+        honest = records(t / "honest.jsonl", ["open secret.zen", "print secret.zen", "close"])
+        hidden = records(t / "hidden.jsonl", ["open secret.zen", "open notes.zen"])
+        self.a.accept(batch(self.key, honest))
+        self.b.accept(batch(self.key, honest[:2]))                # behind, but the same history
+        self.c.accept(batch(self.key, hidden))                    # the PC told the auditor a different story
+        v = an.consortium_view(self.members(), self.fetch, "pc-1", "guard")
+        self.assertEqual(v["quorum"], 2)
+        self.assertEqual(v["final"], 2)                           # a and b agree on the first two records
+        self.assertEqual(v["last"], honest[1]["hash"])
+        self.assertEqual(v["members"], {"a": "agrees", "b": "agrees", "c": "dissents"})
+
+    def test_no_majority_means_nothing_final_beyond_the_common_part(self):
+        t = Path(self.tmp.name)
+        one = records(t / "1.jsonl", ["open", "print"])
+        two = records(t / "2.jsonl", ["start", "copy"])
+        self.a.accept(batch(self.key, one))
+        self.b.accept(batch(self.key, two))
+        v = an.consortium_view(self.peers("https://a", "https://b"), self.fetch, "pc-1", "guard")
+        self.assertEqual(v["final"], 0)                            # 1 against 1 from the first record on
+        v3 = an.consortium_view(self.members(), self.fetch, "pc-1", "guard")   # c holds nothing
+        self.assertEqual(v3["final"], 0)
+
+    def test_an_unreachable_member_does_not_block_a_majority(self):
+        recs = records(Path(self.tmp.name) / "l.jsonl", ["open", "approve"])
+        self.a.accept(batch(self.key, recs))
+        self.b.accept(batch(self.key, recs))
+        ms = self.members()
+        ms[2]["url"] = "https://down"
+        def fetch(url, machine, chain, at):
+            if url == "https://down":
+                raise OSError("unreachable")
+            return self.fetch(url, machine, chain, at)
+        v = an.consortium_view(ms, fetch, "pc-1", "guard")
+        self.assertEqual((v["final"], v["members"]["c"]), (2, "unreachable"))
+
 
 if __name__ == "__main__":
     unittest.main()

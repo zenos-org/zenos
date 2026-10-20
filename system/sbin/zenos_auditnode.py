@@ -17,6 +17,8 @@ as peers in the config file and compare their copies every few minutes. A PC tha
 histories to different nodes, or a node whose copy was altered, shows up as a fork on both sides:
   zenos_auditnode.py --config /etc/zenos/auditnode.json --store /var/lib/zenos-audit
   zenos_auditnode.py --config /etc/zenos/auditnode.json --store /var/lib/zenos-audit --check-peers
+The history the consortium stands behind is the longest prefix a majority of the audit nodes hold identically:
+  zenos_auditnode.py --config /etc/zenos/auditnode.json --store /var/lib/zenos-audit --consortium-status MACHINE CHAIN
 """
 import base64, hashlib, json, os, re, ssl, sys, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -235,6 +237,63 @@ def cross_check(node, peers, fetch):
     return findings
 
 
+def consortium_view(members, fetch, machine, chain, quorum=None):
+    """One history for the whole consortium: the longest prefix that a quorum (default: a majority) of the
+    audit nodes hold identically, each one's answer signed. members: [{"name", "url", "pub"}] (this node
+    included as a member like the others). Returns {"final": n, "last": hash, "quorum": q, "members": [...]}:
+    records up to `final` are agreed; a member whose copy differs within that prefix is a dissenter."""
+    q = quorum or (len(members) // 2 + 1)
+    answers = {}
+    for m in members:
+        try:
+            r = verify_receipt(m["pub"], fetch(m["url"], machine, chain, None))
+            if r["machine"] == machine and r["chain"] == chain:
+                answers[m["name"]] = r
+        except Exception:
+            pass
+    view = {"machine": machine, "chain": chain, "quorum": q, "final": 0, "last": zledger.GENESIS,
+            "members": {m["name"]: ("reachable" if m["name"] in answers else "unreachable") for m in members}}
+
+    def at(n):
+        """what each member holds at length n: {hash: [names]}"""
+        groups = {}
+        for m in members:
+            r = answers.get(m["name"])
+            if not r or r["count"] < n:
+                continue
+            try:
+                r = r if r["count"] == n else verify_receipt(m["pub"], fetch(m["url"], machine, chain, n))
+            except Exception:
+                continue
+            if r["count"] == n:
+                groups.setdefault(r["last"], []).append(m["name"])
+        return groups
+
+    def agreed(n):
+        g = at(n)
+        best = max(g.items(), key=lambda kv: len(kv[1])) if g else (None, [])
+        return best if len(best[1]) >= q else None
+
+    # Chains are hash-linked, so members that agree at length n agree on every shorter length:
+    # the longest agreed length is found by bisection.
+    lo, hi = 0, max([r["count"] for r in answers.values()] or [0])
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        if agreed(mid):
+            lo = mid
+        else:
+            hi = mid - 1
+    if lo:
+        last, holders = agreed(lo)
+        view["final"], view["last"] = lo, last
+        diverged = {name for h, names in at(lo).items() if h != last for name in names}
+        for name, state in view["members"].items():
+            if state == "unreachable":
+                continue
+            view["members"][name] = "agrees" if name in holders else "dissents" if name in diverged else "behind"
+    return view
+
+
 def http_fetch(url, machine, chain, at, timeout=15):
     import urllib.request
     from urllib.parse import urlparse
@@ -326,6 +385,16 @@ def main():
         i = a.index("--enroll")
         node.enroll(a[i + 1], a[i + 2])
         return print(f"enrolled {a[i + 1]}")
+    if "--consortium-status" in a:   # the history a majority of the consortium agrees on
+        i = a.index("--consortium-status")
+        port = int(opt("--port", "8443"))
+        me = {"name": cfg.get("name", "this node"), "url": f"{'https' if opt('--cert') else 'http'}://127.0.0.1:{port}", "pub": node.pub_b64()}
+        def fetch(url, machine, chain, at):
+            if url == me["url"]:
+                return {"ok": True, **node.receipt_at(machine, chain, at)}
+            return http_fetch(url, machine, chain, at)
+        print(json.dumps(consortium_view([me, *cfg.get("peers", [])], fetch, a[i + 1], a[i + 2]), ensure_ascii=False))
+        return
     if "--check-peers" in a:   # one consortium check now, printed
         for f in cross_check(node, cfg.get("peers", []), http_fetch):
             f.pop("theirs_signed", None)

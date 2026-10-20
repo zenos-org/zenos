@@ -28,7 +28,8 @@ First public preview. Not for real classified data; see [docs/THREAT_MODEL.md](d
   filter). Tested on two machines: files restore with two nodes down; an L1 PC holding the capability is refused.
 - Audit consortium: audit nodes run by different parties list each other as peers and compare their copies of
   every PC's ledger; a PC that sends different histories to different parties, or an altered copy, is reported
-  as a fork on both sides with both parties' signed statements kept as evidence (once, not on every check).
+  as a fork on both sides with both parties' signed statements kept as evidence (once, not on every check). The
+  consortium's history is the longest prefix a majority of the audit nodes hold identically, each answer signed.
 - Signed apt repository tooling; release gate for secrets and real phone numbers; tests and CI.
 
 **Apps**

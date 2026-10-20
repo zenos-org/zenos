@@ -69,7 +69,14 @@ are written to `forks.jsonl`, so neither party can later deny what it held.
 zenos_auditnode.py --config /etc/zenos/auditnode.json --store /var/lib/zenos-audit --check-peers
 ```
 
-prints the comparison with every peer now.
+prints the comparison with every peer now, and
+
+```
+zenos_auditnode.py --config /etc/zenos/auditnode.json --store /var/lib/zenos-audit --consortium-status MACHINE CHAIN
+```
+
+prints the history the consortium stands behind: the longest prefix a majority of the audit nodes hold
+identically, and which members agree, are behind, dissent or cannot be reached.
 
 The TLS certificate and key for the audit node stay in `/etc/zenos/auditnode.crt` and `.key`
 (root only); systemd hands the service a copy.
@@ -77,7 +84,5 @@ The TLS certificate and key for the audit node stay in `/etc/zenos/auditnode.crt
 ## Not yet
 
 - The administrator key on a hardware token.
-- Agreement on a single order of records across parties (today the parties detect a fork; they do
-  not yet vote on which history is the right one).
 - Issuing the per-file capability through the request-and-approval flow instead of keeping it in the
   PC's sealed index.
