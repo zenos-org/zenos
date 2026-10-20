@@ -6,6 +6,7 @@
 - Crypto (fragment + per-fragment keys): /usr/local/lib/zenos/zfrag.py  (zenos.py delegates; no AES elsewhere)
 - Tamper-evident ledger (hash chain): /usr/local/lib/zenos/zledger.py  (audit() delegates)
 - Sensor + reflex + agent: /usr/local/sbin/zenos_netsentinel.py (+ zenos-netsense.bt)
+- Security monitor feed: /usr/sbin/zenos_secstat.py (zenos-secstat.service). Read-only: counts ZENOS_IN drops (and the rate-limited "ZENOS_IN_DROP " log line for source/port), PAM sign-in failures and sentinel incidents; writes /run/zenos/secstat.json for the System Monitor. Changes no rule.
 - Open-time network cut (L4+): /usr/local/sbin/zopenguard.py
 - Sensor liveness (dead-man's switch): /usr/local/sbin/zheartbeat.py
 - Inbound firewall: /usr/local/sbin/zenos-firewall

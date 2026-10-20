@@ -9,6 +9,7 @@ for IPT in iptables ip6tables; do
   $IPT -N ZENOS_IN 2>/dev/null || $IPT -F ZENOS_IN
   $IPT -A ZENOS_IN -i lo -j RETURN
   $IPT -A ZENOS_IN -m conntrack --ctstate ESTABLISHED,RELATED -j RETURN
+  $IPT -A ZENOS_IN -p tcp --syn -m limit --limit 20/s --limit-burst 40 -j LOG --log-prefix "ZENOS_IN_DROP " --log-level 6
   $IPT -A ZENOS_IN -p tcp --syn -j DROP
   $IPT -C INPUT -j ZENOS_IN 2>/dev/null || $IPT -I INPUT 1 -j ZENOS_IN
 done

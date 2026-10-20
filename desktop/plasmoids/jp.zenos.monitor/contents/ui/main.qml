@@ -6,6 +6,8 @@ import org.kde.plasma.plasma5support as P5Support
 
 // ZENOS System Monitor (Figma 42:2 chip, 42:19 panel): CPU, memory, network and disk in the top bar,
 // graphs of the last two minutes on click. Reads /proc every 2 s; nothing leaves the machine.
+// Security (Tk 2026-10-21): blocked inbound attempts, failed sign-ins and sentinel incidents from
+// /run/zenos/secstat.json (zenos-secstat.service); a new alert raises a desktop notification.
 PlasmoidItem {
     id: root
     preferredRepresentation: fullRepresentation
@@ -28,6 +30,11 @@ PlasmoidItem {
     property var hMem: []
     property var hNet: []
     property var hDisk: []
+    property var sec: ({ firewall: true, inbound_blocked: 0, auth_failed: 0, outbound_contained: 0, h_in: [], alerts: [] })
+    property bool secReady: false
+    property var secSeen: ({})
+    property string secLevel: "ok"     // ok | amber | red (an alert in the last 10 minutes)
+    readonly property color secColor: secLevel === "red" ? "#FF453A" : secLevel === "amber" ? "#FFD60A" : "#30D158"
 
     function human(b) {
         if (b < 1024) return Math.round(b) + " B"
@@ -71,6 +78,30 @@ PlasmoidItem {
         prev = cur
         cores = nCores; memTotal = mt; memAvail = ma; rxTotal = rx; txTotal = tx; diskFree = df
     }
+    function parseSec(out) {
+        let s
+        try { s = JSON.parse(out) } catch (e) { return }
+        const now = Date.now() / 1000
+        let lvl = s.firewall ? "ok" : "red"
+        const seen = Object.assign({}, secSeen)
+        for (const a of (s.alerts || [])) {
+            if (now - a.t < 600) lvl = (a.sev === "red" || lvl === "red") ? "red" : "amber"
+            if (!seen[a.id]) {
+                seen[a.id] = true
+                if (secReady && now - a.t < 120)
+                    runner.connectSource("notify-send -a 'ZENOS Security' -i " + (a.sev === "red" ? "security-low -u critical" : "security-medium -u normal")
+                                         + " '" + a.title + "' '" + a.text + "' #" + a.id)
+            }
+        }
+        secSeen = seen; secLevel = lvl; sec = s; secReady = true
+    }
+    function ago(t) {
+        const d = Math.max(0, Date.now() / 1000 - t)
+        return d < 60 ? "just now" : d < 3600 ? Math.round(d / 60) + " min ago" : Math.round(d / 3600) + " h ago"
+    }
+    // security graph: blocked attempts per 2 s, scaled to the busiest moment (at least 5)
+    function scaledN(arr) { const m = Math.max(5, ...arr); return arr.map(v => v / m) }
+
     // network and disk graphs scale to the busiest moment on screen (at least 1 MB/s)
     function scaled(arr) { const m = Math.max(1048576, ...arr); return arr.map(v => v / m) }
 
@@ -84,9 +115,15 @@ PlasmoidItem {
         engine: "executable"
         onNewData: (source, data) => { root.load1 = Number(String(data["stdout"]).split(" ")[0]) || 0; disconnectSource(source) }
     }
+    P5Support.DataSource {
+        id: secReader
+        engine: "executable"
+        onNewData: (source, data) => { root.parseSec(String(data["stdout"])); disconnectSource(source) }
+    }
     Timer {
         interval: 2000; running: true; repeat: true; triggeredOnStart: true
         onTriggered: {
+            secReader.connectSource("cat /run/zenos/secstat.json #" + Date.now())
             reader.connectSource("sh -c 'cat /proc/stat /proc/meminfo /proc/net/dev /proc/diskstats; echo ==DF; df -B1 --output=avail / | tail -1' #" + Date.now())
             loadReader.connectSource("cat /proc/loadavg #" + Date.now())
         }
@@ -120,7 +157,8 @@ PlasmoidItem {
                         ["CPU", Math.round(root.cpu * 100) + "%", "#0A84FF"],
                         ["MEM", root.human(root.memTotal - root.memAvail) + " / " + root.human(root.memTotal), "#30D158"],
                         ["NET", "↓ " + root.rate(root.rxRate) + "  ↑ " + root.rate(root.txRate), "#BF5AF2"],
-                        ["DISK", root.rate(root.rdRate + root.wrRate), "#FF9F0A"]
+                        ["DISK", root.rate(root.rdRate + root.wrRate), "#FF9F0A"],
+                        ["SEC", !root.sec.firewall ? "Firewall off" : root.secLevel === "ok" ? root.sec.inbound_blocked + " blocked" : "Alert", root.secColor]
                     ]
                     delegate: RowLayout {
                         required property var modelData
@@ -210,6 +248,54 @@ PlasmoidItem {
                             }
                             Graph { Layout.fillWidth: true; Layout.preferredHeight: 44; tint: modelData[3]; values: modelData[4] }
                             Text { text: modelData[2]; color: "#8E8E93"; font.pixelSize: 11; font.family: "Inter" }
+                        }
+                    }
+
+                    // ---- Security ----
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 6
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Rectangle { width: 6; height: 6; radius: 3; color: root.secColor }
+                            Text { text: "Security"; color: "#8E8E93"; font.pixelSize: 12; font.weight: Font.DemiBold; font.family: "Inter" }
+                            Item { Layout.fillWidth: true }
+                            Text {
+                                text: !root.sec.firewall ? "Firewall off" : root.sec.inbound_blocked + " blocked"
+                                color: root.sec.firewall ? "white" : "#FF453A"; font.pixelSize: 12; font.weight: Font.Medium; font.family: "Inter"
+                            }
+                        }
+                        Graph { Layout.fillWidth: true; Layout.preferredHeight: 44; tint: "#FF375F"; values: root.scaledN(root.sec.h_in || []) }
+                        Text {
+                            text: "Inbound blocked " + root.sec.inbound_blocked + " · Failed sign-ins " + root.sec.auth_failed + " · Contained " + root.sec.outbound_contained
+                            color: "#8E8E93"; font.pixelSize: 11; font.family: "Inter"
+                        }
+                        Repeater {
+                            model: (root.sec.alerts || []).slice(-3).reverse()
+                            delegate: RowLayout {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                Layout.topMargin: 2
+                                spacing: 8
+                                Rectangle {
+                                    Layout.alignment: Qt.AlignTop; Layout.topMargin: 5
+                                    width: 6; height: 6; radius: 3; color: modelData.sev === "red" ? "#FF453A" : "#FFD60A"
+                                }
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 1
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Text { text: modelData.title; color: "white"; font.pixelSize: 12; font.weight: Font.Medium; font.family: "Inter" }
+                                        Item { Layout.fillWidth: true }
+                                        Text { text: root.ago(modelData.t); color: "#8E8E93"; font.pixelSize: 11; font.family: "Inter" }
+                                    }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: modelData.text; color: "#AEAEB2"; font.pixelSize: 11; font.family: "Inter"; wrapMode: Text.Wrap
+                                    }
+                                }
+                            }
                         }
                     }
                 }

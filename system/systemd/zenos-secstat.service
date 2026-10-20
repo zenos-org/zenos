@@ -1,0 +1,10 @@
+[Unit]
+Description=ZENOS security monitor feed (blocked inbound, failed sign-ins, sentinel incidents)
+After=zenos-firewall.service systemd-journald.service
+Wants=zenos-firewall.service
+[Service]
+ExecStart=/usr/bin/python3 -I /usr/sbin/zenos_secstat.py
+Restart=always
+RestartSec=2
+[Install]
+WantedBy=multi-user.target
