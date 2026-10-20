@@ -7,7 +7,7 @@ Before publishing:
 
 1. Replace every `ORG` with the GitHub organization name.
 2. Put a real screenshot of the running desktop at `site/desktop.png` (fictitious content only).
-3. Add `site/CNAME` containing the domain (for example `openzenos.org`).
+3. Add `site/CNAME` containing the domain (zenos-os.org).
 
 Publishing with GitHub Pages: repository Settings → Pages → Source "GitHub Actions" or "Deploy from a branch",
 folder `/site`. Custom domain: enter the domain there and tick "Enforce HTTPS".
