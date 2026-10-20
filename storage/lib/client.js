@@ -9,16 +9,18 @@ const Hyperswarm = require('hyperswarm')
 const { Rpc } = require('./wire')
 const { topicFor } = require('./topic')
 const { seal, open, parseCapability, verifyManifest, shardOk } = require('./seal')
-const { resolveTrust, planPlacement } = require('./policy')
+const { resolveTrust, planPlacement, verifyRevocations, newerRevocations } = require('./policy')
 
 const HEX64 = /^[0-9a-f]{64}$/
 
 class ZenosClient {
   // adminKey: the grid administrator's public key (production). seed + cert: this client's identity.
-  constructor ({ grid = 'default', bootstrap, dht, adminKey, seed, cert } = {}) {
+  constructor ({ grid = 'default', bootstrap, dht, adminKey, seed, cert, revocations } = {}) {
     this.grid = grid
     this.adminKey = adminKey || null
     this.cert = cert || null
+    this.revocations = null
+    if (revocations) this.adoptRevocations(revocations)
     const o = seed ? { seed } : {}
     this.swarm = new Hyperswarm(dht ? { ...o, dht } : { ...o, bootstrap })
     this.publicKey = this.swarm.keyPair.publicKey.toString('hex')
@@ -28,6 +30,7 @@ class ZenosClient {
       const key = info.publicKey.toString('hex')
       const rpc = new Rpc(socket, h => {
         if (h.op === 'hello') return { header: { role: 'client', cert: this.cert } }
+        if (h.op === 'revocations') return { header: { list: this.revocations ? this.revocations.raw : null } }
         throw new Error('a client does not serve requests')
       })
       const peer = { rpc, label: key.slice(0, 8), publicKey: key }
@@ -37,7 +40,11 @@ class ZenosClient {
         const { header } = await rpc.request({ op: 'hello' }, undefined, 5000)
         if (header.role !== 'node') return
         peer.label = String(header.label || peer.label).slice(0, 64)
-        Object.assign(peer, resolveTrust(header, key, this.adminKey))
+        try {
+          const r = await rpc.request({ op: 'revocations' }, undefined, 5000)
+          if (r.header.list) this.adoptRevocations(r.header.list)
+        } catch {}
+        Object.assign(peer, resolveTrust(header, key, this.adminKey, this.revocations))
         if (this.adminKey && !peer.certified) return // a node without a valid certificate is never used
         peer.ready = true
         const r = await rpc.request({ op: 'peers' }, undefined, 5000) // reach the nodes this node knows
@@ -58,6 +65,16 @@ class ZenosClient {
       await new Promise(r => setTimeout(r, 100))
     }
     return this
+  }
+
+  adoptRevocations (raw) {
+    if (!this.adminKey) return false
+    const v = verifyRevocations(raw, this.adminKey)
+    const next = newerRevocations(this.revocations, v)
+    if (!v || next === this.revocations) return false
+    this.revocations = next
+    for (const p of this.peers.values()) if (next.revoked.has(p.publicKey)) p.ready = false
+    return true
   }
 
   livePeers () {

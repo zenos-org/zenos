@@ -93,6 +93,8 @@ def grid_args(c, client=True):
     a = ["--grid", c["grid"], "--bootstrap", c["bootstrap"], "--admin", c["admin"]]
     if c.get("host"):
         a += ["--host", c["host"]]
+    if c.get("revocations"):
+        a += ["--revocations", c["revocations"]]   # newer lists also arrive from the nodes
     if client and (CLIENT / "cert.json").exists():
         a += ["--id-dir", str(CLIENT), "--cert", str(CLIENT / "cert.json")]
     return a

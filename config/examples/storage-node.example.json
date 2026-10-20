@@ -4,6 +4,7 @@
   "host": "10.20.0.11",
   "admin": "<grid administrator public key, 64 hex characters>",
   "cert": "/etc/zenos/storage-node-cert.json",
+  "revocations": "/etc/zenos/grid-revocations.json",
   "label": "Storage A1",
   "repair": 60,
   "max-bytes": 500000000000

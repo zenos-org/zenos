@@ -45,6 +45,17 @@ be lost and every file still restores.
 A PC without a certificate gets nothing from the nodes, not even the list of other nodes. A PC
 certified for L2 cannot read an L3 file's shards even if it holds the file's capability.
 
+## Expiry and revocation
+
+Certificates are valid for a year (`certify --days N` to change). To take a key out of the grid at once:
+
+```
+zenos-store.js revoke --admin-file admin.json --keys <key>[,<key>...] --previous revocations.json --out revocations.json
+```
+
+Give the new list to any one node or PC (`/etc/zenos/grid-revocations.json`, or `--revocations`); every node and
+PC passes the newest list it holds to each peer it meets, and checks it on every request.
+
 ## Audit nodes: the consortium
 
 Every PC ships its ledgers to every audit node it is enrolled on (`/etc/zenos/audit.json` on the PC).
@@ -65,7 +76,7 @@ The TLS certificate and key for the audit node stay in `/etc/zenos/auditnode.crt
 
 ## Not yet
 
-- The administrator key on a hardware token, and certificates that expire and can be revoked.
+- The administrator key on a hardware token.
 - Agreement on a single order of records across parties (today the parties detect a fork; they do
   not yet vote on which history is the right one).
 - Issuing the per-file capability through the request-and-approval flow instead of keeping it in the

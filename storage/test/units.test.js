@@ -58,7 +58,9 @@ test('certificates: role, key binding, forged signature', () => {
   const other = policy.createAdminKey()
   const key = crypto.randomBytes(32).toString('hex')
   const c = policy.signCert(admin.privateJwk, { key, role: 'client', clearance: 'L2', zone: 'Site A' })
-  assert.deepStrictEqual(policy.verifyCert(c, admin.publicKey, key), { role: 'client', clearance: 'L2', zone: 'Site A' })
+  const v = policy.verifyCert(c, admin.publicKey, key)
+  assert.deepStrictEqual([v.role, v.clearance, v.zone], ['client', 'L2', 'Site A'])
+  assert.ok(Date.parse(v.expires) > Date.now() + 364 * 86400000)
   assert.strictEqual(policy.verifyCert(c, admin.publicKey, crypto.randomBytes(32).toString('hex')), null) // another peer's key
   assert.strictEqual(policy.verifyCert(c, other.publicKey, key), null) // another administrator
   assert.strictEqual(policy.verifyCert({ ...c, clearance: 'L5' }, admin.publicKey, key), null) // edited
@@ -80,4 +82,31 @@ test('placement: only cleared nodes, never more than n-k shards per zone, never 
   for (const t of targets) perZone[t.zone] = (perZone[t.zone] || 0) + 1
   for (const z of Object.values(perZone)) assert.ok(z <= 2)
   assert.throws(() => policy.planPlacement({ fileId: 'b'.repeat(32), k: 3, n: 5, level: 'L5' }, peers), /no storage node/)
+})
+
+test('certificates expire', () => {
+  const admin = policy.createAdminKey()
+  const key = crypto.randomBytes(32).toString('hex')
+  const c = policy.signCert(admin.privateJwk, { key, role: 'node', clearance: 'L3', zone: 'Z', days: 1 })
+  assert.ok(policy.verifyCert(c, admin.publicKey, key))
+  assert.strictEqual(policy.verifyCert(c, admin.publicKey, key, null, Date.now() + 2 * 86400000), null)
+  assert.strictEqual(policy.verifyCert({ ...c, expires: '2099-01-01T00:00:00.000Z' }, admin.publicKey, key), null) // extended by hand
+})
+
+test('revocation lists: signed by the administrator, newest wins, revoked keys refused', () => {
+  const admin = policy.createAdminKey()
+  const other = policy.createAdminKey()
+  const k1 = crypto.randomBytes(32).toString('hex')
+  const k2 = crypto.randomBytes(32).toString('hex')
+  const c1 = policy.signCert(admin.privateJwk, { key: k1, role: 'client', clearance: 'L3', zone: 'Z' })
+  const older = policy.verifyRevocations(policy.signRevocations(admin.privateJwk, [k2], '2026-01-01T00:00:00.000Z'), admin.publicKey)
+  const newer = policy.verifyRevocations(policy.signRevocations(admin.privateJwk, [k1, k2]), admin.publicKey)
+  assert.ok(policy.verifyCert(c1, admin.publicKey, k1, older))
+  assert.strictEqual(policy.verifyCert(c1, admin.publicKey, k1, newer), null)
+  assert.strictEqual(policy.newerRevocations(newer, older), newer)
+  assert.strictEqual(policy.newerRevocations(older, newer), newer)
+  assert.strictEqual(policy.verifyRevocations(policy.signRevocations(other.privateJwk, [k1]), admin.publicKey), null)
+  const forged = { ...policy.signRevocations(admin.privateJwk, [k2]) }
+  forged.revoked = []
+  assert.strictEqual(policy.verifyRevocations(forged, admin.publicKey), null)
 })

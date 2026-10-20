@@ -22,7 +22,8 @@ First public preview. Not for real classified data; see [docs/THREAT_MODEL.md](d
   per file, erasure-coded 3-of-5 and spread over storage nodes, at most two shards per zone. Every node and
   every PC holds a certificate from the grid administrator (role, highest level, zone); a node refuses every
   request from a peer without one, serves a file only to a PC cleared for its level, and never takes a level
-  above its own clearance. A certified grid refuses to run on the public DHT. Nodes repair lost shards without
+  above its own clearance. A certified grid refuses to run on the public DHT. Certificates expire; the administrator revokes keys with a
+  signed list that every node and PC passes on to the peers it meets, checked on every request. Nodes repair lost shards without
   the key. Storage node, bootstrap and audit node run as hardened systemd services (dynamic user, system-call
   filter). Tested on two machines: files restore with two nodes down; an L1 PC holding the capability is refused.
 - Audit consortium: audit nodes run by different parties list each other as peers and compare their copies of

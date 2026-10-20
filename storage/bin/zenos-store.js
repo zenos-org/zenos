@@ -7,6 +7,9 @@
 //   zenos-store client-id --dir <dir>                  create a client (PC) key and print it (to be certified)
 //   zenos-store certify --admin-file admin.json --key <public key> --role node|client --clearance L4 --zone "Site A" --out cert.json
 //                                                      sign a certificate: role, highest level, zone
+//                                                      [--days 365] (certificates expire)
+//   zenos-store revoke --admin-file admin.json --keys K1,K2 [--previous revocations.json] --out revocations.json
+//                                                      sign a revocation list (it spreads from peer to peer)
 //   zenos-store bootstrap --host <IP> [--port 49737]   run the grid's own bootstrap (DHT entry point)
 //   zenos-store node --dir <store> --cert cert.json [--label NAME] [--repair 60] [--max-bytes N]
 //                                                      run a storage node (checks and repairs every --repair seconds)
@@ -20,6 +23,7 @@
 //         --bootstrap IP:port,... (the grid's own bootstrap; required on a certified grid)
 //         --host IP (address this machine uses on the LAN)
 //         --admin KEY (the administrator's public key: only certified peers are used or served)
+//         --revocations FILE (the administrator's revocation list; newer lists also arrive from peers)
 //         --config FILE (a JSON file with any of these options, e.g. /etc/zenos/storage-node.json)
 
 const fs = require('fs')
@@ -28,7 +32,7 @@ const crypto = require('crypto')
 const DHT = require('hyperdht')
 const { StorageNode } = require('../lib/node')
 const { ZenosClient } = require('../lib/client')
-const { createAdminKey, signCert } = require('../lib/policy')
+const { createAdminKey, signCert, signRevocations, verifyRevocations } = require('../lib/policy')
 
 const argv = process.argv.slice(2)
 const cmd = argv[0]
@@ -68,8 +72,12 @@ function seedFile (dir, name) {
   return fs.readFileSync(f)
 }
 
+function revocations () {
+  return opt.revocations && fs.existsSync(opt.revocations) ? JSON.parse(fs.readFileSync(opt.revocations, 'utf8')) : undefined
+}
+
 function identity () {
-  const id = {}
+  const id = { revocations: revocations() }
   if (opt['id-dir']) id.seed = seedFile(opt['id-dir'], 'client.seed')
   if (opt.cert) id.cert = JSON.parse(fs.readFileSync(opt.cert, 'utf8'))
   if (opt.admin && !(id.seed && id.cert)) throw new Error('a certified grid needs this client\'s identity: --id-dir and --cert')
@@ -104,10 +112,25 @@ async function main () {
         throw new Error('usage: zenos-store certify --admin-file admin.json --key <public key> --role node|client --clearance L4 --zone "Site A" --out cert.json')
       }
       const a = JSON.parse(fs.readFileSync(opt['admin-file'], 'utf8'))
-      const cert = signCert(a.privateJwk, { key, role: opt.role || 'node', clearance: opt.clearance, zone: opt.zone })
+      const cert = signCert(a.privateJwk, { key, role: opt.role || 'node', clearance: opt.clearance, zone: opt.zone, days: Number(opt.days || 365) })
       const file = opt.out || 'cert.json'
       fs.writeFileSync(file, JSON.stringify(cert, null, 2))
-      console.log(`certificate written to ${file} (${cert.role} ${key.slice(0, 16)}…, up to ${cert.clearance}, zone ${cert.zone})`)
+      console.log(`certificate written to ${file} (${cert.role} ${key.slice(0, 16)}…, up to ${cert.clearance}, zone ${cert.zone}, until ${cert.expires.slice(0, 10)})`)
+      break
+    }
+
+    case 'revoke': {
+      if (!opt['admin-file'] || !opt.keys || !opt.out) throw new Error('usage: zenos-store revoke --admin-file admin.json --keys K1,K2 [--previous revocations.json] --out revocations.json')
+      const a = JSON.parse(fs.readFileSync(opt['admin-file'], 'utf8'))
+      let keys = String(opt.keys).split(',').map(k => k.trim()).filter(Boolean)
+      if (opt.previous) {
+        const prev = verifyRevocations(JSON.parse(fs.readFileSync(opt.previous, 'utf8')), a.publicKey)
+        if (!prev) throw new Error(`${opt.previous} is not a valid revocation list of this administrator`)
+        keys = [...prev.revoked, ...keys]
+      }
+      const list = signRevocations(a.privateJwk, keys)
+      fs.writeFileSync(opt.out, JSON.stringify(list, null, 2))
+      console.log(`revocation list written to ${opt.out} (${list.revoked.length} key(s), ${list.issuedAt}); give it to any node or PC: it spreads to the rest`)
       break
     }
 
@@ -140,7 +163,7 @@ async function main () {
       const node = await new StorageNode({
         dir: path.resolve(opt.dir), grid, label: opt.label, dht: makeDht(),
         adminKey: opt.admin, cert, clearance: opt.clearance || 'L5', zone: opt.zone,
-        repairIntervalMs: repairSec * 1000, maxBytes: Number(opt['max-bytes'] || 0),
+        repairIntervalMs: repairSec * 1000, maxBytes: Number(opt['max-bytes'] || 0), revocations: revocations(),
         log: s => console.log(`${stamp()} ${s}`)
       }).start()
       const how = node.trust.certified ? 'certified' : opt.admin ? 'certificate INVALID: holds nothing' : 'self-declared, development only'

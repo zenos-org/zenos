@@ -2,6 +2,7 @@
   "grid": "ministry-grid",
   "bootstrap": "10.20.0.5:49737",
   "admin": "<grid administrator public key, 64 hex characters>",
+  "revocations": "/etc/zenos/grid-revocations.json",
   "k": 3,
   "n": 5
 }

@@ -16,7 +16,7 @@ const { Rpc } = require('./wire')
 const { topicFor } = require('./topic')
 const { repairFile } = require('./repair')
 const { checkManifest } = require('./seal')
-const { levelNum, verifyCert, resolveTrust, mayAccess } = require('./policy')
+const { levelNum, verifyCert, resolveTrust, mayAccess, verifyRevocations, newerRevocations } = require('./policy')
 
 const HEX32 = /^[0-9a-f]{32}$/
 const HEX64 = /^[0-9a-f]{64}$/
@@ -37,7 +37,7 @@ class StorageNode {
   // clearance / zone without adminKey: self-declared (development only)
   // maxBytes: refuse new shards once the store holds this much (0 = no limit)
   constructor ({ dir, grid = 'default', bootstrap, dht, seed, label, repairIntervalMs = 60000, log = () => {},
-    clearance = 'L5', zone, adminKey, cert, maxBytes = 0 } = {}) {
+    clearance = 'L5', zone, adminKey, cert, maxBytes = 0, revocations } = {}) {
     if (!dir) throw new Error('dir (the storage folder) is required')
     this.dir = dir
     this.grid = grid
@@ -62,8 +62,15 @@ class StorageNode {
     }
     this.adminKey = adminKey || null
     this.cert = cert || null
+    this.revocations = null
     if (adminKey) {
-      const v = verifyCert(cert, adminKey, this.publicKey)
+      // the newest revocation list: the one this node kept, or a newer one it was given
+      const kept = path.join(dir, 'revocations.json')
+      if (fs.existsSync(kept)) this.adoptRevocations(JSON.parse(fs.readFileSync(kept, 'utf8')), { quiet: true })
+      if (revocations) this.adoptRevocations(revocations, { quiet: true })
+    }
+    if (adminKey) {
+      const v = verifyCert(cert, adminKey, this.publicKey, this.revocations)
       if (!v || v.role !== 'node') this.log(`[${this.label}] no valid node certificate: this node will not hold anything`)
       this.trust = v && v.role === 'node' ? { ...v, certified: true } : { role: 'node', clearance: 'L0', zone: null, certified: false }
     } else {
@@ -88,17 +95,47 @@ class StorageNode {
     const rpc = new Rpc(socket, async (h, body) => {
       if (h.op === 'hello') return { header: this._hello() }
       const trust = await trustP // nothing is answered before the peer's certificate is checked
-      return this._handle(h, body, trust)
+      if (h.op === 'revocations') return { header: { list: this.revocations ? this.revocations.raw : null } }
+      return this._handle(h, body, this._stillValid(trust))
     })
     rpc.request({ op: 'hello' }, undefined, 5000).then(({ header }) => {
-      const trust = resolveTrust(header, key, this.adminKey)
+      const trust = { ...resolveTrust(header, key, this.adminKey, this.revocations), cert: header.cert, key }
       settle(trust)
+      // pass revocations on in both directions: take theirs if newer (theirs reach us on the next exchange)
+      rpc.request({ op: 'revocations' }, undefined, 5000).then(r => r.header.list && this.adoptRevocations(r.header.list)).catch(() => {})
       if (trust.role !== 'node' || (this.adminKey && !trust.certified)) return // clients and strangers are not repair partners
       const peer = { label: String(header.label || key.slice(0, 8)).slice(0, 64), publicKey: key, request: (hh, b) => rpc.request(hh, b), ...trust }
       this.peers.set(key, peer)
       socket.on('close', () => { if (this.peers.get(key) === peer) this.peers.delete(key) })
       this._exchange(peer)
     }).catch(() => settle({ role: null, clearance: 'L0', zone: null, certified: false }))
+  }
+
+  // A newer administrator-signed revocation list replaces the one held. Peers that are now revoked lose
+  // their access at their next request. Returns true when the list was adopted.
+  adoptRevocations (raw, { quiet = false } = {}) {
+    if (!this.adminKey) return false
+    const v = verifyRevocations(raw, this.adminKey)
+    if (!v) return false
+    const next = newerRevocations(this.revocations, v)
+    if (next === this.revocations) return false
+    this.revocations = next
+    fs.writeFileSync(path.join(this.dir, 'revocations.json'), JSON.stringify(raw), { mode: 0o600 })
+    if (this.peers) for (const k of [...this.peers.keys()]) if (next.revoked.has(k)) this.peers.delete(k)
+    if (this.trust && this.trust.certified && next.revoked.has(this.publicKey)) {
+      this.trust = { role: 'node', clearance: 'L0', zone: null, certified: false }
+      this.self && Object.assign(this.self, this.trust)
+      this.log(`[${this.label}] this node's own key has been revoked: it no longer holds anything new`)
+    }
+    if (!quiet) this.log(`[${this.label}] revocation list of ${next.issuedAt} adopted (${next.revoked.size} revoked)`)
+    return true
+  }
+
+  // Is this peer still allowed? (certificates expire and keys get revoked while connections stay open)
+  _stillValid (trust) {
+    if (!this.adminKey) return trust
+    if (trust.self) return trust
+    return trust.certified && verifyCert(trust.cert, this.adminKey, trust.key, this.revocations) ? trust : { ...trust, certified: false }
   }
 
   _hello () {
@@ -126,6 +163,10 @@ class StorageNode {
   // Peer exchange: ask a node which nodes it knows and connect to the ones we are not connected to
   // (a DHT lookup alone does not guarantee every node reaches every other node)
   async _exchange (peer) {
+    try {
+      const r = await peer.request({ op: 'revocations' })
+      if (r.header.list) this.adoptRevocations(r.header.list)
+    } catch {}
     try {
       const { header } = await peer.request({ op: 'peers' })
       for (const k of (header.keys || []).slice(0, 256)) {

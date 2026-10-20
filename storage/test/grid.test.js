@@ -113,6 +113,19 @@ test('certified grid', { timeout: 240000 }, async t => {
       fs.writeFileSync(p, good)
       assert.ok((await pc3.get(cap)).data.equals(data))
     })
+
+    await t.test('a revoked PC is refused everywhere once the list reaches one node', async () => {
+      const { signRevocations } = require('../lib/policy')
+      const list = signRevocations(admin.privateJwk, [pc3.publicKey])
+      const live = Object.values(nodes)
+      assert.ok(live[0].adoptRevocations(list))
+      for (let round = 0; round < 3; round++) {          // peer exchange (normally every repair interval)
+        for (const n of live) for (const peer of n.peers.values()) await n._exchange(peer)
+      }
+      assert.ok(live.every(n => n.revocations && n.revocations.revoked.has(pc3.publicKey)))
+      await assert.rejects(pc3.get(cap), /no node holds|not cleared/)
+      assert.ok(fs.existsSync(path.join(live[1].dir, 'revocations.json')))   // kept across restarts
+    })
   } finally {
     for (const pc of pcs) await pc.close().catch(() => {})
     for (const n of Object.values(nodes)) await n.stop().catch(() => {})
