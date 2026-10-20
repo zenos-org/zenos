@@ -9,7 +9,7 @@ import org.kde.plasma.plasma5support as P5Support
 PlasmoidItem {
     id: root
     property int level: 1
-    readonly property var colors: ["#E5E7EB", "#38BDF8", "#22C55E", "#EF4444", "#A1A1AA"]
+    readonly property var colors: ["#0A84FF", "#30D158", "#30D158", "#FF453A", "#C7C7CC"]   // same as the ZENOS Browser
     readonly property var notes: [
         "Public · Any registered AI allowed",
         "Confidentiality 2 · No-training AI and Gov AI only",
@@ -25,12 +25,18 @@ PlasmoidItem {
     fullRepresentation: RowLayout {
         spacing: 10
         Layout.minimumWidth: implicitWidth
-        Rectangle {
+        Rectangle {   // the ZENOS Browser address field look: dark inset well
             Layout.alignment: Qt.AlignVCenter
-            radius: 5
-            color: Qt.rgba(1, 1, 1, 0.10)
+            radius: 6
+            border.width: 1
+            border.color: Qt.rgba(0, 0, 0, 0.5)
+            gradient: Gradient {
+                GradientStop { position: 0; color: "#141417" }
+                GradientStop { position: 1; color: "#1A1A1E" }
+            }
             implicitWidth: chip.implicitWidth + 16
             implicitHeight: 20
+            Rectangle { x: 3; y: 1; width: parent.width - 6; height: 1.5; color: Qt.rgba(0, 0, 0, 0.35) }
             RowLayout {
                 id: chip
                 anchors.centerIn: parent
@@ -47,8 +53,9 @@ PlasmoidItem {
         PlasmaComponents.Label {
             Layout.alignment: Qt.AlignVCenter
             text: root.notes[root.level - 1]
-            opacity: 0.8
+            color: "#C7C7CC"
             font.pixelSize: 12
+            font.weight: Font.Medium
         }
     }
 }

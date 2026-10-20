@@ -10,7 +10,14 @@ import org.kde.plasma.plasma5support as P5Support
 // ZENOS Launcher: Windows-style Start menu anchored bottom-left. Apps in a vertical list grouped by section.
 PlasmoidItem {
     id: root
-    readonly property string base: "/usr/share/zenos/icons/"
+    // installed package: /usr/share/zenos; a per-user development copy: ~/.local/share/zenos
+    property string base: "/usr/share/zenos/icons/"
+    P5Support.DataSource {
+        id: rootFinder
+        engine: "executable"
+        connectedSources: ["sh -c 'if [ -d /usr/share/zenos/icons ]; then echo /usr/share/zenos; else echo $HOME/.local/share/zenos; fi'"]
+        onNewData: (source, data) => { const d = String(data["stdout"]).trim(); if (d) root.base = d + "/icons/"; disconnectSource(source); }
+    }
     property string query: ""
     property int level: 1
     // AI allowed per level (design: L1-L2 all registered, L3 Gov AI + domestic, L4-L5 in-ministry only)
@@ -40,7 +47,7 @@ PlasmoidItem {
         onNewData: (source, data) => { const n = parseInt(data["stdout"]); if (n >= 1 && n <= 5) root.level = n; disconnectSource(source); }
     }
     function launch(id) {
-        runner.connectSource("setsid -f kioclient exec /usr/share/applications/zenos-" + id + ".desktop >> /tmp/zenos-launch.log 2>&1");
+        runner.connectSource("sh -c 'f=$(ls /usr/share/applications/zenos-" + id + ".desktop $HOME/.local/share/applications/zenos-" + id + ".desktop 2>/dev/null | head -1); setsid -f kioclient exec \"$f\"' >> /tmp/zenos-launch.log 2>&1");
         menu.close();
     }
 
@@ -70,24 +77,20 @@ PlasmoidItem {
             width: 220; height: 30
             hoverEnabled: true
             onClicked: menu.visible ? menu.close() : menu.open()
-            Rectangle {
-                anchors.fill: parent; radius: 15
-                color: Qt.rgba(1, 1, 1, searchBtn.containsMouse ? 0.14 : 0.08)
-                border.color: Qt.rgba(1, 1, 1, 0.12); border.width: 1
-            }
+            // the same field as the ZENOS Browser address bar: a dark inset well
+            Well { anchors.fill: parent; radius: 9; lit: searchBtn.containsMouse }
             Kirigami.Icon {
                 id: mag
                 anchors.left: parent.left; anchors.leftMargin: 12; anchors.verticalCenter: parent.verticalCenter
-                width: 16; height: 16
+                width: 15; height: 15
                 source: "search"
-                color: "white"; isMask: true
-                opacity: 0.7
+                color: "#8E8E93"; isMask: true
             }
             QQC2.Label {
                 anchors.left: mag.right; anchors.leftMargin: 8; anchors.verticalCenter: parent.verticalCenter
                 text: "Search"
-                color: Qt.rgba(1, 1, 1, 0.6)
-                font.pixelSize: 14; font.family: "Inter"
+                color: "#8E8E93"
+                font.pixelSize: 13; font.family: "Inter"
             }
         }
     }
@@ -123,9 +126,14 @@ PlasmoidItem {
                 width: menu.panelW
                 height: menu.panelH
                 radius: 14
-                color: Qt.rgba(0.07, 0.10, 0.18, 0.96)
-                border.color: Qt.rgba(1, 1, 1, 0.12)
+                // the ZENOS Browser window: graphite, black outline, light inner edge on top
+                gradient: Gradient {
+                    GradientStop { position: 0; color: "#2C2C31" }
+                    GradientStop { position: 1; color: "#1E1E23" }
+                }
+                border.color: Qt.rgba(0, 0, 0, 0.6)
                 border.width: 1
+                Rectangle { x: 10; y: 1; width: parent.width - 20; height: 1; color: Qt.rgba(1, 1, 1, 0.18) }
                 // swallow clicks inside the panel so it doesn't close
                 MouseArea { anchors.fill: parent }
 
@@ -155,11 +163,9 @@ PlasmoidItem {
                     }
 
                     // search
-                    Rectangle {
+                    Well {
                         Layout.fillWidth: true
-                        height: 38; radius: 9
-                        color: Qt.rgba(1, 1, 1, 0.08)
-                        border.color: Qt.rgba(1, 1, 1, 0.16)
+                        Layout.preferredHeight: 36; radius: 9
                         QQC2.TextField {
                             id: search
                             anchors.fill: parent
@@ -167,8 +173,8 @@ PlasmoidItem {
                             placeholderText: "Search apps"
                             background: null
                             color: "white"
-                            placeholderTextColor: Qt.rgba(1, 1, 1, 0.55)
-                            font.pixelSize: 14
+                            placeholderTextColor: "#8E8E93"
+                            font.pixelSize: 13
                             font.family: "Inter"
                             onTextChanged: root.query = text.toLowerCase()
                             Keys.onEscapePressed: menu.close()
