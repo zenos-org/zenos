@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZENOS — a desktop OS for classified work</title>
+<meta name="description" content="ZENOS is an open-source desktop operating system for handling classified information, built so that ordinary staff can use it. Developer Preview.">
+<style>
+:root{--bg:#1B1B20;--bar1:#333338;--bar2:#24242A;--fg:#E8E8EE;--muted:#B8B8C4;--dim:#8A8A96;--line:rgba(255,255,255,.12);--accent:#3D7BFF;--label:#7FA6FF;--warn:#F0C060}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:inherit}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+nav{background:linear-gradient(var(--bar1),var(--bar2));border-bottom:1px solid rgba(0,0,0,.6);box-shadow:inset 0 1px rgba(255,255,255,.22);position:sticky;top:0;z-index:1}
+nav .wrap{display:flex;align-items:center;gap:28px;height:60px}
+.logo{font-weight:700;font-size:20px;color:#fff;text-decoration:none;margin-right:auto}
+nav a.l{color:#C9C9D2;text-decoration:none;font-size:14px}
+nav a.l:hover{color:#fff}
+.btn{display:inline-block;padding:12px 22px;border-radius:8px;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.05);color:#fff}
+.btn.primary{background:var(--accent);border-color:var(--accent)}
+nav .btn{padding:8px 14px;font-size:14px;border-radius:6px;background:rgba(255,255,255,.07)}
+.hero{padding:110px 0 80px}
+.badge{display:inline-block;padding:6px 12px;border-radius:999px;background:rgba(224,160,48,.15);border:1px solid rgba(224,160,48,.6);color:var(--warn);font-size:13px;font-weight:600}
+h1{font-size:clamp(36px,6vw,64px);line-height:1.12;margin:28px 0;color:#fff;max-width:1000px}
+.lead{font-size:20px;color:var(--muted);max-width:820px}
+.btns{display:flex;flex-wrap:wrap;gap:16px;margin:32px 0 48px}
+.shot{width:100%;border-radius:12px;border:1px solid rgba(255,255,255,.15);display:block;background:#0E2A6B;aspect-ratio:16/9;object-fit:cover}
+section{padding:80px 0}
+.k{font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--label)}
+h2{font-size:clamp(28px,4vw,40px);margin:12px 0 28px;color:#fff}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px}
+.card{padding:24px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.card h3{margin:0 0 10px;font-size:18px;color:#fff}
+.card p{margin:0;color:var(--muted);font-size:15px}
+.spec{width:100%;border-collapse:collapse}
+.spec td{padding:16px 12px 16px 0;border-bottom:1px solid rgba(255,255,255,.1);vertical-align:top}
+.spec td:first-child{font-weight:600;color:#fff;width:30%}
+.spec td:nth-child(2){color:var(--muted);font-size:15px}
+.spec td:last-child{color:var(--warn);font-size:13px;font-weight:600;text-align:right;white-space:nowrap}
+.alt{background:rgba(255,255,255,.03)}
+.alt p{color:var(--muted);font-size:18px;max-width:900px}
+footer{padding:40px 0;color:var(--dim);font-size:13px}
+@media (max-width:720px){nav a.l{display:none}.spec td:first-child{width:auto}.spec td{display:block;padding:4px 0;text-align:left!important}.spec tr{display:block;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.1)}.spec td{border:0}}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="logo" href="#">ZENOS</a>
+  <a class="l" href="#philosophy">Philosophy</a>
+  <a class="l" href="#spec">Specification</a>
+  <a class="l" href="https://github.com/ORG/zenos/blob/main/docs/THREAT_MODEL.md">Threat model</a>
+  <a class="l" href="https://github.com/ORG/zenos/releases">Download</a>
+  <a class="l" href="#review">Contribute</a>
+  <a class="btn" href="https://github.com/ORG/zenos">GitHub →</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <span class="badge">Developer Preview · not yet for real classified data</span>
+  <h1>A desktop operating system for classified work — that ordinary staff can use.</h1>
+  <p class="lead">Every file carries a security level. Opening above your level asks your officers to approve. Anything that looks like a leak stops the machine until several officers release it from their own devices. Open source, no single vendor.</p>
+  <div class="btns">
+    <a class="btn primary" href="https://github.com/ORG/zenos">View source on GitHub</a>
+    <a class="btn" href="https://github.com/ORG/zenos/blob/main/docs/THREAT_MODEL.md">Read the threat model</a>
+  </div>
+  <img class="shot" src="desktop.png" alt="The ZENOS desktop with the level bar, Start menu and system monitor">
+</div></header>
+
+<section id="philosophy"><div class="wrap">
+  <div class="k">DESIGN PHILOSOPHY</div>
+  <h2>Security that does not need training</h2>
+  <div class="cards">
+    <div class="card"><h3>Familiar first</h3><p>A Windows-like layout and ordinary controls. Staff work the way they already do; the protection sits underneath.</p></div>
+    <div class="card"><h3>Nobody acts alone</h3><p>Keys above your level are issued only after approval. Releasing a stopped PC needs several officers, each signing on their own device.</p></div>
+    <div class="card"><h3>History cannot be rewritten</h3><p>Every action goes into a hash-chained ledger kept on audit nodes run by different parties. A forked history is caught.</p></div>
+    <div class="card"><h3>No single vendor</h3><p>Debian, KDE and WebKitGTK. Open source, self-hostable, inspectable by anyone.</p></div>
+  </div>
+</div></section>
+
+<section id="spec"><div class="wrap">
+  <div class="k">SPECIFICATION</div>
+  <h2>What it does today</h2>
+  <table class="spec">
+    <tr><td>Levelled, sealed files</td><td>L1–L5 levels in a signed header; plaintext is only ever opened in RAM.</td><td>Working PoC</td></tr>
+    <tr><td>Approval-based key issuance</td><td>The number of approvers grows with the level; officers sign on their own devices.</td><td>Working PoC</td></tr>
+    <tr><td>Anomaly stop</td><td>Bulk reads, removable media and unusual egress freeze the session; release needs several signatures.</td><td>Root service</td></tr>
+    <tr><td>Tamper-evident ledger</td><td>Hash chains shipped to an audit consortium that detects forked history.</td><td>Working</td></tr>
+    <tr><td>Distributed storage</td><td>AES-256-GCM, Reed-Solomon 3-of-5 across zones, certified nodes, revocation.</td><td>PoC</td></tr>
+    <tr><td>Messenger</td><td>End-to-end encryption (Signal protocol), self-hostable calls.</td><td>Working PoC</td></tr>
+  </table>
+</div></section>
+
+<section id="review" class="alt"><div class="wrap">
+  <div class="k">REVIEW AND CONTRIBUTE</div>
+  <h2>Break it. Tell us.</h2>
+  <p>Bugs and ideas go to <a href="https://github.com/ORG/zenos/issues">GitHub Issues</a>, design questions to <a href="https://github.com/ORG/zenos/discussions">Discussions</a>, fixes as Pull Requests. Security problems: report privately through GitHub's vulnerability reporting, as described in <a href="https://github.com/ORG/zenos/blob/main/SECURITY.md">SECURITY.md</a>.</p>
+</div></section>
+
+<footer><div class="wrap">ZENOS · Apache-2.0 (messenger AGPL-3.0) · <a href="https://github.com/ORG/zenos">github.com/ORG/zenos</a></div></footer>
+</body>
+</html>
