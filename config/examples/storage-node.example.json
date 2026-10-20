@@ -1,0 +1,10 @@
+{
+  "grid": "ministry-grid",
+  "bootstrap": "10.20.0.5:49737",
+  "host": "10.20.0.11",
+  "admin": "<grid administrator public key, 64 hex characters>",
+  "cert": "/etc/zenos/storage-node-cert.json",
+  "label": "Storage A1",
+  "repair": 60,
+  "max-bytes": 500000000000
+}

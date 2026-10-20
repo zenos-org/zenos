@@ -1,0 +1,32 @@
+[Unit]
+Description=ZENOS grid bootstrap (the closed network's own DHT entry point)
+Documentation=file:///usr/share/doc/zenos-grid/README.md
+ConditionPathExists=/etc/zenos/grid-bootstrap.json
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+ExecStart=/usr/bin/node /usr/share/zenos-grid/storage/bin/zenos-store.js bootstrap --config /etc/zenos/grid-bootstrap.json
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

@@ -12,7 +12,10 @@ What happens
   - "Vault" lists the files the current session level is cleared to see and restores any version.
 
 Commands (run as the ZENOS user)
-  zenos_p2p.py setup            create the local grid (admin key, 5 test nodes with certificates)
+  zenos_p2p.py setup            create the local test grid (admin key, 5 test nodes and this PC, all certified)
+  zenos_p2p.py enroll           print this PC's storage key, to be certified for a networked grid
+  zenos_p2p.py install-cert F   install the client certificate the grid administrator issued
+                                (a networked grid is configured in /etc/zenos/grid.json)
   zenos_p2p.py grid-start | grid-stop | grid-status
   zenos_p2p.py backup FILE      store one .zen file (the guard calls this after every check)
   zenos_p2p.py backup-all       store every .zen file in the security folders (rate-limited)
@@ -39,8 +42,22 @@ TMP = P2P / "tmp"
 RUN = P2P / "run"
 LOGS = P2P / "logs"
 NODES = P2P / "nodes"
-CONF = P2P / "grid.json"
-STORE = Path(os.environ.get("ZENOS_STORE", str(zenos.Z / "store"))) / "bin" / "zenos.js"
+CONF = P2P / "grid.json"                       # the local test grid (setup)
+NET_CONF = Path(os.environ.get("ZENOS_GRID_CONF", "/etc/zenos/grid.json"))   # a networked grid (administrator)
+CLIENT = P2P / "client"                         # this PC's storage identity: client.seed + cert.json
+
+
+def _store_bin():
+    if os.environ.get("ZENOS_STORE"):
+        return Path(os.environ["ZENOS_STORE"]) / "bin" / "zenos-store.js"
+    for p in (zenos.ROOT / "storage" / "bin" / "zenos-store.js",           # packaged with ZENOS
+              zenos.Z / "store" / "bin" / "zenos.js"):                     # older per-user copy
+        if p.exists():
+            return p
+    return zenos.ROOT / "storage" / "bin" / "zenos-store.js"
+
+
+STORE = _store_bin()
 NODEJS = os.environ.get("ZENOS_NODEJS", "node")
 MAX_VERSIONS = 50
 
@@ -56,15 +73,44 @@ DEFAULT_NODES = [
 
 # ---------------- storage layer ----------------
 
+def networked():
+    return NET_CONF.exists()
+
+
 def conf():
+    """The networked grid when the administrator configured one, otherwise the local test grid.
+    /etc/zenos/grid.json: {"grid": "...", "bootstrap": "10.0.0.5:49737", "admin": "<key>", "k": 3, "n": 5}"""
+    if networked():
+        c = json.loads(NET_CONF.read_text())
+        c.setdefault("k", 3)
+        c.setdefault("n", 5)
+        c["networked"] = True
+        return c
     return json.loads(CONF.read_text())
 
 
-def grid_args(c):
-    return ["--grid", c["grid"], "--bootstrap", c["bootstrap"], "--host", c["host"], "--admin", c["admin"]]
+def grid_args(c, client=True):
+    a = ["--grid", c["grid"], "--bootstrap", c["bootstrap"], "--admin", c["admin"]]
+    if c.get("host"):
+        a += ["--host", c["host"]]
+    if client and (CLIENT / "cert.json").exists():
+        a += ["--id-dir", str(CLIENT), "--cert", str(CLIENT / "cert.json")]
+    return a
+
+
+def local_client_cert():
+    """On the local test grid this machine is also the administrator: certify this PC if it is not yet
+    (grids set up before PCs needed a certificate)."""
+    admin_file = P2P / "admin.json"
+    if networked() or STORE.name != "zenos-store.js" or (CLIENT / "cert.json").exists() or not admin_file.exists():
+        return
+    store_text(["certify", "--admin-file", str(admin_file), "--key", enroll(), "--role", "client",
+                "--clearance", "L5", "--zone", "This PC", "--out", str(CLIENT / "cert.json")])
 
 
 def store(args, stdin=None, timeout=120, grid=True):
+    if grid:
+        local_client_cert()
     cmd = [NODEJS, str(STORE), *args, *(grid_args(conf()) if grid else []), "--json"]
     r = subprocess.run(cmd, input=stdin, capture_output=True, text=True, timeout=timeout)
     lines = [ln for ln in r.stdout.strip().splitlines() if ln.startswith("{")]
@@ -147,7 +193,25 @@ class Lock:
 
 
 def enabled():
+    if networked():
+        return (CLIENT / "cert.json").exists()
     return (P2P / "enabled").exists() and CONF.exists()
+
+
+def enroll():
+    """This PC's storage key, for the administrator to certify (role client)."""
+    CLIENT.mkdir(parents=True, exist_ok=True)
+    os.chmod(CLIENT, 0o700)
+    return store_text(["client-id", "--dir", str(CLIENT)]).splitlines()[-1].strip()
+
+
+def install_cert(path):
+    cert = json.loads(Path(path).read_text())
+    if cert.get("role") != "client" or cert.get("key") != enroll():
+        raise ValueError("this certificate is not a client certificate for this PC's key")
+    (CLIENT / "cert.json").write_text(json.dumps(cert, indent=1))
+    zenos.audit("vault-cert-installed", clearance=cert.get("clearance"), zone=cert.get("zone"))
+    return cert
 
 
 def backup(path, quiet=False):
@@ -277,6 +341,7 @@ def setup(host="127.0.0.1", port=49737):
             store_text(["certify", "--admin-file", str(admin_file), "--node", pub,
                         "--clearance", "L5", "--zone", zone, "--out", str(cert)])
         nodes.append({"label": zone, "slug": slug, "dir": str(d), "cert": str(cert)})
+    local_client_cert()  # the nodes serve only certified PCs
     c = {"grid": "zenos-local", "bootstrap": f"{host}:{port}", "host": host, "port": port,
          "admin": admin, "k": 3, "n": 5, "repair": 30, "nodes": nodes}
     CONF.write_text(json.dumps(c, ensure_ascii=False, indent=1))
@@ -318,6 +383,8 @@ def _spawn(name, args):
 
 def grid_start(only=None):
     c = conf()
+    if c.get("networked"):
+        return []  # the nodes of a networked grid run on their own servers (zenos-storage-node.service)
     if not _alive(RUN / "bootstrap.pid") and not _port_open(c["host"], c["port"]):
         _spawn("bootstrap", ["bootstrap", "--host", c["host"], "--port", str(c["port"])])
         time.sleep(3)
@@ -326,7 +393,7 @@ def grid_start(only=None):
         if only and n["slug"] not in only:
             continue
         if _spawn(n["slug"], ["node", "--dir", n["dir"], "--label", n["label"], "--cert", n["cert"],
-                              "--repair", str(c["repair"]), *grid_args(c)]):
+                              "--repair", str(c["repair"]), *grid_args(c, client=False)]):
             started.append(n["label"])
     return started
 
@@ -346,7 +413,7 @@ def grid_stop(only=None):
 
 def grid_status():
     c = conf()
-    local = {n["slug"]: bool(_alive(RUN / f"{n['slug']}.pid")) for n in c["nodes"]}
+    local = {n["slug"]: bool(_alive(RUN / f"{n['slug']}.pid")) for n in c.get("nodes", [])}
     try:
         seen = store(["status", "--wait", "1500"], timeout=40)["nodes"]
     except Exception as e:
@@ -431,6 +498,12 @@ def main(argv):
             i += 1
     if cmd == "setup":
         print(json.dumps({k: v for k, v in setup().items() if k != "nodes"}, ensure_ascii=False))
+    elif cmd == "enroll":
+        print(json.dumps({"key": enroll(), "next": "certify this key with role client on the grid administrator's machine, "
+                                                  "then run: zenos_p2p.py install-cert CERT.json"}))
+    elif cmd == "install-cert":
+        c = install_cert(pos[0])
+        print(json.dumps({"installed": True, "clearance": c["clearance"], "zone": c["zone"]}))
     elif cmd == "grid-start":
         print(json.dumps({"started": grid_start(opt.get("only", "").split(",") if opt.get("only") else None)}))
     elif cmd == "grid-stop":

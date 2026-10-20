@@ -1,0 +1,85 @@
+#!/bin/bash
+# Build the ZENOS grid server package (amd64): storage node, grid bootstrap and audit node.
+# These run on servers the PC users do not control, one set per party (ministry, agency, audit body).
+#   packaging/build-grid-deb.sh       -> build/zenos-grid_<version>_amd64.deb
+# Needs: dpkg-deb, nodejs + npm.
+set -euo pipefail
+SRC="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+VER="${VER:-0.1.0~preview$(date +%Y%m%d)}"
+OUT="${OUT:-$SRC/build}"
+B="$OUT/grid-work"; P="$OUT/grid-pkg"
+mkdir -p "$OUT"
+exec 9>"$OUT/.grid-build.lock"
+flock -n 9 || { echo "another grid build is running in $OUT" >&2; exit 1; }
+rm -rf "$B" "$P"; mkdir -p "$B" "$P"
+G="$P/usr/share/zenos-grid"
+
+echo "== storage layer"
+cp -a "$SRC/storage" "$B/storage"
+( cd "$B/storage" && rm -rf node_modules test && npm ci --omit=dev --no-audit --no-fund --loglevel=error )
+mkdir -p "$G"
+cp -a "$B/storage" "$G/storage"
+chmod 755 "$G/storage/bin/zenos-store.js"
+
+echo "== audit node"
+mkdir -p "$G/audit"
+install -m 755 "$SRC/system/sbin/zenos_auditnode.py" "$G/audit/"
+install -m 644 "$SRC/system/lib/zledger.py" "$G/audit/"
+
+echo "== services (each starts only once its /etc/zenos/*.json exists)"
+mkdir -p "$P/lib/systemd/system"
+install -m 644 "$SRC"/packaging/grid/*.service "$P/lib/systemd/system/"
+
+echo "== docs and examples"
+D="$P/usr/share/doc/zenos-grid"
+mkdir -p "$D/examples"
+cp "$SRC/packaging/grid/README.md" "$SRC/LICENSE" "$SRC/NOTICE" "$D/"
+cp "$SRC"/config/examples/storage-node.example.json "$SRC"/config/examples/grid-bootstrap.example.json \
+   "$SRC"/config/examples/auditnode.example.json "$SRC"/config/examples/grid.example.json "$D/examples/"
+
+echo "== control"
+find "$P" -name __pycache__ -prune -exec rm -rf {} +
+mkdir -p "$P/DEBIAN"
+SIZE=$(du -sk "$P" | cut -f1)
+cat > "$P/DEBIAN/control" <<EOF
+Package: zenos-grid
+Version: $VER
+Section: net
+Priority: optional
+Architecture: amd64
+Installed-Size: $SIZE
+Maintainer: The ZENOS Authors <zenos-authors@users.noreply.invalid>
+Depends: nodejs (>= 20), python3 (>= 3.11), python3-cryptography
+Description: ZENOS grid servers: storage node, bootstrap and audit node (Developer Preview)
+ Servers for a ZENOS grid, run by each party outside the PCs: a storage node keeps
+ encrypted, erasure-coded shards and serves them only to certified PCs cleared for
+ their level; the bootstrap is the closed network's own entry point; the audit node
+ keeps a copy of every enrolled PC's ledger and compares it with the other parties'
+ audit nodes, so a rewritten or forked history is caught.
+ .
+ This is a proof of concept and not yet safe for real classified data.
+EOF
+cat > "$P/DEBIAN/postinst" <<'EOF'
+#!/bin/sh
+set -e
+if [ "$1" = "configure" ] && [ -d /run/systemd/system ]; then
+    systemctl daemon-reload || true
+    for u in zenos-storage-node zenos-grid-bootstrap zenos-auditnode; do
+        systemctl enable "$u.service" >/dev/null 2>&1 || true   # inert until its config file exists
+        systemctl try-restart "$u.service" || true
+    done
+fi
+EOF
+cat > "$P/DEBIAN/prerm" <<'EOF'
+#!/bin/sh
+set -e
+if [ "$1" = "remove" ] && [ -d /run/systemd/system ]; then
+    for u in zenos-storage-node zenos-grid-bootstrap zenos-auditnode; do
+        systemctl disable --now "$u.service" >/dev/null 2>&1 || true
+    done
+fi
+EOF
+chmod 755 "$P/DEBIAN/postinst" "$P/DEBIAN/prerm"
+
+dpkg-deb --root-owner-group -Zxz --build "$P" "$OUT/zenos-grid_${VER}_amd64.deb" >/dev/null
+ls -la "$OUT/zenos-grid_${VER}_amd64.deb"

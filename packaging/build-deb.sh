@@ -37,6 +37,12 @@ cp -a "$SRC/messenger" "$B/msg"
 cp -a "$B/msg" "$Z/msg"
 chmod 755 "$Z"/msg/*.sh
 
+echo "== storage layer (encrypted, erasure-coded shards on certified storage nodes)"
+cp -a "$SRC/storage" "$B/storage"
+( cd "$B/storage" && rm -rf node_modules test && npm ci --omit=dev --no-audit --no-fund --loglevel=error )
+cp -a "$B/storage" "$Z/storage"
+chmod 755 "$Z/storage/bin/zenos-store.js"
+
 echo "== system services"
 mkdir -p "$P/usr/lib/zenos" "$P/usr/sbin" "$P/lib/systemd/system" "$P/usr/lib/systemd/user"
 cp -a "$SRC"/system/lib/. "$P/usr/lib/zenos/"

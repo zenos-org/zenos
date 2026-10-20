@@ -17,12 +17,15 @@ jobs:
       - name: Messenger device binding
         run: npm ci && node ../tests/messenger_binding.js
         working-directory: messenger
+      - name: Storage layer (erasure code, certificates, a certified grid on this machine, repair)
+        run: npm ci && npm test
+        working-directory: storage
       - name: No secrets or real phone numbers
         run: packaging/check-secrets.sh
       - name: Syntax of every script
         run: |
           for f in $(git ls-files '*.py'); do python3 -m py_compile "$f"; done
-          for f in messenger/*.js; do node --check "$f"; done
+          for f in messenger/*.js storage/bin/*.js storage/lib/*.js; do node --check "$f"; done
           for f in $(git ls-files '*.svg'); do python3 -c 'import sys, xml.dom.minidom as m; m.parse(sys.argv[1])' "$f"; done
   apps:
     runs-on: ubuntu-24.04

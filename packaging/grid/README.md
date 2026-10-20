@@ -1,0 +1,72 @@
+# ZENOS grid servers
+
+The `zenos-grid` package holds the three servers a ZENOS grid needs outside the PCs. Each party
+(a ministry, an agency, an independent audit board) runs its own set on machines the PC users do not
+control. Nothing here holds a key that opens a file.
+
+| Service | What it does | Config file |
+|---|---|---|
+| `zenos-grid-bootstrap` | the closed network's own entry point, so nothing touches the public internet | `/etc/zenos/grid-bootstrap.json` |
+| `zenos-storage-node` | keeps encrypted, erasure-coded shards; serves them only to certified PCs cleared for the level | `/etc/zenos/storage-node.json` |
+| `zenos-auditnode` | keeps a copy of every enrolled PC's ledger and compares it with the other parties' audit nodes | `/etc/zenos/auditnode.json` |
+
+Each service starts only once its config file exists. Examples are in `/usr/share/doc/zenos-grid/examples`.
+
+## The grid administrator
+
+The administrator key signs every certificate. Create it on a machine that is not part of the grid
+and keep it there:
+
+```
+node /usr/share/zenos-grid/storage/bin/zenos-store.js admin-init --out admin.json
+```
+
+The public key it prints goes into every node's and every PC's config (`admin`).
+
+## A storage node
+
+1. Write `/etc/zenos/storage-node.json` (see `storage-node.example.json`; one zone per site).
+2. `sudo systemctl start zenos-storage-node` and read the node key: `journalctl -u zenos-storage-node | grep key`.
+3. On the administrator's machine, certify it, with the highest level this site may hold:
+   `zenos-store.js certify --admin-file admin.json --key <node key> --role node --clearance L4 --zone "Site A" --out cert.json`
+4. Copy `cert.json` to `/etc/zenos/storage-node-cert.json` and `sudo systemctl restart zenos-storage-node`.
+
+A node without a valid certificate starts but holds nothing. A node never takes a file above its own
+clearance, whoever asks. Files are spread 3-of-5 with at most two shards per zone, so a whole site can
+be lost and every file still restores.
+
+## A ZENOS PC
+
+1. Write `/etc/zenos/grid.json` on the PC (see `grid.example.json`).
+2. As the desktop user: `zenos_p2p.py enroll` prints the PC's storage key.
+3. The administrator certifies it with `--role client` and the user's clearance.
+4. `zenos_p2p.py install-cert cert.json`. From then on sealed files are also stored on the grid.
+
+A PC without a certificate gets nothing from the nodes, not even the list of other nodes. A PC
+certified for L2 cannot read an L3 file's shards even if it holds the file's capability.
+
+## Audit nodes: the consortium
+
+Every PC ships its ledgers to every audit node it is enrolled on (`/etc/zenos/audit.json` on the PC).
+Each audit node accepts only records that continue the history it already holds, and signs what it
+holds. The audit nodes of the different parties list each other as `peers` and compare their copies
+every `check_seconds`. The shorter copy must be a prefix of the longer one; if not, it is a fork: the PC
+sent different histories to different parties, or one party's copy was changed. Both signed statements
+are written to `forks.jsonl`, so neither party can later deny what it held.
+
+```
+zenos_auditnode.py --config /etc/zenos/auditnode.json --store /var/lib/zenos-audit --check-peers
+```
+
+prints the comparison with every peer now.
+
+The TLS certificate and key for the audit node stay in `/etc/zenos/auditnode.crt` and `.key`
+(root only); systemd hands the service a copy.
+
+## Not yet
+
+- The administrator key on a hardware token, and certificates that expire and can be revoked.
+- Agreement on a single order of records across parties (today the parties detect a fork; they do
+  not yet vote on which history is the right one).
+- Issuing the per-file capability through the request-and-approval flow instead of keeping it in the
+  PC's sealed index.

@@ -43,7 +43,8 @@ def verify(path):
     prev = GENESIS
     i = -1
     try:
-        lines = [l for l in open(path, encoding="utf-8").read().splitlines() if l.strip()]
+        with open(path, encoding="utf-8") as fh:
+            lines = [l for l in fh.read().splitlines() if l.strip()]
     except FileNotFoundError:
         return True, -1, "empty"
     for i, line in enumerate(lines):

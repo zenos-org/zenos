@@ -1,0 +1,19 @@
+{
+  "name": "zenos-storage",
+  "version": "0.4.0",
+  "private": true,
+  "description": "ZENOS storage layer: encryption, erasure coding and certified P2P storage nodes",
+  "main": "lib/client.js",
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "b4a": "^1.9.0",
+    "hyperdht": "^6.34.1",
+    "hyperswarm": "^4.17.2"
+  },
+  "bin": {
+    "zenos-store": "bin/zenos-store.js"
+  }
+}

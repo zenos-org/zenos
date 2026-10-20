@@ -18,9 +18,20 @@ First public preview. Not for real classified data; see [docs/THREAT_MODEL.md](d
   signed in ZENOS Messages with a key that never leaves the officer's browser, and checked against
   administrator-enrolled keys.
 - Tamper-evident ledgers shipped off the PC to audit nodes, which refuse rewritten history and report silent PCs.
+- Storage grid (`storage/`, also shipped as the `zenos-grid` server package): sealed files are encrypted again
+  per file, erasure-coded 3-of-5 and spread over storage nodes, at most two shards per zone. Every node and
+  every PC holds a certificate from the grid administrator (role, highest level, zone); a node refuses every
+  request from a peer without one, serves a file only to a PC cleared for its level, and never takes a level
+  above its own clearance. A certified grid refuses to run on the public DHT. Nodes repair lost shards without
+  the key. Storage node, bootstrap and audit node run as hardened systemd services (dynamic user, system-call
+  filter). Tested on two machines: files restore with two nodes down; an L1 PC holding the capability is refused.
+- Audit consortium: audit nodes run by different parties list each other as peers and compare their copies of
+  every PC's ledger; a PC that sends different histories to different parties, or an altered copy, is reported
+  as a fork on both sides with both parties' signed statements kept as evidence (once, not on every check).
 - Signed apt repository tooling; release gate for secrets and real phone numbers; tests and CI.
 
 **Apps**
+- Desktop top bar, taskbar, search fields and open-window buttons in the ZENOS Browser tone.
 - ZENOS Browser (WebKitGTK): tabs, bookmarks, persistent sign-in, full-screen video.
 - Documents, Sheets, Slides: sealed files are edited from a RAM copy and sealed again on close; text of L3+ files
   is copied only into windows of the same level or higher (level clipboard in the key agent), never to other
