@@ -187,7 +187,7 @@ def _heartbeat():
     import time as _t
     while True:
         try:
-            open("/run/zenos-sensor.hb", "w").write(str(_t.time()))
+            _hb = "/run/zenos-sensor.hb"; open(_hb + ".tmp", "w").write(str(_t.time())); os.replace(_hb + ".tmp", _hb)
         except Exception:
             pass
         _t.sleep(1.0)

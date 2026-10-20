@@ -56,7 +56,44 @@ def home(u=None):
 
 
 def data(u=None):
-    return os.path.join(home(u), ".local/share/zenos")
+    """the user's ZENOS data folder. When a root service needs it before the user has logged in, it is
+    created owned by the user (a root-owned folder would lock the user out of their own data)."""
+    d = os.path.join(home(u), ".local/share/zenos")
+    if os.geteuid() == 0:
+        try:
+            _ensure_user_dir(d, u or user())
+        except Exception:
+            pass
+    return d
+
+
+def _ensure_user_dir(d, u):
+    p = pwd.getpwnam(u)
+    if not os.path.isdir(p.pw_dir) or not d.startswith(p.pw_dir.rstrip("/") + "/"):
+        return
+    parts = os.path.relpath(d, p.pw_dir).split(os.sep)
+    cur = p.pw_dir
+    for part in parts:
+        cur = os.path.join(cur, part)
+        if os.path.islink(cur):
+            return                     # never follow a link a user planted
+        if not os.path.exists(cur):
+            os.mkdir(cur, 0o700 if part == "zenos" else 0o755)
+            os.chown(cur, p.pw_uid, p.pw_gid)
+        elif part == "zenos" and os.stat(cur).st_uid == 0:
+            os.chown(cur, p.pw_uid, p.pw_gid)   # repair a folder an older version created as root
+
+
+def give_to_user(path, u=None):
+    """a file a root service wrote into the user's data folder stays usable by the user's own programs"""
+    if os.geteuid() != 0:
+        return
+    try:
+        p = pwd.getpwnam(u or user())
+        if os.path.exists(path) and not os.path.islink(path):
+            os.chown(path, p.pw_uid, p.pw_gid)
+    except Exception:
+        pass
 
 
 def root():

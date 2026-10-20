@@ -17,13 +17,30 @@ except Exception:
 HB = "/run/zenos-sensor.hb"
 LEDGER = "/var/log/zenos/access-ledger.jsonl"
 INTERVAL = 1.0
-TIMEOUT = 3.0
+TIMEOUT = 10.0      # a loaded machine can miss a few beats; a stopped sensor is silent for good
+GRACE = 180.0       # after boot the sensor (netsentinel, bpftrace) needs time to start
+
+
+def beat():
+    """write the heartbeat atomically: a reader sees the old value or the new one, never an empty file"""
+    tmp = HB + ".tmp"
+    with open(tmp, "w") as f:
+        f.write(str(time.time()))
+    os.replace(tmp, HB)
 
 
 def emitter():
     while True:
-        open(HB, "w").write(str(time.time()))
+        beat()
         time.sleep(INTERVAL)
+
+
+def read_beat():
+    try:
+        with open(HB) as f:
+            return float(f.read().strip())
+    except (OSError, ValueError):
+        return None
 
 
 def watcher(run_sec):
@@ -31,18 +48,23 @@ def watcher(run_sec):
     forever = run_sec <= 0
     t0 = time.time()
     alarmed = False
+    last = None                       # the last heartbeat this watcher could read
     while forever or time.time() - t0 < run_sec:
-        try:
-            age = time.time() - float(open(HB).read().strip())
-        except Exception:
-            age = 999
+        b = read_beat()
+        if b is not None:
+            last = b if last is None else max(last, b)
+        now = time.time()
+        if last is None:              # never seen one: silent only once the start-up grace is over
+            age = now - t0 if now - t0 > GRACE else 0
+        else:
+            age = now - last
         if age <= TIMEOUT and alarmed:
             zledger.append(LEDGER, 'sensor-recovered', 'node-B', 'watcher', target='node-A')
             print('recovered: heartbeat fresh again', flush=True); alarmed = False  # re-arm
         if age > TIMEOUT and not alarmed:
             detect = round(age, 2)
             zledger.append(LEDGER, "sensor-silenced", "node-B", "watcher",
-                           target="node-A", stale_sec=detect, action="escalate")
+                           target="node-A", stale_sec=detect, action="escalate", never_started=last is None)
             print("ALARM: sensor silenced, heartbeat stale %.2fs -> escalate" % detect, flush=True)
             if zalarm is not None:
                 try:

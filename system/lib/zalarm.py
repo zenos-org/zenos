@@ -28,7 +28,9 @@ def _alive(pid):
 
 def _ensure_siren(text):
     os.makedirs(Z, exist_ok=True)
-    json.dump({"text": text, "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z")}, open(STATE, "w"))
+    with open(STATE, "w") as f:
+        json.dump({"text": text, "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z")}, f)
+    zconf.give_to_user(STATE)
     try:
         if os.path.exists(PID) and _alive(int(open(PID).read().strip())):
             return                                   # already ringing; message refreshed via STATE
@@ -90,6 +92,8 @@ def dispatch(title, text, reasons):
         import zledger
         dev = __import__("hashlib").sha256(b"node-A").hexdigest()[:16]
         zledger.append(LEDGER, "red-dispatch", "alarm", dev, recipients=sent, reasons=reasons, text=text)
+        zconf.give_to_user(LEDGER)
+        zconf.give_to_user(LEDGER + ".lock")
     except Exception:
         pass
     return sent

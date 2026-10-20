@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import zledger, zanchor, zalarm
 
 HB = "/run/zenos-sensor.hb"
-HB_MAX = 5.0
+HB_MAX = 10.0      # same limit as the dead-man watcher (zheartbeat.TIMEOUT)
 
 
 def inventory():
@@ -40,10 +40,13 @@ def inventory():
 
 
 def hb_age():
-    try:
-        return time.time() - float(open(HB).read().strip())
-    except Exception:
-        return 1e9
+    for attempt in range(3):              # an older sensor rewrote the file in place: retry a torn read
+        try:
+            with open(HB) as f:
+                return time.time() - float(f.read().strip())
+        except (OSError, ValueError):
+            time.sleep(0.2)
+    return 1e9
 
 
 # --- machine health (we watch the COMPUTER, not the person) ---
