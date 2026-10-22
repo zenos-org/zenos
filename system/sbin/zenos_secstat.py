@@ -7,7 +7,7 @@ Counts what the System Monitor's Security graph shows and raises plain alerts. N
   contained: outbound destinations the network sentinel cut (ZENOS_OUT rules) and its incidents log
   sign-in  : failed passwords (sudo, su, login screen, lock screen, ssh) from the system journal
 Alerts (deterministic thresholds, no AI): port scan, inbound burst, repeated failed sign-ins, sentinel incident,
-firewall missing. Written every 2 s to /run/zenos/secstat.json (world-readable, no secrets in it).
+firewall missing, security fixes not installed, restart pending after a fix. Written every 2 s to /run/zenos/secstat.json (world-readable, no secrets in it).
 """
 import json, os, re, subprocess, threading, time
 from collections import deque, Counter
@@ -18,6 +18,11 @@ SCAN_PORTS, SCAN_WIN = 10, 60          # one source touching >= 10 different por
 BURST_N, BURST_WIN = 50, 60            # >= 50 blocked attempts within 60 s
 AUTH_N, AUTH_WIN = 5, 300              # >= 5 failed sign-ins within 5 min
 QUIET = 600                            # the same alert is not repeated for 10 min
+UPD_EVERY = 900                        # look for pending security fixes every 15 min
+UPD_RED = 24 * 3600                    # a security fix still not installed after 24 h -> red
+REBOOT_FLAG = "/run/reboot-required"
+UU_STAMP = "/var/lib/apt/periodic/unattended-upgrades-stamp"
+SEC_ORIGIN = re.compile(r"\((\S+) (\S+) \[")   # 'Inst pkg [old] (new Debian-Security:13/stable-security [amd64])'
 # one line per wrong password: PAM's own record (sudo, su, login screen, lock screen and ssh all go through PAM);
 # the summaries sudo/sshd add on top ("incorrect password attempts", "Failed password") would count it twice
 AUTH_RE = re.compile(r"pam_\w+\([\w-]+:auth\): authentication failure", re.I)
@@ -157,6 +162,45 @@ def journal():
         time.sleep(2)
 
 
+upd = {"security_pending": 0, "packages": [], "pending_since": None, "reboot_required": False,
+       "reboot_since": None, "last_auto": None, "checked": None}
+
+
+def pending_security():
+    """packages with a fix waiting from Debian-Security or the ZENOS repository (simulation, no lock taken)"""
+    out = sh("apt-get", "-s", "-o", "Debug::NoLocking=1", "dist-upgrade")
+    pk = []
+    for l in out.splitlines():
+        if not l.startswith("Inst "):
+            continue
+        m = SEC_ORIGIN.search(l)
+        src = m.group(2) if m else ""
+        if "security" in src.lower() or src.startswith("ZENOS"):
+            pk.append(l.split()[1])
+    return pk
+
+
+def updates():
+    while True:
+        now = time.time()
+        try:
+            pk = pending_security()
+        except Exception:
+            pk = None
+        rb = os.path.exists(REBOOT_FLAG)
+        try:
+            last = int(os.path.getmtime(UU_STAMP))
+        except OSError:
+            last = None
+        with lock:
+            if pk is not None:
+                upd["security_pending"], upd["packages"] = len(pk), pk[:20]
+                upd["pending_since"] = (upd["pending_since"] or int(now)) if pk else None
+            upd["reboot_since"] = (upd["reboot_since"] or int(now)) if rb else None
+            upd["reboot_required"], upd["last_auto"], upd["checked"] = rb, last, int(now)
+        time.sleep(UPD_EVERY)
+
+
 def incidents_since(pos):
     try:
         with open(INCIDENTS) as f:
@@ -170,6 +214,7 @@ def incidents_since(pos):
 def main():
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     threading.Thread(target=journal, daemon=True).start()
+    threading.Thread(target=updates, daemon=True).start()
     try:
         pos = os.path.getsize(INCIDENTS)
     except OSError:
@@ -236,6 +281,15 @@ def main():
                       "%d wrong passwords in 5 minutes, via %s." % (len(a5), c))
             top = Counter(s for t, s, p in drops if now - t <= 3600).most_common(3)
             recent = [{"t": int(t), "src": s, "port": p} for t, s, p in list(drops)[-5:]]
+            if upd["security_pending"] and upd["pending_since"]:
+                late = now - upd["pending_since"] >= UPD_RED
+                alert("upd:" + ("red" if late else "amber"), "red" if late else "amber",
+                      "Security fixes not installed" if late else "Security fixes waiting",
+                      "%d package(s) with a security fix: %s." % (upd["security_pending"], ", ".join(upd["packages"][:4])))
+            if upd["reboot_required"]:
+                alert("reboot", "amber", "Restart to finish security fixes",
+                      "A fix (for example to the kernel) takes effect only after a restart. Save your work and restart.")
+            ust = dict(upd)
             al = list(alerts)
         hist_in.append(0 if prev_in is None else max(0, blocked - prev_in)); prev_in = blocked
         hist_auth.append(max(0, at - prev_auth)); prev_auth = at
@@ -243,7 +297,7 @@ def main():
                  "remote": [{"what": w, "peer": p} for w, p in remote],
                  "inbound_blocked": blocked, "outbound_contained": max(0, tout - base_out) + contained_total,
                  "auth_failed": at, "h_in": list(hist_in), "h_auth": list(hist_auth),
-                 "top_sources": [{"src": s, "n": n} for s, n in top], "recent": recent, "alerts": al}
+                 "top_sources": [{"src": s, "n": n} for s, n in top], "recent": recent, "alerts": al, "updates": ust}
         tmp = OUT + ".tmp"
         with open(tmp, "w") as f:
             json.dump(state, f)

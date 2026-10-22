@@ -52,6 +52,9 @@ chmod 644 "$P/usr/sbin/zenos-netsense.bt"
 cp "$SRC"/system/systemd/*.service "$P/lib/systemd/system/"
 cp "$SRC"/system/systemd-user/*.service "$P/usr/lib/systemd/user/"
 mkdir -p "$P/etc/zenos"
+# security fixes install themselves (packaging/debian/apt/52zenos-auto-update)
+mkdir -p "$P/etc/apt/apt.conf.d"
+install -m 644 "$SRC/packaging/debian/apt/52zenos-auto-update" "$P/etc/apt/apt.conf.d/52zenos-auto-update"
 cat > "$P/etc/zenos/zenos.conf" <<'EOF'
 # ZENOS machine settings (KEY=value)
 # The desktop user whose files the root services protect. Empty: the first user who has ZENOS data.
