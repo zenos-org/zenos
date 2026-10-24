@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 # ZENOS Browser - WebKitGTK shell (non-Google). Two-layer: HTML toolbar (exact Figma) + content WebView.
-import os, json, time, gi
+import os, sys, json, time, gi
 from urllib.parse import urlparse
+for _lib in (os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../system/lib"), "/usr/lib/zenos"):
+    if os.path.isdir(_lib) and _lib not in sys.path:
+        sys.path.append(_lib)
+import zdistrust
 import zenos_bookmarks as BM
 import zenos_picker
 gi.require_version("Gtk", "3.0")
@@ -176,7 +180,28 @@ class Zenos(Gtk.Window):
         v.connect("run-file-chooser", self.on_file_chooser)
         v.connect("enter-fullscreen", self.on_enter_fs)
         v.connect("leave-fullscreen", self.on_leave_fs)
+        v.connect("load-changed", self.on_load_tls)
         return v
+
+    # refuse sites whose certificate chain contains a compromised CA key (system/lib/distrust.json),
+    # even when a still-trusted root cross-signed that key
+    def on_load_tls(self, v, ev):
+        if ev != WebKit2.LoadEvent.COMMITTED:
+            return
+        try:
+            ok, cert, _ = v.get_tls_info()
+            bad = zdistrust.blocked_gio(cert) if ok and cert is not None else None
+        except Exception:
+            bad = None
+        if bad:
+            uri = v.get_uri() or ""
+            v.stop_loading()
+            host = GLib.markup_escape_text(urlparse(uri).hostname or uri)
+            v.load_alternate_html(
+                "<html><body style='font:15px sans-serif;background:#1a1a1f;color:#eee;padding:60px'>"
+                f"<h2>Connection refused</h2><p>{host} uses a certificate from a compromised authority:</p>"
+                f"<p><b>{GLib.markup_escape_text(bad)}</b></p><p>ZENOS will not open this site.</p></body></html>",
+                uri, None)
 
     # video / page fullscreen: hide our chrome and take the whole screen, like other browsers
     def on_enter_fs(self, v):

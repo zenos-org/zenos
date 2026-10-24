@@ -4,6 +4,7 @@
 // Production: run by each ministry on its own server. Every request made for an account is signed by the device the
 // account is registered on (see "device binding" below).
 "use strict";
+require("./distrust");   // refuse compromised CA keys on every TLS connection
 const http = require("http");
 const fs = require("fs");
 const path = require("path");

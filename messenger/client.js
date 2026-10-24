@@ -4,6 +4,7 @@
 // Levels: a message carries a level; it can only be sent to people whose clearance covers that level.
 // PoC limits: keys and history are stored as files on this PC (production: device secure element, encrypted history).
 "use strict";
+require("./distrust");   // refuse compromised CA keys on every TLS connection
 const S = require("@signalapp/libsignal-client");
 const http = require("http");
 const fs = require("fs");
