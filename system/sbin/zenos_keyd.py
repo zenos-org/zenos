@@ -252,6 +252,7 @@ def main():
         return set_clearance(sys.argv[2], sys.argv[3])
     ensure_keys()
     os.makedirs(os.path.dirname(SOCK), exist_ok=True)
+    os.chmod(os.path.dirname(SOCK), 0o755)   # with the unit's UMask=0077 it would be 0700: no user could reach the socket
     try:
         os.unlink(SOCK)
     except OSError:

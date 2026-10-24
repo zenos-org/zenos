@@ -52,6 +52,7 @@ chmod 755 "$P"/usr/sbin/*
 chmod 644 "$P/usr/sbin/zenos-netsense.bt"
 cp "$SRC"/system/systemd/*.service "$P/lib/systemd/system/"
 cp "$SRC"/system/systemd-user/*.service "$P/usr/lib/systemd/user/"
+mkdir -p "$P/usr/lib/tmpfiles.d" && install -m 644 "$SRC/system/tmpfiles.d/zenos.conf" "$P/usr/lib/tmpfiles.d/zenos.conf"
 mkdir -p "$P/etc/zenos"
 # security fixes install themselves (packaging/debian/apt/52zenos-auto-update)
 mkdir -p "$P/etc/apt/apt.conf.d"

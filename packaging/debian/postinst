@@ -5,6 +5,7 @@ if [ "$1" = "configure" ]; then
     chmod 750 /var/log/zenos
     if [ -d /run/systemd/system ]; then
         systemctl daemon-reload || true
+        systemd-tmpfiles --create zenos.conf || true     # /run/zenos 0755 before the services start
     fi
     # clearances (which levels each user may open without an approval) are set by the administrator:
     #   sudo zenos_keyd.py --clearance <user> <1-5>      until then every user is cleared for L1 only
