@@ -132,8 +132,19 @@ def describe(path):
     """(label, users, unused) for a trust store file found on the disk"""
     m = re.match(r"/var/lib/docker/overlay2/([0-9a-f]+)/diff(/.*)", path)
     if m:
-        img = docker_layers().get(m.group(1), "image layer " + m.group(1)[:12])
-        return "Container %s: %s" % (img, m.group(2)), ["programs in container image %s" % img], False
+        layer, inner = m.groups()
+        img = docker_layers().get(layer, "image layer " + layer[:12])
+        running, stopped = [], []
+        for c in docker_containers():
+            if layer not in c["layers"]:
+                continue
+            if any(inner == d or inner.startswith(d.rstrip("/") + "/") for d in c["mounts"]):
+                continue                       # a bind mount replaces this file inside that container
+            (running if c["running"] else stopped).append(c["name"])
+        users = ["running container " + n for n in running] + ["stopped container " + n for n in stopped]
+        # the file is a live route only while a running container sees it
+        return ("Container image %s: %s" % (img, inner),
+                users or ["no container uses it (image only, or replaced by a mount)"], not running)
     owner = dpkg_owner(path)
     label = path + (" (package %s)" % owner if owner else "")
     if path.endswith("/certifi/cacert.pem"):
@@ -148,6 +159,24 @@ def describe(path):
 
 
 _layers = {}
+_containers = []
+
+
+def docker_containers():
+    """[{name, running, layers, mounts}] for every container, from docker inspect"""
+    if not _containers and shutil.which("docker"):
+        ids = sh("docker", "ps", "-aq", timeout=30).split()
+        if ids:
+            out = sh("docker", "inspect", "--format",
+                     "{{.Name}}|{{.State.Running}}|{{.GraphDriver.Data.UpperDir}}:{{.GraphDriver.Data.LowerDir}}|"
+                     "{{range .Mounts}}{{.Destination}},{{end}}", *ids, timeout=60)
+            for l in out.splitlines():
+                f = l.split("|")
+                if len(f) == 4:
+                    _containers.append({"name": f[0].lstrip("/"), "running": f[1] == "true",
+                                        "layers": set(re.findall(r"/var/lib/docker/overlay2/([0-9a-f]+)/diff", f[2])),
+                                        "mounts": [d for d in f[3].split(",") if d]})
+    return _containers
 
 
 def docker_layers():
@@ -261,6 +290,7 @@ def dpkg_owner(path):
 
 
 def inventory(prev):
+    _containers.clear(); _layers.clear()          # containers come and go between rounds
     bad = compromised_pems()
     learned = load(LEARNED, {})
     onecrl_issuers = {k.split(":")[0] for k in learned.get("issuer_serial", {})}
@@ -456,6 +486,17 @@ def get_fix(reason):
 
 # ---------------------------------------------------------------- main loop
 
+def publish(st, stores, local, feed, fix, now):
+    risk = "red" if any(s.get("distrusted") for s in stores) else \
+        "amber" if any((s.get("vouching") or s.get("key_compromise_issuers")) and not s.get("protected")
+                       for s in stores) else "green"
+    st.update(t=int(now), stores=stores, local_roots=local, feed=feed, fix=fix, risk=risk)
+    save(STATE, st, 0o600)
+    pub = {k: v for k, v in st.items() if k != "seen"}
+    pub["stores"] = [{k: v for k, v in s.items() if not k.startswith("_")} for s in stores]
+    save(OUT, pub)
+
+
 def main():
     once = "--once" in sys.argv
     st = load(STATE, {})
@@ -493,6 +534,7 @@ def main():
             reasons.append("a trust store trusts a root that cross-signed a compromised CA key")
         fix = st.get("fix")
         since = now - (fix or {}).get("t", 0)
+        publish(st, stores, local, feed, fix, now)       # show the routes now; fetching a fix can take a while
         if (reasons and since > FIX_GAP) or since > 86400:
             fix = get_fix("; ".join(reasons) or "daily check")
             if fix["installed"]:
@@ -515,14 +557,7 @@ def main():
                                  "sev": sev, "title": title, "text": text[:200]})
             log("alert", sev=sev, title=title, text=text)
         st["alerts"] = st["alerts"][-30:]
-        risk = "red" if any(s.get("distrusted") for s in stores) else \
-            "amber" if any((s.get("vouching") or s.get("key_compromise_issuers")) and not s.get("protected")
-                           for s in stores) else "green"
-        st.update(t=int(now), stores=stores, local_roots=local, feed=feed, fix=fix, risk=risk)
-        save(STATE, st, 0o600)
-        pub = {k: v for k, v in st.items() if k != "seen"}
-        pub["stores"] = [{k: v for k, v in s.items() if not k.startswith("_")} for s in stores]
-        save(OUT, pub)
+        publish(st, stores, local, feed, fix, now)
         if once:
             return
         time.sleep(INV_EVERY)
