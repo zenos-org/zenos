@@ -57,6 +57,11 @@ mkdir -p "$P/etc/zenos"
 # security fixes install themselves (packaging/debian/apt/52zenos-auto-update)
 mkdir -p "$P/etc/apt/apt.conf.d"
 install -m 644 "$SRC/packaging/debian/apt/52zenos-auto-update" "$P/etc/apt/apt.conf.d/52zenos-auto-update"
+# Node.js 24 LTS from NodeSource; Debian 13's Node 20 is past end of life (packaging/debian/apt/zenos-nodesource.*)
+mkdir -p "$P/etc/apt/sources.list.d" "$P/etc/apt/preferences.d" "$P/usr/share/keyrings"
+install -m 644 "$SRC/packaging/debian/apt/zenos-nodesource.sources" "$P/etc/apt/sources.list.d/zenos-nodesource.sources"
+install -m 644 "$SRC/packaging/debian/apt/zenos-nodesource.pref" "$P/etc/apt/preferences.d/zenos-nodesource"
+install -m 644 "$SRC/packaging/debian/apt/nodesource-archive-keyring.gpg" "$P/usr/share/keyrings/zenos-nodesource.gpg"
 # every Node program refuses distrusted CA certificates and keys (system/lib/zdistrust.js)
 mkdir -p "$P/etc/profile.d" "$P/usr/lib/environment.d" "$P/usr/lib/systemd/system.conf.d"
 install -m 644 "$SRC/packaging/debian/node/zenos-node.sh" "$P/etc/profile.d/zenos-node.sh"

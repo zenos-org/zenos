@@ -1,0 +1,8 @@
+# ZENOS: Node.js 24 LTS from NodeSource (Tk 2026-10-24). Debian 13 ships Node 20, which is past end of life and
+# gets no fixes from the Node.js project (CVE-2026-111497, Brotli decoder, was fixed only in 22/24/26).
+# Key fingerprint 6F71F525282841EEDAF851B42F59B5F99B1BE0B4. Updates install themselves (52zenos-auto-update).
+Types: deb
+URIs: https://deb.nodesource.com/node_24.x
+Suites: nodistro
+Components: main
+Signed-By: /usr/share/keyrings/zenos-nodesource.gpg

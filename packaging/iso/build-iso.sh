@@ -24,6 +24,13 @@ lb config \
 
 mkdir -p config/package-lists config/packages.chroot config/includes.chroot/etc/sddm.conf.d config/hooks/live config/bootloaders
 cp "$DEB" config/packages.chroot/
+# Node.js 24 LTS from NodeSource (the ZENOS package needs nodejs >= 24; Debian 13 has only the unsupported Node 20)
+mkdir -p config/archives
+for s in chroot binary; do
+  echo "deb https://deb.nodesource.com/node_24.x nodistro main" > config/archives/nodesource.list.$s
+  cp "$SRC/packaging/debian/apt/nodesource-archive-keyring.asc" config/archives/nodesource.key.$s
+  cp "$SRC/packaging/debian/apt/zenos-nodesource.pref" config/archives/nodesource.pref.$s
+done
 cp "$SRC/packaging/iso/splash.svg" config/bootloaders/splash.svg      # ZENOS boot screen (BIOS and UEFI menus)
 cat > config/package-lists/zenos.list.chroot <<'EOF'
 # desktop

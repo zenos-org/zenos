@@ -1,0 +1,8 @@
+# ZENOS: take only nodejs from NodeSource; nothing else in that repository (N|Solid and the rest) is installable.
+Package: *
+Pin: origin deb.nodesource.com
+Pin-Priority: -1
+
+Package: nodejs
+Pin: origin deb.nodesource.com
+Pin-Priority: 600

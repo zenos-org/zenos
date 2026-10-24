@@ -1,5 +1,6 @@
 // ZENOS: security fixes go in without waiting for a person (Tk 2026-10-22).
-// Debian's security and stable updates, and signed ZENOS updates, are fetched and installed every day.
+// Debian's security and stable updates, signed ZENOS updates and Node.js 24 LTS (NodeSource) are fetched and
+// installed every day.
 // The System Monitor turns amber while a security fix is pending and red after 24 hours (zenos_secstat.py).
 // A kernel fix needs a restart; ZENOS never restarts on its own (open work would be lost) and asks instead.
 APT::Periodic::Update-Package-Lists "1";
@@ -11,6 +12,7 @@ Unattended-Upgrade::Origins-Pattern {
         "origin=Debian,codename=${distro_codename},label=Debian";
         "origin=Debian,codename=${distro_codename}-updates";
         "origin=ZENOS";
+        "site=deb.nodesource.com";
 };
 Unattended-Upgrade::Automatic-Reboot "false";
 Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";

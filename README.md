@@ -51,6 +51,11 @@ ZENOS is a Debian 13 ("trixie") system with a KDE Plasma 6 X11 session. It does 
 
 ```
 packaging/build-deb.sh                     # -> build/zenos_<version>_amd64.deb
+# ZENOS needs Node.js 24 LTS (Debian 13's Node 20 is past end of life): add NodeSource first
+sudo install -m 644 packaging/debian/apt/nodesource-archive-keyring.gpg /usr/share/keyrings/zenos-nodesource.gpg
+sudo install -m 644 packaging/debian/apt/zenos-nodesource.sources /etc/apt/sources.list.d/
+sudo install -m 644 packaging/debian/apt/zenos-nodesource.pref /etc/apt/preferences.d/zenos-nodesource
+sudo apt update
 sudo apt install ./build/zenos_*_amd64.deb
 ```
 

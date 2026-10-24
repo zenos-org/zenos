@@ -168,7 +168,7 @@ upd = {"security_pending": 0, "packages": [], "pending_since": None, "reboot_req
 
 
 def pending_security():
-    """packages with a fix waiting from Debian-Security or the ZENOS repository (simulation, no lock taken)"""
+    """packages with a fix waiting from Debian-Security, the ZENOS repository or NodeSource (simulation, no lock taken)"""
     out = sh("apt-get", "-s", "-o", "Debug::NoLocking=1", "dist-upgrade")
     pk = []
     for l in out.splitlines():
@@ -176,7 +176,7 @@ def pending_security():
             continue
         m = SEC_ORIGIN.search(l)
         src = m.group(2) if m else ""
-        if "security" in src.lower() or src.startswith("ZENOS"):
+        if "security" in src.lower() or src.startswith("ZENOS") or "nodistro" in l:
             pk.append(l.split()[1])
     return pk
 
