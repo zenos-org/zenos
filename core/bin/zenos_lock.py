@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ZENOS stop screen (PoC). Covers the whole desktop while the PC is stopped after an anomaly.
 It cannot be closed from here: it disappears only when the officers approve the emergency release."""
-import json, os, sys, time
+import json, os, sys
 import tkinter as tk
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import zenos

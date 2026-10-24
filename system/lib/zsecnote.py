@@ -11,12 +11,12 @@ Hard (the trust root; a compromised endpoint cannot retroactively match its own 
 Verdict: trusted | SUSPECT(reasons). Any hard check failing => the endpoint's OS may be modified.
 The audit first anchors new local edits (the scheduler), then reconciles. Verdict is logged.
 """
-import json, os, socket, subprocess, sys, time
+import os, socket, subprocess, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import zledger, zanchor, zalarm
 
 HB = "/run/zenos-sensor.hb"
-HB_MAX = 10.0      # same limit as the dead-man watcher (zheartbeat.TIMEOUT)
+HB_MAX = 10.0      # same limit as the dead-man watcher (zenos_heartbeat.TIMEOUT)
 
 
 def inventory():

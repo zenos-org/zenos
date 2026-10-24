@@ -8,7 +8,8 @@ the siren. Singleton via a pid file, so repeated red alerts keep one siren and r
 import json, os, subprocess, sys, threading, time
 import tkinter as tk
 
-sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib", "zenos")))
+# the ZENOS library is ../lib/zenos beside this program (/usr/lib/zenos, root-owned)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib", "zenos"))
 import zconf
 Z = zconf.data()
 STATE = os.path.join(Z, "redalert.json")

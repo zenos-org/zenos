@@ -10,9 +10,8 @@ sanctioned path; the sensor still catches anything that tries to bypass it.
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import zconf
-sys.path.insert(0, os.path.join(zconf.root(), "bin"))
-import zenos, zledger
+import zenos                           # also puts the ZENOS library on the path
+import zledger
 
 NORMAL_MAX = 50 * 1024 * 1024      # <= this and sealed: allowed
 HUGE_MAX = NORMAL_MAX              # over this: requires an approved transfer request

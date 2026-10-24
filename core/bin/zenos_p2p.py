@@ -28,12 +28,11 @@ PoC notes
   - The grid admin key lives on this machine (p2p/admin.json). In production it stays off the machine.
   - Level keys are read from disk like the rest of the PoC. In production they come from the FIDO2 device.
 """
-import base64, fcntl, hashlib, json, os, secrets, signal, socket, subprocess, sys, time
+import fcntl, hashlib, json, os, secrets, signal, socket, subprocess, sys, time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import zenos  # noqa: E402
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM  # noqa: E402
 
 P2P = zenos.Z / "p2p"
 INDEX = P2P / "index"

@@ -28,17 +28,20 @@ single vendor; the browser engine is WebKitGTK, not Chromium.
 ## Repository layout
 
 ```
-core/         ZENOS core: sealing, approvals, sentinel, lock screen, shared app shell, file picker, browser
-  bin/        Python modules and launchers
-  shell/      HTML chrome for the browser, popovers, bookmark manager, file picker
-  icons/
-apps/         Documents, Sheets, Slides (Vite + TypeScript), PDF, Images, Video
-messenger/    ZENOS Messages: client, relay, web UI, calls
-system/       root services: network sentinel, firewall, ledger, fragment crypto, heartbeat (sbin/, lib/, systemd/)
-desktop/      KDE Plasma integration: launcher and level indicator plasmoids, .desktop files, session start
-third_party/  Modified KDE plasmoids (kept under their original GPL/LGPL licenses)
-docs/         Threat model and architecture
+core/         desktop side: sealed files and approvals (zenos.py), browser, app shell, file picker, lock screen
+apps/         Documents, Sheets, Slides (Vite + TypeScript), PDF, Images, Video; apps/common: their local server
+messenger/    ZENOS Messages: client, relay, web UI, calls (AGPL-3.0)
+desktop/      KDE Plasma integration: launcher, level indicator and monitor plasmoids, .desktop files
+system/       root services (sbin/, systemd/) and the shared library installed to /usr/lib/zenos (lib/)
+storage/      storage grid nodes (erasure code, certificates, repair)
+packaging/    the zenos and zenos-grid packages and the installer image
+config/       example configuration for the servers
+tests/        unit tests
+third_party/  modified KDE plasmoids (kept under their original GPL/LGPL licenses)
+docs/         architecture, security architecture, threat model, release process
 ```
+
+How the parts fit together and which run as root: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Running it
 

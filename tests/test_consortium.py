@@ -1,5 +1,5 @@
 """Consortium of audit nodes: copies are compared across parties and a forked history is caught."""
-import base64, hashlib, json, os, sys, tempfile, unittest
+import base64, hashlib, json, sys, tempfile, unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent

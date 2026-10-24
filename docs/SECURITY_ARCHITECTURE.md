@@ -7,14 +7,14 @@
 - Tamper-evident ledger (hash chain): /usr/local/lib/zenos/zledger.py  (audit() delegates)
 - Sensor + reflex + agent: /usr/local/sbin/zenos_netsentinel.py (+ zenos-netsense.bt)
 - Security monitor feed: /usr/sbin/zenos_secstat.py (zenos-secstat.service). Read-only: counts ZENOS_IN drops (and the rate-limited "ZENOS_IN_DROP " log line for source/port), PAM sign-in failures and sentinel incidents; writes /run/zenos/secstat.json for the System Monitor. Changes no rule.
-- Open-time network cut (L4+): /usr/local/sbin/zopenguard.py
-- Sensor liveness (dead-man's switch): /usr/local/sbin/zheartbeat.py
+- Open-time network cut (L4+): /usr/local/sbin/zenos_openguard.py
+- Sensor liveness (dead-man's switch): /usr/local/sbin/zenos_heartbeat.py
 - Inbound firewall: /usr/local/sbin/zenos-firewall
 
 ## iptables chain map (three separate chains, never overlap)
 - ZENOS_IN   : inbound. Owner: zenos-firewall. lo RETURN; ESTABLISHED,RELATED RETURN; new non-lo DROP.
 - ZENOS_OUT  : egress reflex. Owner: netsentinel. Per-incident DROP of a destination.
-- ZENOS_OPEN : open-time cut. Owner: zopenguard. lo RETURN; ESTABLISHED,RELATED RETURN; else DROP.
+- ZENOS_OPEN : open-time cut. Owner: zenos_openguard. lo RETURN; ESTABLISHED,RELATED RETURN; else DROP.
 Rule: each chain is inserted/removed only by its owner. No module touches another's chain.
 
 ## Open sequence (fixed order)
@@ -65,7 +65,7 @@ Change-point capture is integrated at the viewer/OS level (automatic, like autos
 Pattern: database write-ahead logging + CloudTrail-style local-then-digest; neither loses committed records.
 
 ## New owned modules (send-check + two-tier anchor)
-- Pre-send gate: /usr/local/lib/zenos/zsendcheck.py  (plaintext/unsealed/tampered -> block; over the huge
+- Pre-send gate: /usr/share/zenos/bin/zenos_sendcheck.py  (plaintext/unsealed/tampered -> block; over the huge
   line -> allowed only with an approved 申請; every decision logged to the ledger)
 - Two-tier anchor: /usr/local/lib/zenos/zanchor.py  (local fine-grained chain + periodic Merkle-root anchor
   to the consortium)
@@ -83,7 +83,7 @@ hard checks and emit a verdict (trusted | SUSPECT) logged to the consortium ledg
   the consortium, so the mismatch exposes the modified OS. Attestation (measured boot) strengthens trust in
   the self-reported inventory but is not yet implemented (target B).
 Verified: stealth tamper (self-consistent local rewrite) -> SUSPECT(local-vs-consortium-mismatch).
-Remaining wiring: run the audit on a resident timer across endpoints; call zsendcheck at each transfer point.
+Remaining wiring: run the audit on a resident timer across endpoints; call zenos_sendcheck at each transfer point.
 
 ## Machine health (watch the computer, not the person)
 Folded into zsecnote. Framing: resource/behavioral signals are device monitoring, not surveillance of staff.

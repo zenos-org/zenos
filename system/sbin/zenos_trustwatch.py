@@ -20,7 +20,8 @@ Output: /run/zenos/trust.json (routes, stores, alerts; read by the security moni
 """
 import base64, hashlib, json, os, re, shutil, ssl, subprocess, sys, time, urllib.request
 
-sys.path.insert(0, "/usr/lib/zenos"); sys.path.insert(0, "/usr/local/lib/zenos")
+# the ZENOS library is ../lib/zenos beside this program (/usr/lib/zenos, root-owned)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib", "zenos"))
 import zdistrust
 
 _T = os.environ.get("ZENOS_TRUST_DIR")           # tests: keep every file the agent writes in one folder

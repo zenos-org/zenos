@@ -1,11 +1,11 @@
 """Dead-man watcher: no false alarm from a torn read or a slow start; a silent sensor still alarms."""
-import json, os, sys, tempfile, threading, time, unittest
+import json, sys, tempfile, threading, time, unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "system" / "lib"))
 sys.path.insert(0, str(ROOT / "system" / "sbin"))
-import zheartbeat as hb  # noqa: E402
+import zenos_heartbeat as hb  # noqa: E402
 
 
 class Watcher(unittest.TestCase):

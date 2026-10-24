@@ -25,8 +25,9 @@ for a in docs sheets slides; do
   cp -a "$SRC/apps/$a" "$B/$a"
   ( cd "$B/$a" && npm ci --no-audit --no-fund --loglevel=error && npm run build --silent )
   mkdir -p "$Z/apps/$a"
-  cp -a "$B/$a/dist" "$B/$a/server" "$Z/apps/$a/"
+  cp -a "$B/$a/dist" "$Z/apps/$a/"
 done
+cp -a "$SRC/apps/common" "$Z/apps/"          # the local server the three office apps share
 
 echo "== messenger (AGPL-3.0)"
 cp -a "$SRC/messenger" "$B/msg"

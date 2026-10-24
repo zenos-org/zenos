@@ -10,7 +10,7 @@ spec = {
   "focus": {"mask": id, "blur": 0..100, "feather": 0..100} or None,
   "regions": [{"shape": "rect"|"ellipse", "x","y","w","h" (0..1 of rotated image), "kind": "mosaic"|"blur", "strength": 1..100}]
 }"""
-import os, io, base64, secrets, threading, urllib.request
+import base64, secrets, threading, urllib.request
 import numpy as np
 import cv2
 

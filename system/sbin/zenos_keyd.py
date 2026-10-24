@@ -14,8 +14,8 @@ Protocol: one JSON line per connection on /run/zenos/keyd.sock; the caller is id
 import base64, hashlib, json, os, pwd, re, socket, struct, sys, threading, time
 from pathlib import Path
 
-sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib", "zenos")))
-sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib")))
+# the ZENOS library is ../lib/zenos beside this program (/usr/lib/zenos, root-owned)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib", "zenos"))
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from cryptography.hazmat.primitives import serialization

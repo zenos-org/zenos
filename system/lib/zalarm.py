@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ZENOS alerting (PoC).
 
-severity "red": a full-screen flashing siren that rings until a person ACKNOWLEDGEs it (zsiren), PLUS a
+severity "red": a full-screen flashing siren that rings until a person ACKNOWLEDGEs it (zenos_siren), PLUS a
 fan-out to every pre-registered senior's device (dispatch). Red is meant to be impossible to ignore and to
 reach the chain of command, not just the one machine.
 severity "low": on-screen notice only.
@@ -16,7 +16,7 @@ PID = os.path.join(Z, "redalert.pid")
 RECIPIENTS = os.path.join(Z, "alert-recipients.json")
 INBOX = os.path.join(Z, "alerts-outbox")          # per-recipient fan-out (reaches their device via the grid)
 LEDGER = os.path.join(Z, "ledger.jsonl")
-SIREN = os.path.join(zconf.SBIN, "zsiren.py")
+SIREN = os.path.join(zconf.SBIN, "zenos_siren.py")
 
 
 def _alive(pid):

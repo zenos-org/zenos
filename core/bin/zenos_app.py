@@ -75,7 +75,7 @@ class App(Gtk.Window):
         ucm = WebKit2.UserContentManager()
         ucm.register_script_message_handler("zenos")
         ucm.connect("script-message-received::zenos", self.on_msg)
-        SEALED = int(os.environ.get("ZENOS_SEALED_LEVEL", "0") or 0)
+        SEALED = self.sealed = int(os.environ.get("ZENOS_SEALED_LEVEL", "0") or 0)
         init = {"level": read_level(), "file": finfo(start_file) if start_file else None, "home": HOME, "sealed": SEALED}
         ucm.add_script(WebKit2.UserScript.new(
             "window.__zinit=%s;(function(){var n=0,p={};window.__zr=function(i,r){var f=p[i];delete p[i];if(f)f(r);};"
@@ -132,16 +132,16 @@ class App(Gtk.Window):
                     ceiling = int(v.strip())
         except (OSError, ValueError):
             pass
-        allowed = SEALED <= ceiling
+        allowed = self.sealed <= ceiling
         try:
             import zenos
-            zenos.audit("print" if allowed else "print-refused", file=os.path.basename(start_file), level=SEALED)
+            zenos.audit("print" if allowed else "print-refused", file=os.path.basename(start_file), level=self.sealed)
         except Exception:
             pass
         if allowed:
             return False
         d = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK,
-                              text="This file is L%d. Files above L%d cannot be printed from this PC." % (SEALED, ceiling))
+                              text="This file is L%d. Files above L%d cannot be printed from this PC." % (self.sealed, ceiling))
         d.run()
         d.destroy()
         return True

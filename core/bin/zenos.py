@@ -13,6 +13,11 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from cryptography.hazmat.primitives import serialization
 
+for _lib in ("/usr/lib/zenos", "/usr/local/lib/zenos"):   # the ZENOS library: installed, else development layout
+    if os.path.isdir(_lib) and _lib not in sys.path:
+        sys.path.append(_lib)
+from zformat import MAGIC, FOLDERS, LABEL, REQUIRED, request_core, request_digest  # noqa: E402
+
 H = Path.home()
 Z = H / ".local/share/zenos"                     # per-user data
 ROOT = Path(__file__).resolve().parent.parent      # program files (icons, apps, launchers)
@@ -20,16 +25,11 @@ K = Z / "keys"
 CFG = H / ".config/zenos"
 DESK = H / "Desktop"
 AUDIT = Z / "audit.log"
-MAGIC = b"ZENOS1\n"
-FOLDERS = {"Basic · L1": (1, 1), "Green · L2-L3": (2, 3), "Red · L4": (4, 4), "Black · L5": (5, 5)}
 FOLDER_ICON = {"Basic · L1": "basic", "Green · L2-L3": "green", "Red · L4": "red", "Black · L5": "black"}
-LABEL = {1: "Public", 2: "Confidentiality 2", 3: "Confidentiality 3",
-         4: "Important Economic Security Information", 5: "Specially Designated Secret"}
 REQ = Z / "requests"
 GRANTS = Z / "grants"
 APPROVER_KEYS = Z / "approvers"
 # approvers needed per level (design: more approvers as the level rises)
-REQUIRED = {1: 0, 2: 1, 3: 1, 4: 2, 5: 3}
 # PoC roster. In production each officer signs with their own FIDO2 device.
 ROSTER = {"sato": "Sato Kenji · Section Chief", "tanaka": "Tanaka Yuko · Director",
           "suzuki": "Suzuki Akira · Security Officer"}
@@ -49,13 +49,7 @@ PLANS = Z / "plans"
 QUAR = Z / "quarantine"
 USB = DESK / "USB Drive"   # PoC stand-in for removable media / external transfer
 PLAN_RULES = {"usb-export": "Copy files to the USB Drive", "bulk-read": "Open many protected files at once"}
-CORE_KEYS = ("id", "kind", "requester", "file", "file_hash", "level", "reason", "created", "scope")
 
-import sys as _sys
-import os as _os
-for _lib in ("/usr/local/lib/zenos", "/usr/lib/zenos"):   # development, then installed
-    if _os.path.isdir(_lib) and _lib not in _sys.path:
-        _sys.path.append(_lib)                       # after anything the caller put first (tests use the repo copy)
 try:
     import zledger as _zledger
 except Exception:
@@ -267,14 +261,6 @@ def approver_key(name):
         (APPROVER_KEYS / f"{name}.pub").write_bytes(
             k.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw))
     return Ed25519PrivateKey.from_private_bytes(sk.read_bytes())
-
-
-def request_core(r):
-    return {k: r[k] for k in CORE_KEYS if k in r}
-
-
-def request_digest(r):
-    return hashlib.sha256(json.dumps(request_core(r), sort_keys=True, ensure_ascii=False).encode()).digest()
 
 
 def admin_enrolled():

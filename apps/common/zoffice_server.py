@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-# ZENOS Sheets local server: serves the built app and relays AI calls to the
+# ZENOS office local server (Docs, Sheets, Slides): serves the built app and relays AI calls to the
 # user's own provider (OpenAI-compatible or Anthropic). Same-origin for the app,
 # so no CORS issues; the API key stays on this machine and is never stored here.
-import os, json
+import os, sys, json
 import urllib.request
 import urllib.error
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-DIST = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'dist')
+# usage: zoffice_server.py <app directory> <port>   (the app's built files are in <app directory>/dist)
+DIST = os.path.join(os.path.abspath(sys.argv[1]), 'dist')
 HOST = '127.0.0.1'
-PORT = 5175
+PORT = int(sys.argv[2])
 
 
 class Handler(SimpleHTTPRequestHandler):

@@ -14,6 +14,8 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y python3-cryptography
       - name: Unit tests (sealing, request digest, officer enrollment, guard approvals)
         run: python3 -W error::ResourceWarning -m unittest discover -s tests -v
+      - name: Refusal of distrusted CA certificates (Node)
+        run: node tests/messenger_distrust.js && node tests/messenger_distrust_learned.js
       - name: Messenger device binding
         run: npm ci && node ../tests/messenger_binding.js
         working-directory: messenger
@@ -25,7 +27,7 @@ jobs:
       - name: Syntax of every script
         run: |
           for f in $(git ls-files '*.py'); do python3 -m py_compile "$f"; done
-          for f in messenger/*.js storage/bin/*.js storage/lib/*.js; do node --check "$f"; done
+          for f in messenger/*.js system/lib/*.js storage/bin/*.js storage/lib/*.js; do node --check "$f"; done
           for f in $(git ls-files '*.svg'); do python3 -c 'import sys, xml.dom.minidom as m; m.parse(sys.argv[1])' "$f"; done
   apps:
     runs-on: ubuntu-24.04

@@ -38,7 +38,8 @@ REMOTE_TOOLS = re.compile(r"^(anydesk|teamviewer\w*|TeamViewer\w*|rustdesk|x11vn
                           r"xrdp\w*|chrome-remote\w*|remoting_host|parsecd|splashtop\w*|meshagent|tacticalrmm|sshd\S*)$")
 ALLOW_REMOTE = "/etc/zenos/remote-allow.json"      # ["10.1.2.0/24", ...] approved admin consoles (officer-set)
 import ipaddress, sys
-sys.path.insert(0, "/usr/lib/zenos"); sys.path.insert(0, "/usr/local/lib/zenos")
+# the ZENOS library is ../lib/zenos beside this program (/usr/lib/zenos, root-owned)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib", "zenos"))
 try:
     import zalarm
 except Exception:

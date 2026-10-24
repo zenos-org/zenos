@@ -3,7 +3,7 @@ Description=ZENOS periodic endpoint audit (Security Note)
 # desktop users only: root's or a service account's user manager must not raise alerts as if it were the desk
 ConditionUser=!@system
 [Service]
-ExecStart=/usr/bin/python3 -I /usr/sbin/zsecaudit_loop.py
+ExecStart=/usr/bin/python3 -I /usr/sbin/zenos_secaudit.py
 Restart=always
 RestartSec=5
 [Install]

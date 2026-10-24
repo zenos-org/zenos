@@ -2,7 +2,7 @@
 Description=ZENOS sensor dead-man watcher (stand-in for a peer node)
 After=zenos-netsentinel.service
 [Service]
-ExecStart=/usr/bin/python3 -I /usr/sbin/zheartbeat.py watcher 0
+ExecStart=/usr/bin/python3 -I /usr/sbin/zenos_heartbeat.py watcher 0
 Restart=always
 RestartSec=1
 [Install]

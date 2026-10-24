@@ -11,7 +11,8 @@ Agent   : after containment, judges the incident and picks the next step. With a
 import ipaddress, json, os, signal, subprocess, sys, threading, time, urllib.request
 from collections import defaultdict, deque
 
-import os as _os; sys.path.insert(0, _os.path.normpath(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "lib", "zenos")))
+# the ZENOS library is ../lib/zenos beside this program (/usr/lib/zenos, root-owned)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib", "zenos"))
 import zconf
 try:
     import zalarm
@@ -196,10 +197,9 @@ def _heartbeat():
 
 OPEN_FLAG = os.path.join(zconf.data(), "open.flag")
 def open_flag_watch():
-    import importlib
     if zconf.SBIN not in sys.path:
         sys.path.insert(0, zconf.SBIN)
-    import zopenguard
+    import zenos_openguard as zopenguard
     cut = False
     while True:
         want = False

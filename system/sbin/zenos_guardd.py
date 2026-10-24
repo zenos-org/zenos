@@ -18,20 +18,19 @@ Release     the officers' signatures arrive over /run/zenos/guardd.sock and are 
             operation is cancelled, not resumed) and everything else is thawed.
 Pre-filed operations approved in advance are honoured: the event is recorded instead of stopping the PC.
 """
-import base64, ctypes, ctypes.util, errno, hashlib, json, os, pwd, select, signal, socket, struct, subprocess, sys
+import base64, ctypes, ctypes.util, hashlib, json, os, pwd, select, signal, socket, struct, subprocess, sys
 import threading, time
 from collections import deque
 from pathlib import Path
 
-LIB = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "lib", "zenos"))
-sys.path.insert(0, LIB)
+# the ZENOS library is ../lib/zenos beside this program (/usr/lib/zenos, root-owned)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib", "zenos"))
 import zconf
 try:
     import zledger
 except Exception:
     zledger = None
-sys.path.insert(0, os.path.join(zconf.root(), "bin"))
-import zenos as Z                      # constants and the request digest; no user paths are used from it
+import zformat as Z                    # file format, levels and the request digest, shared with the desktop side
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 SYSD = Path("/var/lib/zenos")

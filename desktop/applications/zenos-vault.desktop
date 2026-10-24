@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
 Name=Vault
-GenericName=Ministry grid storage
-Comment=Every sealed file is stored across five ministries. Restore any version you are cleared to see.
+GenericName=Storage grid
+Comment=Every sealed file is stored across five storage nodes. Restore any version you are cleared to see.
 Exec=python3 -I /usr/share/zenos/bin/zenos_p2p.py vault
 Icon=/usr/share/zenos/icons/zenos-vault.svg
 Categories=Office;System;

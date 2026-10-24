@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# ZENOS Browser - WebKitGTK shell (non-Google). Two-layer: HTML toolbar (exact Figma) + content WebView.
+# ZENOS Browser - WebKitGTK shell (non-Google). Two layers: an HTML toolbar and the content WebView.
 import os, sys, json, time, gi
 from urllib.parse import urlparse
-for _lib in (os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../system/lib"), "/usr/lib/zenos"):
+for _lib in ("/usr/lib/zenos", "/usr/local/lib/zenos"):   # the ZENOS library: installed, else development layout
     if os.path.isdir(_lib) and _lib not in sys.path:
         sys.path.append(_lib)
 import zdistrust
