@@ -201,6 +201,30 @@ def updates():
         time.sleep(UPD_EVERY)
 
 
+TRUST = "/run/zenos/trust.json"         # written by the trust agent (zenos_trustwatch.py)
+trust_seen = set()
+
+
+def read_trust():
+    """the trust agent's alerts and a short summary of every trust route, for the monitor"""
+    try:
+        d = json.load(open(TRUST))
+    except (OSError, ValueError):
+        return {}
+    return d
+
+
+def trust_summary(d):
+    if not d:
+        return None
+    return {"risk": d.get("risk"), "checked": d.get("t"),
+            "feed": {k: (d.get("feed") or {}).get(k) for k in ("ok", "keys", "certificates", "checked")},
+            "routes": [{"label": s.get("label"), "users": s.get("users"), "roots": s.get("roots"),
+                        "protected": s.get("protected"), "distrusted": len(s.get("distrusted") or []),
+                        "vouching": len(s.get("vouching") or []), "unreadable": bool(s.get("unreadable"))}
+                       for s in d.get("stores", [])][:20]}
+
+
 def incidents_since(pos):
     try:
         with open(INCIDENTS) as f:
@@ -248,6 +272,11 @@ def main():
                                            "This PC is being operated from another machine (%s, %s)." % (peer, what))
                     except Exception:
                         pass
+        trust = read_trust()
+        for a in trust.get("alerts", []):
+            if a.get("id") not in trust_seen and now - a.get("t", 0) < QUIET:
+                alert("trust:" + a["id"], a.get("sev", "amber"), a.get("title", "Trust"), a.get("text", ""))
+            trust_seen.add(a.get("id"))
         pos, inc = incidents_since(pos)
         for r in inc:
             ty = r.get("type", "")
@@ -297,7 +326,8 @@ def main():
                  "remote": [{"what": w, "peer": p} for w, p in remote],
                  "inbound_blocked": blocked, "outbound_contained": max(0, tout - base_out) + contained_total,
                  "auth_failed": at, "h_in": list(hist_in), "h_auth": list(hist_auth),
-                 "top_sources": [{"src": s, "n": n} for s, n in top], "recent": recent, "alerts": al, "updates": ust}
+                 "top_sources": [{"src": s, "n": n} for s, n in top], "recent": recent, "alerts": al, "updates": ust,
+                 "trust": trust_summary(trust)}
         tmp = OUT + ".tmp"
         with open(tmp, "w") as f:
             json.dump(state, f)

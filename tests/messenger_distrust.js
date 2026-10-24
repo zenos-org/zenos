@@ -1,6 +1,6 @@
 // Node side: every compromised certificate is refused, ordinary chains are not.
 "use strict";
-const D = require("../messenger/distrust");
+const D = require("../system/lib/zdistrust");
 const fs = require("fs"), path = require("path"), crypto = require("crypto"), assert = require("assert");
 const pems = fs.readFileSync(path.join(__dirname, "fixtures/emudhra-compromised.pem"), "utf8")
   .split("-----END CERTIFICATE-----").filter((p) => p.includes("BEGIN")).map((p) => p.trim() + "\n-----END CERTIFICATE-----\n");
@@ -11,4 +11,4 @@ for (const p of pems) {
 }
 const ok = new crypto.X509Certificate(require("tls").rootCertificates[0]);
 assert.strictEqual(D.blocked({ raw: ok.raw }), null);
-console.log("distrust ok:", D.size, "keys,", pems.length, "certificates refused");
+console.log("distrust ok:", D.size(), "entries,", pems.length, "certificates refused");

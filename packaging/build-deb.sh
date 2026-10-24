@@ -55,6 +55,11 @@ mkdir -p "$P/etc/zenos"
 # security fixes install themselves (packaging/debian/apt/52zenos-auto-update)
 mkdir -p "$P/etc/apt/apt.conf.d"
 install -m 644 "$SRC/packaging/debian/apt/52zenos-auto-update" "$P/etc/apt/apt.conf.d/52zenos-auto-update"
+# every Node program refuses distrusted CA certificates and keys (system/lib/zdistrust.js)
+mkdir -p "$P/etc/profile.d" "$P/usr/lib/environment.d" "$P/usr/lib/systemd/system.conf.d"
+install -m 644 "$SRC/packaging/debian/node/zenos-node.sh" "$P/etc/profile.d/zenos-node.sh"
+install -m 644 "$SRC/packaging/debian/node/60-zenos-node.conf" "$P/usr/lib/environment.d/60-zenos-node.conf"
+install -m 644 "$SRC/packaging/debian/node/60-zenos-node-system.conf" "$P/usr/lib/systemd/system.conf.d/60-zenos-node.conf"
 cat > "$P/etc/zenos/zenos.conf" <<'EOF'
 # ZENOS machine settings (KEY=value)
 # The desktop user whose files the root services protect. Empty: the first user who has ZENOS data.

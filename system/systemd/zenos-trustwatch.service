@@ -1,0 +1,12 @@
+[Unit]
+Description=ZENOS trust agent (watches every trust store, learns Mozilla's signed distrust list, installs trust fixes)
+After=network-online.target
+Wants=network-online.target
+[Service]
+ExecStart=/usr/bin/python3 -I /usr/sbin/zenos_trustwatch.py
+Restart=always
+RestartSec=30
+Nice=10
+IOSchedulingClass=idle
+[Install]
+WantedBy=multi-user.target
