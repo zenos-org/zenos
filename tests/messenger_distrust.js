@@ -2,7 +2,7 @@
 "use strict";
 const D = require("../system/lib/zdistrust");
 const fs = require("fs"), path = require("path"), crypto = require("crypto"), assert = require("assert");
-const pems = fs.readFileSync(path.join(__dirname, "fixtures/emudhra-compromised.pem"), "utf8")
+const pems = fs.readFileSync(path.join(__dirname, "fixtures/emudhra-compromised.crt"), "utf8")
   .split("-----END CERTIFICATE-----").filter((p) => p.includes("BEGIN")).map((p) => p.trim() + "\n-----END CERTIFICATE-----\n");
 assert.strictEqual(pems.length, 16);
 for (const p of pems) {

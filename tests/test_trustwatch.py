@@ -7,7 +7,7 @@ import zenos_trustwatch as T
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 
-FIX = open(os.path.join(os.path.dirname(__file__), "fixtures/emudhra-compromised.pem")).read()
+FIX = open(os.path.join(os.path.dirname(__file__), "fixtures/emudhra-compromised.crt")).read()
 
 
 class TrustWatch(unittest.TestCase):

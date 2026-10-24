@@ -2,7 +2,7 @@ import os, sys, ssl, unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../system/lib"))
 import zdistrust
 
-PEMS = open(os.path.join(os.path.dirname(__file__), "fixtures/emudhra-compromised.pem")).read()
+PEMS = open(os.path.join(os.path.dirname(__file__), "fixtures/emudhra-compromised.crt")).read()
 
 
 class Distrust(unittest.TestCase):
