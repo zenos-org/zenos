@@ -9,6 +9,11 @@ QPushButton { background-color: #2A2D37; color: #E6E8EC; border: 0; border-radiu
 QPushButton:hover { background-color: #343845; }
 QPushButton:disabled { color: #6B6F78; }
 QCheckBox, QRadioButton { background: transparent; }
+/* the choice marks must stay visible on the dark background (they vanished in the first dark build) */
+QRadioButton::indicator { width: 14px; height: 14px; border-radius: 8px; border: 2px solid #8B8F98; background: #0E0F13; }
+QRadioButton::indicator:checked { border: 2px solid #9B3BEF; background: qradialgradient(cx:0.5, cy:0.5, radius:0.5, fx:0.5, fy:0.5, stop:0 #9B3BEF, stop:0.55 #9B3BEF, stop:0.6 #0E0F13, stop:1 #0E0F13); }
+QCheckBox::indicator { width: 14px; height: 14px; border-radius: 3px; border: 2px solid #8B8F98; background: #0E0F13; }
+QCheckBox::indicator:checked { border: 2px solid #9B3BEF; background: #9B3BEF; }
 QProgressBar { background-color: #0E0F13; border: 1px solid #2A2D37; border-radius: 6px; text-align: center; color: #E6E8EC; }
 QProgressBar::chunk { background-color: #9B3BEF; border-radius: 6px; }
 QScrollBar:vertical { background: transparent; width: 6px; margin: 0; }
