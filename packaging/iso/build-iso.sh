@@ -161,5 +161,20 @@ chown -R "${LIVE_USERNAME}:" "$H/.config"
 EOF
 chmod 755 config/includes.chroot/usr/lib/live/config/0087-zenos-live
 
+# boot menu: start the live system by itself after 5 seconds (it waited for Enter forever)
+mkdir -p config/hooks/normal
+cat > config/hooks/normal/0900-zenos-boot-timeout.hook.binary <<'EOF'
+#!/bin/sh
+for f in isolinux/isolinux.cfg isolinux/live.cfg; do
+  [ -f "$f" ] || continue
+  if grep -q '^timeout' "$f"; then sed -i 's/^timeout .*/timeout 50/' "$f"; else sed -i '1i timeout 50' "$f"; fi
+done
+for f in boot/grub/config.cfg boot/grub/grub.cfg; do
+  [ -f "$f" ] || continue
+  if grep -q 'set timeout=' "$f"; then sed -i 's/set timeout=.*/set timeout=5/' "$f"; else echo 'set timeout=5' >> "$f"; fi
+done
+EOF
+chmod +x config/hooks/normal/0900-zenos-boot-timeout.hook.binary
+
 lb build 2>&1 | tee build.log
 ls -la "$W"/*.iso

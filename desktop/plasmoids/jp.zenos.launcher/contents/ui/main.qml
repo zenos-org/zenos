@@ -171,7 +171,7 @@ PlasmoidItem {
                         ColumnLayout {
                             spacing: 0
                             Text { text: "ZENOS User"; color: "white"; font.pixelSize: 14; font.weight: Font.DemiBold; font.family: "Inter" }
-                            Text { text: "Clearance L" + root.level; color: Qt.rgba(1,1,1,0.55); font.pixelSize: 11; font.family: "Inter" }
+                            Text { text: "Working at L" + root.level; color: Qt.rgba(1,1,1,0.55); font.pixelSize: 11; font.family: "Inter" }
                         }
                         Item { Layout.fillWidth: true }
                     }
@@ -197,10 +197,26 @@ PlasmoidItem {
 
                     // scrollable app list, grouped by section (Windows "all apps" style)
                     QQC2.ScrollView {
+                        id: appScroll
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         clip: true
                         QQC2.ScrollBar.horizontal.policy: QQC2.ScrollBar.AlwaysOff
+                        // a thin bar in the ZENOS colour that shows only while scrolling (no grey track)
+                        QQC2.ScrollBar.vertical: QQC2.ScrollBar {
+                            parent: appScroll
+                            x: appScroll.width - width
+                            height: appScroll.availableHeight
+                            policy: QQC2.ScrollBar.AsNeeded
+                            background: Item {}
+                            contentItem: Rectangle {
+                                implicitWidth: 4
+                                radius: 2
+                                color: "#9B3BEF"
+                                opacity: parent.active ? 0.8 : 0
+                                Behavior on opacity { NumberAnimation { duration: 200 } }
+                            }
+                        }
 
                         ColumnLayout {
                             width: panel.width - 28
