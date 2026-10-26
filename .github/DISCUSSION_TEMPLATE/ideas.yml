@@ -1,0 +1,23 @@
+title: "[Idea] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. An AI helps us sort ideas; a maintainer decides. Security problems: please report them privately (SECURITY.md), not here.
+  - type: dropdown
+    id: edition
+    attributes:
+      label: Which edition?
+      options: ["Office", "Family", "Personal", "All / not sure", "A new kind of use"]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you like ZENOS to do?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why? What are you trying to get done?

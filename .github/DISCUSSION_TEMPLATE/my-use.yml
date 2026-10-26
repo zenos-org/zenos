@@ -1,0 +1,16 @@
+title: "[My use] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tell us how you would use ZENOS. Uses we do not cover yet may become a new edition.
+  - type: textarea
+    id: who
+    attributes:
+      label: Who would use it, and for what?
+    validations:
+      required: true
+  - type: textarea
+    id: missing
+    attributes:
+      label: What is missing today?

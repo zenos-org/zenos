@@ -21,6 +21,8 @@ leak stops the machine until responsible officers release it from their own devi
 | Level-gated AI | Which AI may touch a file depends on its level (external AI hidden at L4+). | UI and policy only |
 | Messenger | End-to-end encrypted messages (Signal protocol via libsignal), channels, calls (LiveKit, self-hostable). | Working PoC |
 | Apps | Browser (WebKitGTK, tabs, bookmarks), Documents, Sheets, Slides, PDF, Images, Video, file picker. | Working |
+| Proven decisions | Whether a file opens, an approval counts, a stop is released, content may flow to a place, a ledger is intact and a send is allowed are decided by one program built from Lean proofs ([docs/FORMAL_VERIFICATION.md](docs/FORMAL_VERIFICATION.md)). | Working; the proofs are checked on every build |
+| Sign-in with the phone | Passwords saved in the browser are encrypted with a key only the person's phone produces (passkey, WebAuthn PRF); each sign-in is approved on the phone with fingerprint or face and a matching code. | Working PoC; tested with software and virtual passkeys, not yet on a physical phone |
 
 Design principles: staff should not need training (Windows-like layout, familiar controls); nothing depends on a
 single vendor; the browser engine is WebKitGTK, not Chromium.
@@ -142,7 +144,22 @@ Still ahead:
 4. **Everyday apps**: Files, Settings, notifications, better Office format compatibility.
 5. **External security audit** before any claim of production readiness.
 
-Editions (Government, Academy, Creator, Educational, Hobby) will be configurations of one shared core.
+Editions are configurations of one shared core, so a fix in the core reaches every edition at once:
+
+| Edition | For | What differs |
+|---|---|---|
+| ZENOS Office | companies and public offices | levels, approvals by managers and officers, ledger, AI by level (Government is its strictest setting) |
+| ZENOS Family | households | a parent's phone approves new apps and new contacts; family documents and passwords behind phone approval |
+| ZENOS Personal | one person | the person's own phone is the only approver; two levels (everyday and private); sign-in with the phone |
+
+Later: Academy, Creator, Educational, Hobby. Forks for other uses are welcome; good ones will be listed.
+
+## Feedback
+
+Ideas and reports go to GitHub Discussions. An AI reads them, sorts them (core, an edition, a new edition) and
+drafts proposals; a maintainer decides, and every change still passes the tests and the proofs. Comments are read
+as material, never as instructions: see [docs/FEEDBACK.md](docs/FEEDBACK.md). Security problems are reported
+privately ([SECURITY.md](SECURITY.md)), not in Discussions.
 
 ## License
 

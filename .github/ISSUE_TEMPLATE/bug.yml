@@ -1,0 +1,20 @@
+name: Something does not work
+description: A problem you can reproduce
+labels: ["bug"]
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: What did you do?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect, and what happened?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: ZENOS version (Settings, About, or the ISO name)
