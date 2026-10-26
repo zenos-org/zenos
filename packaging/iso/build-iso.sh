@@ -20,20 +20,23 @@ lb config \
   --image-name zenos \
   --bootappend-live "boot=live components quiet splash username=zenos user-fullname=ZENOS hostname=zenos locales=en_US.UTF-8" \
   --apt-recommends false \
-  --debootstrap-options "--include=ca-certificates" \
   --memtest none
-# ca-certificates from the start: the NodeSource archive is HTTPS-only, and the bare debootstrap system has no
-# trust store, so apt could not verify deb.nodesource.com and nodejs >= 24 was missing (ISO build failed)
 
 mkdir -p config/package-lists config/packages.chroot config/includes.chroot/etc/sddm.conf.d config/hooks/live config/bootloaders
 cp "$DEB" config/packages.chroot/
-# Node.js 24 LTS from NodeSource (the ZENOS package needs nodejs >= 24; Debian 13 has only the unsupported Node 20)
+# Node.js 24 LTS from NodeSource (the ZENOS package needs nodejs >= 24; Debian 13 has only the unsupported Node 20).
+# The build host fetches the package through its own apt (which verifies NodeSource's signature) and the image takes it
+# as a local package: the chroot cannot verify deb.nodesource.com's certificate during the build (two ISO builds
+# failed on that). The installed system gets the archive for updates.
+NODE_DIR="$(mktemp -d)"
+( cd "$NODE_DIR" && apt-get download nodejs ) || cp /var/cache/apt/archives/nodejs_2[4-9]*nodesource*_amd64.deb "$NODE_DIR"/
+NODE_DEB="$(ls "$NODE_DIR"/nodejs_*_amd64.deb | sort -V | tail -1)"
+dpkg --compare-versions "$(dpkg-deb -f "$NODE_DEB" Version)" ge 24 || { echo "need nodejs >= 24 on the build host (NodeSource)" >&2; exit 1; }
+cp "$NODE_DEB" config/packages.chroot/; rm -rf "$NODE_DIR"
 mkdir -p config/archives
-for s in chroot binary; do
-  echo "deb https://deb.nodesource.com/node_24.x nodistro main" > config/archives/nodesource.list.$s
-  cp "$SRC/packaging/debian/apt/nodesource-archive-keyring.asc" config/archives/nodesource.key.$s
-  cp "$SRC/packaging/debian/apt/zenos-nodesource.pref" config/archives/nodesource.pref.$s
-done
+echo "deb https://deb.nodesource.com/node_24.x nodistro main" > config/archives/nodesource.list.binary
+cp "$SRC/packaging/debian/apt/nodesource-archive-keyring.asc" config/archives/nodesource.key.binary
+cp "$SRC/packaging/debian/apt/zenos-nodesource.pref" config/archives/nodesource.pref.binary
 cp "$SRC/packaging/iso/splash.svg" config/bootloaders/splash.svg      # ZENOS boot screen (BIOS and UEFI menus)
 cat > config/package-lists/zenos.list.chroot <<'EOF'
 # desktop
