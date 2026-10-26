@@ -20,7 +20,10 @@ lb config \
   --image-name zenos \
   --bootappend-live "boot=live components quiet splash username=zenos user-fullname=ZENOS hostname=zenos locales=en_US.UTF-8" \
   --apt-recommends false \
+  --debootstrap-options "--include=ca-certificates" \
   --memtest none
+# ca-certificates from the start: the NodeSource archive is HTTPS-only, and the bare debootstrap system has no
+# trust store, so apt could not verify deb.nodesource.com and nodejs >= 24 was missing (ISO build failed)
 
 mkdir -p config/package-lists config/packages.chroot config/includes.chroot/etc/sddm.conf.d config/hooks/live config/bootloaders
 cp "$DEB" config/packages.chroot/
