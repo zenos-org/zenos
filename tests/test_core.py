@@ -101,7 +101,9 @@ class Guard(unittest.TestCase):
         self.assertTrue(ans(op="approve", approver="tanaka", code=r["code"], sig=self._sig("tanaka", r))["ok"])
         self.assertTrue(ans(op="approve", approver="suzuki", code=r["code"], sig=self._sig("suzuki", r))["ok"])
         stored = json.loads((G.REQ / f"{r['id']}.json").read_text())
-        self.assertEqual(G.verified(stored), {"sato", "tanaka", "suzuki"})
+        go, counted = G.verified(stored)
+        self.assertTrue(go)
+        self.assertEqual(set(counted), {"sato", "tanaka", "suzuki"})
 
     def test_decline_needs_a_decline_signature(self):
         G, r = self.G, self._req()

@@ -38,6 +38,7 @@ what is and is not protected today is in [THREAT_MODEL.md](THREAT_MODEL.md).
 | `storage/` | servers | erasure-coded storage nodes and grid bootstrap (Node.js) |
 | `packaging/` | build | `build-deb.sh` (the `zenos` package), `build-grid-deb.sh` (`zenos-grid`), `iso/` (installer image) |
 | `config/examples/` | — | example configuration for the servers |
+| `formal/` | root (as `/usr/lib/zenos/zenos-decide`) | the decisions keyd and guardd take, in Lean 4 with machine-checked proofs ([FORMAL_VERIFICATION.md](FORMAL_VERIFICATION.md)) |
 | `tests/` | — | unit tests (`test_*.py`) and Node tests (`messenger_*.js`) |
 | `third_party/` | desktop user | modified KDE plasmoids under their original licenses |
 
@@ -51,6 +52,7 @@ what is and is not protected today is in [THREAT_MODEL.md](THREAT_MODEL.md).
 | `zfrag` | per-fragment encryption for the storage grid |
 | `zalarm` | alerts (amber notices, red siren and dispatch) |
 | `zsecnote` | periodic endpoint audit |
+| `zdecide` | runs the proven decision program and turns anything unexpected into a refusal |
 | `zdistrust` (`.py`, `.js`) | certificates and keys ZENOS refuses (`distrust.json`, plus Mozilla's signed list learned by `zenos_trustwatch`) |
 
 Rules:
@@ -65,8 +67,8 @@ Rules:
 
 | Service | Program | Job |
 |---|---|---|
-| `zenos-keyd` | `zenos_keyd.py` | holds the level keys; seals and unseals for desktop users by clearance or officer grant |
-| `zenos-guardd` | `zenos_guardd.py` | watches the security folders and the external exit; approvals, stop and release |
+| `zenos-keyd` | `zenos_keyd.py` | holds the level keys; seals and unseals for desktop users by clearance or officer grant (decided by `zenos-decide`) |
+| `zenos-guardd` | `zenos_guardd.py` | watches the security folders and the external exit; approvals, stop and release (decided by `zenos-decide`) |
 | `zenos-firewall` | `zenos-firewall` | inbound lockdown chain `ZENOS_IN` |
 | `zenos-netsentinel` | `zenos_netsentinel.py` | eBPF view of outbound traffic; cuts unapproved egress (`ZENOS_OUT`), open-time cut via `zenos_openguard` |
 | `zenos-secstat` | `zenos_secstat.py` | the security monitor feed: blocked inbound, failed sign-ins, remote operation, pending fixes, trust alerts |

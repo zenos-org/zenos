@@ -64,7 +64,8 @@ def log(kind, **kw):
 
 def load(p, default):
     try:
-        return json.load(open(p))
+        with open(p) as f:
+            return json.load(f)
     except (OSError, ValueError):
         return default
 

@@ -4,8 +4,9 @@
 Without it the level keys sit in each user's home, so anyone could decrypt any level with a few lines of Python.
 Here the keys belong to root (/var/lib/zenos/keys). A user gets plaintext only for files at or below their clearance
 (set by the administrator in /etc/zenos/clearance), or for one exact file with a grant their officers signed
-(verified here against the enrolled keys in /etc/zenos/approvers). Every unseal is written to the root ledger,
-which zenos-auditship sends off the machine.
+(verified here against the enrolled keys in /etc/zenos/approvers). Nothing is opened while the PC is stopped.
+The decision itself is taken by the proven program zenos-decide (zdecide, formal/); this agent checks the signatures
+and digests it relies on. Every unseal is written to the root ledger, which zenos-auditship sends off the machine.
 
   zenos_keyd.py                      run the agent (systemd: zenos-keyd.service)
   zenos_keyd.py --clearance USER N   set a user's clearance (1-5)
@@ -27,6 +28,7 @@ try:
     import zfrag
 except Exception:
     zfrag = None
+import zdecide
 
 KEYS = Path(os.environ.get("ZENOS_KEYD_KEYS", "/var/lib/zenos/keys"))
 CLEARANCE = Path(os.environ.get("ZENOS_CLEARANCE", "/etc/zenos/clearance"))
@@ -34,11 +36,10 @@ APPROVERS = Path(os.environ.get("ZENOS_APPROVERS", "/etc/zenos/approvers"))
 SOCK = os.environ.get("ZENOS_KEYD_SOCK", "/run/zenos/keyd.sock")
 LOG = Path(os.environ.get("ZENOS_KEYD_LOG", "/var/log/zenos/keyd.jsonl"))
 LEDGER = os.environ.get("ZENOS_KEYD_LEDGER", "/var/log/zenos/access-ledger.jsonl")
+HALT = Path(os.environ.get("ZENOS_HALT", "/var/lib/zenos/halt.json"))      # written by zenos-guardd
 MAGIC = b"ZENOS1\n"
 LABEL = {1: "Public", 2: "Confidentiality 2", 3: "Confidentiality 3",
          4: "Important Economic Security Information", 5: "Specially Designated Secret"}
-REQUIRED = {1: 0, 2: 1, 3: 1, 4: 2, 5: 3}          # = zenos.REQUIRED
-GRANT_CORE = ("id", "requester", "file", "file_hash", "level", "reason", "created")
 MAX = 64 * 1024 * 1024
 
 
@@ -144,26 +145,43 @@ def unseal(h, hb, ct):
     return AESGCM((KEYS / f"L{h['level']}.key").read_bytes()).decrypt(base64.b64decode(h["nonce"]), ct, hb)
 
 
-def grant_ok(g, user, blob, level):
-    """a grant the user's officers signed for exactly this file, still valid"""
+def roster():
+    """the officers enrolled by the administrator"""
+    return sorted(p.stem for p in APPROVERS.glob("*.pub")) if APPROVERS.is_dir() else []
+
+
+def halted():
+    try:
+        return json.loads(HALT.read_text()).get("status") == "halted"
+    except FileNotFoundError:
+        return False
+    except Exception:
+        return True                                 # a stop file that cannot be read: treat the PC as stopped
+
+
+def grant_facts(g):
+    """what the decision needs from a grant, with its digest and every signature checked here"""
+    if not isinstance(g, dict) or not isinstance(g.get("core"), dict):
+        return None
     try:
         core = g["core"]
         digest = hashlib.sha256(json.dumps(core, sort_keys=True, ensure_ascii=False).encode()).digest()
-        if (base64.b64decode(g["digest"]) != digest or core.get("requester") != user or g.get("requester") != user
-                or core.get("file_hash") != hashlib.sha256(blob).hexdigest() or int(core.get("level", 0)) < level
-                or time.time() > float(g["expires"])):
-            return False
-        ok = set()
+        approvals = []
         for a in g.get("approvals", []):
             name = os.path.basename(str(a.get("approver", "")))
             try:
-                Ed25519PublicKey.from_public_bytes((APPROVERS / f"{name}.pub").read_bytes()).verify(base64.b64decode(a["sig"]), digest)
-                ok.add(name)
+                Ed25519PublicKey.from_public_bytes((APPROVERS / f"{name}.pub").read_bytes()).verify(
+                    base64.b64decode(a["sig"]), digest)
+                ok = True
             except Exception:
-                pass
-        return len(ok) >= REQUIRED[level]
+                ok = False
+            approvals.append({"approver": name, "sig_ok": ok})
+        return {"requester": str(core.get("requester", "")), "holder": str(g.get("requester", "")),
+                "file_hash": str(core.get("file_hash", "")), "level": int(core.get("level", 0)),
+                "kind": core.get("kind"), "expires": float(g["expires"]),
+                "digest_ok": base64.b64decode(g.get("digest", "")) == digest, "approvals": approvals}
     except Exception:
-        return False
+        return None
 
 
 def handle(msg, uid):
@@ -189,10 +207,15 @@ def handle(msg, uid):
         if op == "verify":
             return {"ok": True, "header": h}
         level, cl = int(h["level"]), clearance(user)
-        how = "clearance" if level <= cl else ("grant" if grant_ok(msg.get("grant") or {}, user, blob, level) else None)
         fh = hashlib.sha256(blob).hexdigest()
-        if not how:
-            log(event="unseal-refused", user=user, level=level, clearance=cl, name=h.get("name"), sha256=fh[:16])
+        stopped = halted()
+        allowed, how, why = zdecide.open_file(user, cl, level, fh, stopped, roster(), grant_facts(msg.get("grant")))
+        if not allowed:
+            log(event="unseal-refused", user=user, level=level, clearance=cl, name=h.get("name"), sha256=fh[:16],
+                reason=why)
+            if why == "halted":
+                return {"ok": False, "error": "halted",
+                        "message": "This PC is stopped after an anomaly. Nothing can be opened until the release is approved."}
             return {"ok": False, "error": "level", "message": f"This file is L{level}; your clearance is L{cl}."}
         data = unseal(h, hb, ct)
         log(event="unseal", user=user, level=level, by=how, name=h.get("name"), sha256=fh[:16])

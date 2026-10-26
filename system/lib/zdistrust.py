@@ -34,7 +34,8 @@ def tables():
         spki, isn = {}, {}
         for p in LISTS:
             try:
-                d = json.load(open(p))
+                with open(p) as f:
+                    d = json.load(f)
             except (OSError, ValueError):
                 continue
             for e in d.get("entries", []):

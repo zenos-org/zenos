@@ -12,6 +12,10 @@ jobs:
           node-version: 22
       - name: Python dependencies
         run: sudo apt-get update && sudo apt-get install -y python3-cryptography
+      - name: Proofs of the decisions and the decision program (Lean 4)
+        run: |
+          curl -sSfL https://github.com/leanprover/lean4/releases/download/v4.34.1/lean-4.34.1-linux.tar.zst | tar --zstd -xf - -C /tmp
+          cd formal && PATH=/tmp/lean-4.34.1-linux/bin:$PATH lake build
       - name: Unit tests (sealing, request digest, officer enrollment, guard approvals)
         run: python3 -W error::ResourceWarning -m unittest discover -s tests -v
       - name: Refusal of distrusted CA certificates (Node)

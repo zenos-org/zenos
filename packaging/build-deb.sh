@@ -51,6 +51,14 @@ cp -a "$SRC"/system/sbin/. "$P/usr/sbin/"
 chmod 755 "$P"/usr/sbin/*
 chmod 644 "$P/usr/sbin/zenos-netsense.bt"
 cp "$SRC"/system/systemd/*.service "$P/lib/systemd/system/"
+
+echo "== decision program (formal/: Lean 4; the build checks every proof)"
+LAKE="${LAKE:-$(command -v lake || echo /opt/lean/lean-4.34.1-linux/bin/lake)}"
+[ -x "$LAKE" ] || { echo "Lean 4 (lake) is needed to build zenos-decide: docs/FORMAL_VERIFICATION.md" >&2; exit 1; }
+rm -rf "$B/formal"; mkdir -p "$B/formal"
+( cd "$SRC/formal" && tar cf - --exclude=.lake . ) | ( cd "$B/formal" && tar xf - )
+( cd "$B/formal" && PATH="$(dirname "$LAKE"):$PATH" "$LAKE" build )
+install -m 755 "$B/formal/.lake/build/bin/zenos-decide" "$P/usr/lib/zenos/zenos-decide"
 cp "$SRC"/system/systemd-user/*.service "$P/usr/lib/systemd/user/"
 mkdir -p "$P/usr/lib/tmpfiles.d" && install -m 644 "$SRC/system/tmpfiles.d/zenos.conf" "$P/usr/lib/tmpfiles.d/zenos.conf"
 mkdir -p "$P/etc/zenos"

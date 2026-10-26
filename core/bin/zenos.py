@@ -421,6 +421,8 @@ def approve(rid, approver, code):
     if code.strip() != r["code"]:
         audit("approve-refused", request=rid, approver=approver, reason="match-code")
         return False, "The match code does not match the requester's screen. Nothing was approved."
+    if approver == r.get("requester"):
+        return False, "You cannot approve your own request. Another officer must approve."
     if any(a["approver"] == approver for a in r["approvals"]):
         return False, "You have already approved this request. Another officer must approve."
     sig = approver_key(approver).sign(request_digest(r))
@@ -558,6 +560,7 @@ def valid_grant(p):
             ok.add(a["approver"])
         except Exception:
             pass
+    ok.discard(g["requester"])                  # the requester's own approval never counts (as in zenos-decide)
     return g if len(ok) >= REQUIRED[g["level"]] else None
 
 

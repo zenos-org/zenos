@@ -37,11 +37,14 @@ storage/      storage grid nodes (erasure code, certificates, repair)
 packaging/    the zenos and zenos-grid packages and the installer image
 config/       example configuration for the servers
 tests/        unit tests
+formal/       the decisions of keyd and guardd in Lean 4, with their proofs (zenos-decide)
 third_party/  modified KDE plasmoids (kept under their original GPL/LGPL licenses)
 docs/         architecture, security architecture, threat model, release process
 ```
 
-How the parts fit together and which run as root: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+How the parts fit together and which run as root: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The decisions that
+release classified data (opening a file, releasing a stop) are proved in Lean and run as proved:
+[docs/FORMAL_VERIFICATION.md](docs/FORMAL_VERIFICATION.md).
 
 ## Running it
 

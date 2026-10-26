@@ -19,7 +19,8 @@ class TrustWatch(unittest.TestCase):
         self.assertEqual(int.from_bytes(base64.b64decode(ser), "big", signed=True), c.serial_number)
 
     def test_learned_list_is_enforced_without_restart(self):
-        c = x509.load_pem_x509_certificates(open("/etc/ssl/certs/ca-certificates.crt", "rb").read())[5]
+        with open("/etc/ssl/certs/ca-certificates.crt", "rb") as f:
+            c = x509.load_pem_x509_certificates(f.read())[5]
         der = c.public_bytes(serialization.Encoding.DER)
         with tempfile.TemporaryDirectory() as d:
             p = os.path.join(d, "learned.json")
@@ -27,7 +28,8 @@ class TrustWatch(unittest.TestCase):
             zdistrust.LISTS[1] = p
             try:
                 self.assertIsNone(zdistrust.why(der))
-                json.dump({"issuer_serial": {zdistrust.issuer_serial(der): "test"}}, open(p, "w"))
+                with open(p, "w") as f:
+                    json.dump({"issuer_serial": {zdistrust.issuer_serial(der): "test"}}, f)
                 self.assertEqual(zdistrust.why(der), "test")
             finally:
                 zdistrust.LISTS[1] = old
@@ -47,7 +49,11 @@ class TrustWatch(unittest.TestCase):
                              capture_output=True, text=True, env={"PATH": os.environ["PATH"]}).stdout
         roots = T.certs_of([ssl.PEM_cert_to_DER_cert(p) for p in json.loads(out)])
         hits = {T.vouches(r, bad) for r in roots} - {None}
-        self.assertTrue(any("EM DV TLS CA - G3B" in h for h in hits), hits)
+        # every compromised certificate whose issuer is among Node's roots must be found (Node 20 still carried the
+        # AAA root that cross-signed them; later Node releases may not)
+        subjects = {r["obj"].subject for r in roots}
+        expected = {name for name, c in bad if c.issuer in subjects}
+        self.assertEqual(hits, expected)
 
 
 if __name__ == "__main__":

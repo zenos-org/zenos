@@ -31,6 +31,7 @@ try:
 except Exception:
     zledger = None
 import zformat as Z                    # file format, levels and the request digest, shared with the desktop side
+import zdecide                         # the proven decisions (formal/): answers, release, officers a release needs
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 SYSD = Path("/var/lib/zenos")
@@ -288,7 +289,7 @@ def pubkey(name):
 
 
 def release_required(level):
-    return min(max(1, len(roster())), max(2, Z.REQUIRED[level] + 1))
+    return zdecide.release_required(roster(), USER, level)
 
 
 def new_release(level, rule, files, hid):
@@ -303,16 +304,23 @@ def new_release(level, rule, files, hid):
     return r
 
 
-def verified(r):
+def with_sig_ok(r):
+    """the request with each approval's signature checked against the enrolled key (the decision trusts this)"""
     digest = Z.request_digest(r)
-    ok = set()
+    out = []
     for a in r.get("approvals", []):
         try:
             pubkey(a["approver"]).verify(base64.b64decode(a["sig"]), digest)
-            ok.add(a["approver"])
+            ok = True
         except Exception:
-            pass
-    return ok
+            ok = False
+        out.append({"approver": a.get("approver", ""), "sig_ok": ok})
+    return dict(r, approvals=out)
+
+
+def verified(r):
+    """(release?, the officers that count), decided by zenos-decide"""
+    return zdecide.release(True, with_sig_ok(r), roster())
 
 
 def plan_allows(rule, level, n=1):
@@ -428,8 +436,8 @@ def enforce_loop():
                     write_json(HALT, h)
                     log(event="release-request-renewed", halt=h["id"], request=n["id"])
                 else:
-                    ok = verified(r)
-                    if len(ok) >= r["required"]:
+                    go, ok = verified(r)
+                    if go:
                         r["status"] = "approved"
                         write_json(rp, r)
                         release(h, r, ok)
@@ -659,30 +667,38 @@ def handle(msg):
         if r["status"] != "pending":
             return {"ok": False, "message": "This request is already decided."}
         who = os.path.basename(str(msg.get("approver", "")))
-        if who not in roster():
-            return {"ok": False, "message": "This officer is not enrolled on this PC."}
+        if op not in ("approve", "decline"):
+            return {"ok": False, "message": "Unknown operation."}
         digest = Z.request_digest(r)
         try:
             sig = base64.b64decode(msg.get("sig", ""))
             pubkey(who).verify(sig, digest if op == "approve" else b"decline:" + digest)
+            sig_ok = True
         except Exception:
-            log(event="approve-refused", request=rid, approver=who, reason="signature")
-            return {"ok": False, "message": "The signature does not verify. Nothing was recorded."}
-        if op == "decline":
+            sig_ok = False
+        code_ok = str(msg.get("code", "")).strip() == r["code"]
+        result = zdecide.approve(with_sig_ok(r), roster(), who, op, sig_ok, code_ok)
+        if result.startswith("refused:"):
+            reason = result.split(":", 1)[1]
+            log(event="approve-refused", request=rid, approver=who, reason=reason)
+            return {"ok": False, "message": {
+                "decided": "This request is already decided.",
+                "not enrolled": "This officer is not enrolled on this PC.",
+                "signature": "The signature does not verify. Nothing was recorded.",
+                "code": "The match code does not match the requester's screen. Nothing was approved.",
+                "requester": "The stopped user cannot approve their own release. Another officer must approve.",
+                "already": "You have already approved this request. Another officer must approve.",
+            }.get(reason, "Refused (%s). Nothing was recorded." % reason)}
+        if result == "declined":
             r["status"] = "declined"
             r["declined_by"] = who
             write_json(rp, r)
             log(event="decline", request=rid, approver=who)
             return {"ok": True, "message": "Declined. The PC stays stopped and a new request is sent."}
-        if str(msg.get("code", "")).strip() != r["code"]:
-            log(event="approve-refused", request=rid, approver=who, reason="match-code")
-            return {"ok": False, "message": "The match code does not match the requester's screen. Nothing was approved."}
-        if any(a["approver"] == who for a in r["approvals"]):
-            return {"ok": False, "message": "You have already approved this request. Another officer must approve."}
         r["approvals"].append({"approver": who, "t": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "sig": base64.b64encode(sig).decode()})
         write_json(rp, r)
         log(event="approve", request=rid, approver=who, count=len(r["approvals"]), required=r["required"])
-        left = r["required"] - len(verified(r))
+        left = 0 if verified(r)[0] else 1
         return {"ok": True, "message": f"Approved ({len(r['approvals'])}/{r['required']})." + (" The stop is released." if left <= 0 else "")}
 
 
