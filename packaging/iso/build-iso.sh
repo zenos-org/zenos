@@ -138,6 +138,10 @@ set -e
 sed -i 's/^branding:.*/branding: zenos/' /etc/calamares/settings.conf
 grep -q 'zenos-sync' /etc/calamares/settings.conf || sed -i 's/^\(  *\)- umount$/\1- zenos-sync\n&/' /etc/calamares/settings.conf
 grep -q 'zenos-sync' /etc/calamares/settings.conf
+# Debian's boot loader step installs grub and the encrypted-root unlock and rebuilds the initramfs twice; on slow
+# PCs (and in a VM without hardware acceleration) that took longer than its 10-minute limit and the install failed
+sed -i 's/^timeout:.*/timeout:    3600/' /usr/lib/calamares/modules/bootloader-config/module.desc
+grep -q 'timeout:    3600' /usr/lib/calamares/modules/bootloader-config/module.desc
 for f in /usr/share/applications/calamares-install-debian.desktop; do
   [ -f "$f" ] || continue
   sed -i -e 's/^Name\(\[[^]]*\]\)\?=.*/Name=Install ZENOS/' -e 's/^GenericName\(\[[^]]*\]\)\?=.*/GenericName=Install ZENOS on this PC/' \
