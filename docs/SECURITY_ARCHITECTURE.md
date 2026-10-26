@@ -100,3 +100,29 @@ Added to zsecnote.health via net_rates() reading /proc/net/dev twice over an int
 "sustained-outbound-high" when deskwork tx exceeds NET_TX_HI (default 5 MB/s, tunable). This is a coarse
 whole-machine corroboration independent of the per-connection eBPF sensor. Verified: idle=0 (no false
 positive), live burst measured ~8.3 MB/s, synthetic high -> alert.
+
+## Sign-in with the phone (zenos_credd)
+
+Passwords saved in the ZENOS Browser are kept by a root service, encrypted with a key that only the person's phone
+produces: the phone's passkey derives it for each entry (WebAuthn PRF) after the phone verifies the person by
+fingerprint, face or PIN. A stolen PC or a copied disk yields only ciphertext.
+
+1. The browser finds a password field on a page it loaded over verified HTTPS and offers to sign in. The origin comes
+   from the browser (top-level address and TLS state), never from the page; the script that finds the field runs in an
+   isolated script world the page cannot reach.
+2. The vault service makes a request (id, site, account, time, a one-time key, the entry's salt) and the browser
+   shows a two-digit code. ZENOS Messages wakes the linked phone.
+3. The phone shows the site, the account and three codes. The person picks the code on the PC and confirms with
+   fingerprint or face. The passkey signs the request's digest; the entry's key goes to the service encrypted to the
+   request's one-time key. ZENOS Messages only carries it.
+4. The service checks the passkey facts and `zenos-decide` decides (`cred_sound`, `cred_once`). The password goes only
+   to the browser process that asked, which fills it only into the same tab, same page load, same origin.
+
+Saving a password takes the same approval. At most 3 prompts per minute reach the phone (`ask_bounded`).
+Phones are registered with a one-time enrolment code from the administrator (`sudo zenos_credd.py --enroll USER`);
+`--phones USER` lists them and `--revoke USER PHONE` removes one (passwords saved with it can no longer be opened).
+
+Not protected: a PC already taken over at the moment of signing in (the password is in the page then), and a program
+of the same user that imitates the browser's request (the person still sees the site on the phone and must pick the
+code shown by the ZENOS Browser). The phone page is served by the PC's ZENOS Messages through the tunnel, and its
+passkey is bound to the tunnel's host: a new tunnel host needs the phone enrolled again.

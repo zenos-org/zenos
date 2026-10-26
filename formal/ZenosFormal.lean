@@ -4,4 +4,5 @@ import ZenosFormal.Flow
 import ZenosFormal.Ledger
 import ZenosFormal.Egress
 import ZenosFormal.Protocol
+import ZenosFormal.Cred
 import ZenosFormal.Axioms

@@ -6,7 +6,7 @@ properties are machine-checked (docs/FORMAL_VERIFICATION.md). This module only g
 and runs it. Anything that goes wrong (program missing, timeout, unreadable answer) is a refusal.
 
 The facts are checked here, outside the proof: signatures (Ed25519 with the enrolled officers' keys), digests, the
-clearance file, the roster, the stop state, the clock.
+clearance file, the roster, the stop state, the clock; for sign-in with the phone, the passkey checks (zwebauthn).
 """
 import json, math, os, subprocess, time
 
@@ -151,6 +151,33 @@ class EgressStream:
                 self.p.wait(timeout=5)
             except Exception:
                 pass
+
+
+def cred(ttl_ms, used, devices, request, answer, now_ms):
+    """(release?, reason) for a password request answered on the phone. devices: [{"device", "user"}];
+    request: id, user, origin, entry_origin, tls_ok, code, created (ms); answer: device, sig_ok, challenge_ok,
+    origin_ok, user_verified, counter_ok, code (the facts checked by zwebauthn)"""
+    try:
+        a = ask({"op": "cred", "ttl": int(ttl_ms), "now": int(now_ms), "used": [str(u) for u in used],
+                 "devices": [{"device": str(d["device"]), "user": str(d["user"])} for d in devices],
+                 "request": {"id": str(request["id"]), "user": str(request["user"]), "origin": str(request["origin"]),
+                             "entry_origin": str(request["entry_origin"]), "tls_ok": request["tls_ok"] is True,
+                             "code": max(0, int(request["code"])), "created": max(0, int(request["created"]))},
+                 "answer": {"device": str(answer["device"]), "code": max(0, int(answer["code"])),
+                            **{k: answer[k] is True for k in ("sig_ok", "challenge_ok", "origin_ok", "user_verified",
+                                                               "counter_ok")}}})
+        return bool(a["allow"]), a.get("reason")
+    except (Refused, KeyError, TypeError, ValueError) as e:
+        return False, "no decision: %s" % e
+
+
+def ask_ok(window_ms, max_prompts, now_ms, log):
+    """may one more prompt go to the phone? log: times (ms) of the prompts already sent"""
+    try:
+        return bool(ask({"op": "ask", "window": int(window_ms), "max": int(max_prompts), "now": int(now_ms),
+                         "log": [max(0, int(t)) for t in log]})["allow"])
+    except (Refused, KeyError, TypeError, ValueError):
+        return False
 
 
 def _request(r):

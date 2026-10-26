@@ -2,6 +2,7 @@ import ZenosFormal.Decide
 import ZenosFormal.Flow
 import ZenosFormal.Ledger
 import ZenosFormal.Egress
+import ZenosFormal.Cred
 
 /-!
 `zenos-decide`: reads one JSON request on stdin, writes one JSON answer on stdout, runs the proven decision
@@ -24,6 +25,11 @@ functions of `ZenosFormal.Decide` and nothing else. Any input it cannot read is 
    "level" (folder, window), "print_max"}                       -> {"allow": bool}
   {"op":"chain", "start", "records":[{"prev","hash","hash_ok"}]} -> {"ok": bool, "index", "reason", "head"}
   {"op":"send", "sealed", "sig_ok", "size", "huge_max", "plan_ok"} -> {"allow": bool, "reason"}
+  {"op":"cred", "ttl", "now", "used":[..], "devices":[{"device","user"}],
+   "request":{"id","user","origin","entry_origin","tls_ok","code","created"},
+   "answer":{"device","sig_ok","challenge_ok","origin_ok","user_verified","counter_ok","code"}}
+      -> {"allow": bool, "reason"}
+  {"op":"ask", "window", "max", "now", "log":[..]}            -> {"allow": bool}
   zenos-decide egress W THR   (the network sentinel's stream: one send per line
       "key<TAB>destination<TAB>allowed 0|1<TAB>time ms<TAB>bytes", one answer per line "cut" | "ok")
 -/
@@ -257,6 +263,26 @@ def answer (j : J) : Except String J := do
     return match decideSend r with
       | .allow => .obj [("allow", .bool true), ("reason", .str "sealed-ok")]
       | .deny why => .obj [("allow", .bool false), ("reason", .str why)]
+  | "cred" =>
+    let q ← field j "request"
+    let a ← field j "answer"
+    let devs ← (← getArr j "devices").mapM fun d => do return (← getS d "device", ← getS d "user")
+    let r : CredReq := { id := ← getS q "id", user := ← getS q "user", origin := ← getS q "origin",
+                         entryOrigin := ← getS q "entry_origin", tlsOk := ← getB q "tls_ok", code := ← getN q "code",
+                         created := ← getN q "created" }
+    let ans : CredAnswer := { device := ← getS a "device", sigOk := ← getB a "sig_ok",
+                              challengeOk := ← getB a "challenge_ok", originOk := ← getB a "origin_ok",
+                              userVerified := ← getB a "user_verified", counterOk := ← getB a "counter_ok",
+                              code := ← getN a "code" }
+    let st : CredState := { used := ← getSs j "used", devices := devs }
+    return match decideCred (← getN j "ttl") (← getN j "now") st r ans with
+      | .allow => .obj [("allow", .bool true), ("reason", .str "approved-on-phone")]
+      | .deny why => .obj [("allow", .bool false), ("reason", .str why)]
+  | "ask" =>
+    let log ← (← getArr j "log").mapM fun v => match v with
+      | .num n => pure n
+      | _ => throw "log: numbers"
+    return .obj [("allow", .bool (decideAsk (← getN j "window") (← getN j "max") (← getN j "now") log))]
   | op => throw s!"unknown op {op}"
 
 /-- The network sentinel's stream: one send per line, one answer per line, state kept between lines. -/

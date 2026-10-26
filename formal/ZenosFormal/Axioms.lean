@@ -3,6 +3,7 @@ import ZenosFormal.Flow
 import ZenosFormal.Ledger
 import ZenosFormal.Egress
 import ZenosFormal.Protocol
+import ZenosFormal.Cred
 
 /-! The main theorems rest only on Lean's standard axioms: no `sorry`, no axiom of our own. The build fails if
     that changes (`#guard_msgs` on the kernel's own report). -/
@@ -75,3 +76,12 @@ import ZenosFormal.Protocol
 
 /-- info: 'Zenos.counted_was_signed_for' does not depend on any axioms -/
 #guard_msgs in #print axioms Zenos.counted_was_signed_for
+
+/-- info: 'Zenos.cred_sound' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.cred_sound
+
+/-- info: 'Zenos.cred_once' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.cred_once
+
+/-- info: 'Zenos.ask_bounded' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.ask_bounded

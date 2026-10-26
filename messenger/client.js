@@ -359,6 +359,32 @@ async function remoteGate(req, res, u) {
   if (["/api/link/new", "/api/push/alert", "/api/devices", "/api/devices/revoke", "/api/register/start", "/api/register/verify", "/api/relays/add", "/api/relays/select"].includes(u.pathname)) { json(res, 403, { error: "Only on the ZENOS PC." }); return true; }
   return false;
 }
+// ---------- sign-in with this phone: the PC's vault service (zenos_credd) asks, the linked phone answers.
+// This process only carries the request and the phone's answer; the answer is a passkey signature over the request and
+// the entry's key encrypted to the vault service, so nothing here can open a password.
+const net = require("net");
+const CREDD = process.env.ZENOS_CREDD_SOCK || "/run/zenos/credd.sock";
+function credd(msg, timeout) {
+  return new Promise((resolve) => {
+    const s = net.createConnection(CREDD); let b = ""; let over = false;
+    const done = (o) => { if (over) return; over = true; try { s.destroy(); } catch {} resolve(o); };
+    s.setTimeout(timeout || 10000, () => done({ ok: false, error: "The sign-in service did not answer." }));
+    s.on("connect", () => s.write(JSON.stringify(msg) + "\n"));
+    s.on("data", (d) => { b += d; if (b.endsWith("\n")) { try { done(JSON.parse(b)); } catch { done({ ok: false, error: "bad answer" }); } } });
+    s.on("error", () => done({ ok: false, error: "The sign-in service is not running on this PC." }));
+  });
+}
+const credSeen = new Set();
+setInterval(async () => {          // a new request: wake the phone (also when notifications are paused: the person is signing in now)
+  const r = await credd({ op: "pending" }, 3000);
+  if (!r.ok) return;
+  for (const p of r.pending) if (!credSeen.has(p.id)) {
+    credSeen.add(p.id);
+    pushTo(Object.keys(devices), { title: p.kind === "save" ? "Save a password?" : "Sign-in request", body: `${String(p.origin).replace(/^https:\/\//, "")} · ${p.account || ""}`, tag: "cred-" + p.id, url: "/", red: true }, { ttl: 120, urgency: "high" });
+  }
+}, 2000);
+const phoneOrigin = () => { try { return new URL(fs.readFileSync(TUNNEL, "utf8").trim()); } catch { return null; } };
+const pickCred = (b) => { const o = {}; for (const k of ["id", "code", "decline", "credential_id", "authenticator_data", "client_data_json", "signature", "phone_key", "iv", "ct", "challenge", "attestation_object", "prf", "name"]) if (b[k] !== undefined) o[k] = b[k]; return o; };
 // ---------- official records: every message leaves a hash in the tamper-evident ledger (DODIG-2026-021: messages auto-deleted, records not kept)
 const { execFile } = require("child_process");
 const LEDGER = path.join(HOME, ".local/share/zenos/ledger.jsonl");
@@ -511,6 +537,22 @@ async function handle(req, res, remote) {
     if (u.pathname.startsWith("/rtc")) {
       const pr = http.request({ host: "127.0.0.1", port: 7880, path: req.url, method: req.method, headers: { ...req.headers, cookie: "" } }, (r2) => { res.writeHead(r2.statusCode, r2.headers); r2.pipe(res); });
       pr.on("error", () => { res.writeHead(502); res.end(); }); req.pipe(pr); return; }
+    if (u.pathname === "/api/cred/pending") {
+      if (!remote) return json(res, 200, { pending: [] });             // answered only on the phone
+      const r = await credd({ op: "pending" }, 3000);
+      return json(res, 200, { pending: r.ok ? r.pending : [], error: r.ok ? null : r.error });
+    }
+    if (remote && req.method === "POST" && ["/api/cred/answer", "/api/cred/enroll/start", "/api/cred/enroll/finish"].includes(u.pathname)) {
+      const b = pickCred(await readBody(req));
+      let m;
+      if (u.pathname === "/api/cred/answer") m = { op: "answer", ...b };
+      else if (u.pathname === "/api/cred/enroll/finish") m = { op: "enroll-finish", ...b };
+      else { const o = phoneOrigin(); if (!o) return json(res, 200, { error: "The secure tunnel is not running yet." });
+        m = { op: "enroll-start", code: String(b.code || ""), origin: o.origin, rp_id: o.hostname }; }
+      const r = await credd(m, 15000);
+      audit("msg-cred-" + u.pathname.split("/").pop(), { ok: !!r.ok, error: r.ok ? null : String(r.error).slice(0, 60) });
+      return json(res, 200, r.ok ? r : { error: r.error });
+    }
     if (!remote && u.pathname === "/api/link/new" && req.method === "POST") {
       let url; try { url = fs.readFileSync(TUNNEL, "utf8").trim(); } catch { return json(res, 200, { error: "The secure tunnel is not running yet." }); }
       const t = crypto.randomBytes(24).toString("base64url"); linkTokens[t] = Date.now() + 5 * 60e3;
@@ -781,6 +823,7 @@ async function handle(req, res, remote) {
     if (u.pathname === "/app-icon-180.png" || u.pathname === "/app-icon-512.png") { res.writeHead(200, { "Content-Type": "image/png", "Cache-Control": "no-cache" }); return res.end(fs.readFileSync(path.join(__dirname, u.pathname.slice(1)))); }
     if (u.pathname === "/pdf/pdf.min.mjs" || u.pathname === "/pdf/pdf.worker.min.mjs") {   // Mozilla pdf.js renders shared PDFs on the device
       res.writeHead(200, { "Content-Type": "text/javascript", "Cache-Control": "no-cache" }); return res.end(fs.readFileSync(path.join(__dirname, "node_modules/pdfjs-dist/legacy/build", path.basename(u.pathname)))); }
+    if (u.pathname === "/zcred.js") { res.writeHead(200, { "Content-Type": "text/javascript", "Cache-Control": "no-cache" }); return res.end(fs.readFileSync(path.join(__dirname, "zcred.js"))); }
     if (u.pathname === "/zcall.js" || u.pathname === "/lk/livekit-client.umd.js" || u.pathname === "/lk/livekit-client.e2ee.worker.js") {
       const fp = u.pathname === "/zcall.js" ? path.join(__dirname, "zcall.js") : path.join(__dirname, "node_modules/livekit-client/dist", path.basename(u.pathname));
       res.writeHead(200, { "Content-Type": "text/javascript", "Cache-Control": "no-cache" }); return res.end(fs.readFileSync(fp)); }

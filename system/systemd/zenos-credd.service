@@ -1,0 +1,20 @@
+[Unit]
+Description=ZENOS vault (passwords kept on the PC, unlocked only by the person's phone)
+After=zenos-keyd.service
+
+[Service]
+ExecStart=/usr/bin/python3 -I /usr/sbin/zenos_credd.py
+Restart=always
+RestartSec=2
+UMask=0077
+StateDirectory=zenos/cred
+StateDirectoryMode=0700
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/zenos/cred /run/zenos
+ProtectHome=yes
+PrivateTmp=yes
+PrivateNetwork=yes
+
+[Install]
+WantedBy=multi-user.target

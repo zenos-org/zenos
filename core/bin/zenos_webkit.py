@@ -8,6 +8,7 @@ for _lib in ("/usr/lib/zenos", "/usr/local/lib/zenos"):   # the ZENOS library: i
 import zdistrust
 import zenos_bookmarks as BM
 import zenos_picker
+import zenos_signin
 gi.require_version("Gtk", "3.0")
 gi.require_version("WebKit2", "4.1")
 gi.require_version("Gdk", "3.0")
@@ -139,6 +140,8 @@ class Zenos(Gtk.Window):
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.pack_start(self.bar, False, False, 0)
+        self.signin = zenos_signin.SignIn(self)          # sign-in with the phone (zenos_credd)
+        box.pack_start(self.signin.widget, False, False, 0)
         self.overlay = Gtk.Overlay()
         self.overlay.add(self.stack)
         pucm = WebKit2.UserContentManager()
@@ -166,7 +169,9 @@ class Zenos(Gtk.Window):
 
     # ---------- tabs ----------
     def make_view(self, related=None):
-        v = WebKit2.WebView.new_with_related_view(related) if related else WebKit2.WebView.new_with_context(self.ctx)
+        # a related view (new tab from a link) inherits the context and the sign-in script from the view that opened it
+        v = WebKit2.WebView.new_with_related_view(related) if related else \
+            WebKit2.WebView(web_context=self.ctx, user_content_manager=self.signin.ucm)
         v.set_background_color(Gdk.RGBA(0.1, 0.1, 0.12, 1))
         st = v.get_settings()
         st.set_user_agent("Mozilla/5.0 (X11; ZENOS x86_64) AppleWebKit/605.1.15 "
@@ -181,6 +186,7 @@ class Zenos(Gtk.Window):
         v.connect("enter-fullscreen", self.on_enter_fs)
         v.connect("leave-fullscreen", self.on_leave_fs)
         v.connect("load-changed", self.on_load_tls)
+        self.signin.view_created(v)
         return v
 
     # refuse sites whose certificate chain contains a compromised CA key (system/lib/distrust.json),
@@ -237,6 +243,7 @@ class Zenos(Gtk.Window):
         return self.new_tab(related=view)
 
     def switch_to(self, v):
+        self.signin.on_switch(v)
         if getattr(self, "panel", None) is not None and self.panel.get_visible():
             self.hide_panel(commit=True)
         self.cur = v

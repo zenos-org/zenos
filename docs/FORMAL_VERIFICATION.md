@@ -67,9 +67,23 @@ Levels need 0, 1, 1, 2, 3 approvals (L1–L5, `required`, the same table as `zfo
 agree). A release needs more officers than opening the file did (at least 2), capped by the enrolled officers other
 than the stopped user; with none, it cannot be met and the PC stays stopped.
 
+### Sign-in with the phone (`Cred.lean`)
+
+| Theorem | Statement |
+|---|---|
+| `cred_sound` | A saved password is released only to the page whose origin, as the browser verified it, is the one it was saved for, over verified TLS, within the time limit, after a phone registered to this person signed this very request with the person verified on the phone (counter moving forward), and the person picked the code the browser showed. |
+| `cred_once` | Every request is answered at most once: once answered, approved or not, it is refused. An answer cannot be replayed, and a wrong code cannot be retried on the same request. |
+| `ask_bounded` | However many requests a program sends, and however fast, at most `max` prompts reach the phone within any window. |
+
+The passkey checks (signature with the registered key, the signed challenge is this request's digest, client data
+origin and relying party of the registered phone page, user-verified flag, counter) are made by `zwebauthn.py` and
+passed to the decision as facts. The entry's key comes from the phone's passkey (WebAuthn PRF) and reaches the vault
+service encrypted to that request's one-time key; the PC stores only ciphertext.
+
 ## What is trusted, not proved
 
-- Cryptography: Ed25519 signature checks with the officers' enrolled keys, SHA-256 digests, AES-GCM. The services
+- Cryptography: Ed25519 signature checks with the officers' enrolled keys, SHA-256 digests, AES-GCM; for sign-in,
+  the passkey signature (ES256 / EdDSA), the PRF of the phone's authenticator, ECDH P-256 and HKDF. The services
   check these and pass the results (`sig_ok`, `digest_ok`) to the decision.
 - The facts the services read from root-owned files: the clearance file, the enrolled officers, the stop state, the
   clock.

@@ -2,8 +2,8 @@
 // The page itself is fetched fresh first (falls back to cache offline), so a phone always gets the latest screen.
 // Static parts (icons, avatars, call code) are served from cache at once and refreshed in the background.
 // Messages, keys and attachments (/api/*) are never cached.
-const CACHE = "zenos-msg-v12";
-const SHELL = ["/", "/app-icon.svg", "/app-icon-180.png", "/app-icon-512.png", "/manifest.webmanifest", "/zcall.js", "/lk/livekit-client.umd.js", "/lk/livekit-client.e2ee.worker.js"];
+const CACHE = "zenos-msg-v13";
+const SHELL = ["/", "/app-icon.svg", "/app-icon-180.png", "/app-icon-512.png", "/manifest.webmanifest", "/zcall.js", "/zcred.js", "/lk/livekit-client.umd.js", "/lk/livekit-client.e2ee.worker.js"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => Promise.all(SHELL.map((u) => c.add(u).catch(() => {})))));
   self.skipWaiting();
@@ -11,7 +11,7 @@ self.addEventListener("install", (e) => {
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
-const isStatic = (p) => p.startsWith("/av/") || p.startsWith("/lk/") || p.startsWith("/pdf/") || p === "/zcall.js" || p.startsWith("/app-icon") || p === "/manifest.webmanifest";
+const isStatic = (p) => p.startsWith("/av/") || p.startsWith("/lk/") || p.startsWith("/pdf/") || p === "/zcall.js" || p === "/zcred.js" || p.startsWith("/app-icon") || p === "/manifest.webmanifest";
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.origin !== location.origin || url.pathname.startsWith("/api/") || url.pathname === "/link") return;
