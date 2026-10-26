@@ -1,4 +1,8 @@
 import ZenosFormal.Proofs
+import ZenosFormal.Flow
+import ZenosFormal.Ledger
+import ZenosFormal.Egress
+import ZenosFormal.Protocol
 
 /-! The main theorems rest only on Lean's standard axioms: no `sorry`, no axiom of our own. The build fails if
     that changes (`#guard_msgs` on the kernel's own report). -/
@@ -23,3 +27,51 @@ import ZenosFormal.Proofs
 
 /-- info: 'Zenos.approvers_nodup' depends on axioms: [propext] -/
 #guard_msgs in #print axioms Zenos.approvers_nodup
+
+/-- info: 'Zenos.flow_within_cap' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.flow_within_cap
+
+/-- info: 'Zenos.no_write_down' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.no_write_down
+
+/-- info: 'Zenos.l3_stays_inside' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.l3_stays_inside
+
+/-- info: 'Zenos.l4_ministry_ai_only' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.l4_ministry_ai_only
+
+/-- info: 'Zenos.l5_stays' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.l5_stays
+
+/-- info: 'Zenos.carry_monotone' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.carry_monotone
+
+/-- info: 'Zenos.chainCheck_ok' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.chainCheck_ok
+
+/-- info: 'Zenos.accept_extends' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.accept_extends
+
+/-- info: 'Zenos.history_unique' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.history_unique
+
+/-- info: 'Zenos.send_sound' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.send_sound
+
+/-- info: 'Zenos.egress_cut_iff' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.egress_cut_iff
+
+/-- info: 'Zenos.egress_cut_stays' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.egress_cut_stays
+
+/-- info: 'Zenos.prune_prune' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.prune_prune
+
+/-- info: 'Zenos.approve_ne_decline' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.approve_ne_decline
+
+/-- info: 'Zenos.release_counts_only_this_stop' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.release_counts_only_this_stop
+
+/-- info: 'Zenos.counted_was_signed_for' does not depend on any axioms -/
+#guard_msgs in #print axioms Zenos.counted_was_signed_for

@@ -6,7 +6,9 @@ record breaks every hash after it, so verify() names the first broken point. Rec
 consortium-chain events that pin attribution: who opened what, when, and every per-fragment key issue.
 Replicated across the grid nodes so no single node can quietly rewrite its own history.
 """
-import fcntl, hashlib, json, os, time
+import fcntl, hashlib, json, os, sys, time
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import zdecide                      # the chain check itself (proved: formal/ZenosFormal/Ledger.lean)
 
 GENESIS = "0" * 64
 
@@ -44,23 +46,32 @@ def append(path, event, actor, device, **kw):
     return body["hash"]
 
 
+def facts(records):
+    """each record's link and stored hash, and whether the stored hash is SHA-256 of the link and its contents"""
+    out = []
+    for rec in records:
+        body = {k: v for k, v in rec.items() if k != "hash"}
+        stored = rec.get("hash")
+        out.append({"prev": rec.get("prev"), "hash": stored,
+                    "hash_ok": hashlib.sha256(str(rec.get("prev")).encode() + _canon(body)).hexdigest() == stored})
+    return out
+
+
 def verify(path):
-    """Return (ok, index, reason). ok=True means the whole chain is intact."""
-    prev = GENESIS
-    i = -1
+    """Return (ok, index, reason). ok=True means the whole chain is intact (decided by zenos-decide)."""
     try:
         with open(path, encoding="utf-8") as f:
             lines = [l for l in f.read().splitlines() if l.strip()]
     except FileNotFoundError:
         return True, -1, "empty"
+    recs = []
     for i, line in enumerate(lines):
-        rec = json.loads(line)
-        if rec.get("prev") != prev:
-            return False, i, "prev-link broken (record edited or one deleted before it)"
-        stored = rec.get("hash")
-        body = {k: v for k, v in rec.items() if k != "hash"}
-        calc = hashlib.sha256(prev.encode() + _canon(body)).hexdigest()
-        if calc != stored:
-            return False, i, "hash mismatch (this record was altered)"
-        prev = stored
-    return True, i, "intact"
+        try:
+            rec = json.loads(line)
+            if not isinstance(rec, dict):
+                raise ValueError
+        except ValueError:
+            return False, i, "unreadable record"
+        recs.append(rec)
+    ok, index, reason, _ = zdecide.chain(GENESIS, facts(recs))
+    return (True, len(recs) - 1, "intact") if ok else (False, index, reason)

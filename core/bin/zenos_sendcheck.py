@@ -11,7 +11,7 @@ sanctioned path; the sensor still catches anything that tries to bypass it.
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import zenos                           # also puts the ZENOS library on the path
-import zledger
+import zledger, zdecide
 
 NORMAL_MAX = 50 * 1024 * 1024      # <= this and sealed: allowed
 HUGE_MAX = NORMAL_MAX              # over this: requires an approved transfer request
@@ -28,21 +28,22 @@ def check_send(path):
     actor, device = _actor_device()
     try:
         blob = p.read_bytes()
-    except Exception as e:
+    except Exception:
         return _deny("unreadable", p.name, 0, actor, device)
     size = len(blob)
-    if not blob.startswith(zenos.MAGIC):
-        return _deny("plaintext-or-unsealed", p.name, size, actor, device)
-    try:
-        h, hb, sig, ct = zenos.parse(blob)
-        zenos.verify(hb, sig, ct)
-    except Exception:
-        return _deny("invalid-or-tampered", p.name, size, actor, device)
-    level = h.get("level", 1)
-    if size > HUGE_MAX:
-        plan, grant = zenos.active_plan("external-send", level)
-        if not plan:
-            return _deny("too-large-needs-approval", p.name, size, actor, device, level=level)
+    sealed, sig_ok, level = blob.startswith(zenos.MAGIC), False, 1
+    if sealed:
+        try:
+            h, hb, sig, ct = zenos.parse(blob)
+            zenos.verify(hb, sig, ct)
+            sig_ok, level = True, h.get("level", 1)
+        except Exception:
+            pass
+    plan_ok = bool(zenos.active_plan("external-send", level)[0]) if sealed and sig_ok and size > HUGE_MAX else False
+    # the decision itself (proved: formal/ZenosFormal/Egress.lean, send_sound)
+    allowed, why = zdecide.send(sealed, sig_ok, size, HUGE_MAX, plan_ok)
+    if not allowed:
+        return _deny(why, p.name, size, actor, device, **({"level": level} if sealed and sig_ok else {}))
     zledger.append(LEDGER, "send-allowed", actor, device, file=p.name, size=size, level=level)
     return True, "sealed-ok"
 

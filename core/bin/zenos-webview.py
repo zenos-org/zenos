@@ -11,6 +11,10 @@ gi.require_version('WebKit2', '4.1')
 from gi.repository import Gtk, WebKit2, GLib
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import zenos_picker
+for _lib in ("/usr/lib/zenos", "/usr/local/lib/zenos"):   # the ZENOS library: installed, else development layout
+    if os.path.isdir(_lib) and _lib not in sys.path:
+        sys.path.append(_lib)
+import zdecide                                            # where content may go (proved: formal/ZenosFormal/Flow.lean)
 
 url = sys.argv[1] if len(sys.argv) > 1 else 'about:blank'
 title = sys.argv[2] if len(sys.argv) > 2 else 'ZENOS App'
@@ -32,7 +36,7 @@ st = view.get_settings()
 st.set_enable_developer_extras(not sealed)
 # from L3 up, nothing is copied out of a sealed file (a copy would land in an unsealed, lower-level place);
 # pasting in stays possible
-NO_COPY = sealed >= 3
+NO_COPY = not zdecide.flow(sealed, "clipboard")
 st.set_javascript_can_access_clipboard(not NO_COPY)
 if NO_COPY:
     # Copy and paste between sealed windows of the same level: what is copied goes to the key agent (RAM, per user),
@@ -197,7 +201,7 @@ def _audit_print(allowed):
 def on_print(wv, op):
     if not sealed:
         return False
-    if sealed > PRINT_MAX:
+    if not zdecide.flow(sealed, "printer", print_max=PRINT_MAX):
         _audit_print(False)
         GLib.idle_add(tell, f'"{name}" is L{sealed}. Files above L{PRINT_MAX} cannot be printed from this PC.')
         return True                                  # handled: nothing is printed

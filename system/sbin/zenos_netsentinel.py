@@ -14,6 +14,7 @@ from collections import defaultdict, deque
 # the ZENOS library is ../lib/zenos beside this program (/usr/lib/zenos, root-owned)
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib", "zenos"))
 import zconf
+import zdecide                     # the egress counter itself (proved: formal/ZenosFormal/Egress.lean)
 try:
     import zalarm
 except Exception:
@@ -226,6 +227,8 @@ def main():
                           text=True)
     log({"t": time.strftime("%Y-%m-%dT%H:%M:%S"), "type": "sentinel-start", "cfg": cfg})
     thr, W = cfg["threshold_bytes"], cfg["window_sec"]
+    egress = zdecide.EgressStream(W * 1000, thr)
+    sent = {}
     for line in bt.stdout:
         parts = line.split(" ", 5)
         if len(parts) < 6 or parts[0] not in ("S", "L"):
@@ -238,19 +241,15 @@ def main():
             if not ip.startswith("127."):
                 reflex_listen(pid, ip, port, comm)
             continue
-        if allowed(ip) or ip in blocked:
+        if ip in blocked:
             continue
         k = (pid, ip)
         first_seen.setdefault(k, t)
-        q = win[k]
-        q.append((t, size))
-        while q and t - q[0][0] > W:
-            q.popleft()
-        total = sum(s for _, s in q)
-        if total >= thr:
+        sent[k] = sent.get(k, 0) + size
+        # cut exactly when an unapproved destination reaches the threshold within the window
+        if egress.send("%d %s" % (pid, ip), ip, allowed(ip), int(t * 1000), size):
             blocked.add(ip)
-            reflex_egress(pid, ip, port, total, comm, first_seen[k], t)
-            win.pop(k, None)
+            reflex_egress(pid, ip, port, sent.pop(k, 0), comm, first_seen.get(k, t), t)
 
 
 if __name__ == "__main__":

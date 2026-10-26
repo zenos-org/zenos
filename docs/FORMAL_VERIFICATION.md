@@ -1,9 +1,10 @@
 # Formal verification of the ZENOS decisions
 
-The decisions that decide whether classified data is released are written in Lean 4 (`formal/`) with
-machine-checked proofs of what they guarantee. The root services do not reimplement them: keyd and guardd run
-`zenos-decide`, the program built from the same Lean definitions, and follow its answer
-(`system/lib/zdecide.py`). Anything unexpected from it (missing, timeout, unreadable answer) is a refusal.
+The decisions that decide whether classified data is released or leaves are written in Lean 4 (`formal/`) with
+machine-checked proofs of what they guarantee. The services do not reimplement them: keyd, guardd, the apps, the
+ledger check, the audit nodes, the pre-send check and the network sentinel run `zenos-decide`, the program built from
+the same Lean definitions, and follow its answer (`system/lib/zdecide.py`). Anything unexpected from it (missing,
+timeout, unreadable answer) is a refusal; for the network sentinel, a cut.
 
 ## What is proved
 
@@ -19,6 +20,49 @@ build unless the theorems rest only on Lean's standard axioms (`propext`, `Quot.
 | `run_open_not_halted` | Over any sequence of anomalies, officers' answers, enforcement checks and open requests, every file keyd opened was opened while the PC was not stopped. |
 | `run_release` | Over any such sequence, the PC goes from stopped to running only through a release check that held. |
 
+### Where content may go (`Flow.lean`)
+
+One decision for every place a copy of a file's content can reach: level folders (Save As), level windows (paste),
+the system clipboard, the printer, external AI, the government's AI, the ministry's AI. The apps (zenos_app,
+zenos-webview) and keyd's clipboard ask it; the launcher's AI table is checked against it by a test.
+
+| Theorem | Statement |
+|---|---|
+| `no_write_down` | Content of a level reaches only folders and windows of that level or higher (public content excepted). |
+| `flow_within_cap` | No place ever holds more than its ceiling: clipboard L2, printer L4, external AI L2, government AI L3, whatever the configuration says. |
+| `l3_stays_inside` | L3 and above never reach the system clipboard or an AI outside the government. |
+| `l4_ministry_ai_only` | L4 and above reach no AI but the ministry's own. |
+| `l5_stays` | Specially Designated Secrets (L5) are never printed and leave the L5 places only for the ministry's AI. |
+| `carry_monotone` | Moving a copy hop by hop never lowers its level. |
+
+### The tamper-evident ledger (`Ledger.lean`)
+
+| Theorem | Statement |
+|---|---|
+| `chainCheck_ok` | The check accepts exactly the chains whose links and hashes hold. |
+| `accept_extends` | An audit node's copy stays an intact chain and only grows: a batch is accepted only if it continues it. |
+| `history_unique` | For any hash function without collisions, two histories that pass the check and end at the same hash are the same history. The audit nodes hold that hash, so an altered past cannot be shown to them. |
+
+### What leaves the PC (`Egress.lean`)
+
+| Theorem | Statement |
+|---|---|
+| `send_sound` | Nothing unsealed or tampered passes the pre-send check, and nothing over the size line without an approved transfer. |
+| `egress_cut_iff` | The network sentinel cuts a destination exactly when it is not approved, not already cut, and the bytes sent to it within the window reach the threshold. |
+| `egress_cut_stays` | A cut destination stays cut. |
+| `prune_prune` | Keeping only the recent part of the window loses nothing, as long as the clock does not go backwards. |
+
+### Officers' signatures (`Protocol.lean`)
+
+Signatures are modelled as unforgeable and the digest as collision-free (hypotheses of the theorems, the standard
+assumptions about Ed25519 and SHA-256).
+
+| Theorem | Statement |
+|---|---|
+| `approve_ne_decline` | An approval (32-byte digest) can never be read as a decline (`"decline:"` + digest) or the reverse. |
+| `counted_was_signed_for` | A signature that counts for a request was made for exactly that request: same id, same stop. |
+| `release_counts_only_this_stop` | A stop is released only with a signature, by an enrolled officer other than the stopped user, over the request that names this stop: approvals cannot be replayed from another request or another stop. |
+
 Levels need 0, 1, 1, 2, 3 approvals (L1–L5, `required`, the same table as `zformat.REQUIRED`; a test checks they
 agree). A release needs more officers than opening the file did (at least 2), capped by the enrolled officers other
 than the stopped user; with none, it cannot be met and the PC stays stopped.
@@ -29,11 +73,14 @@ than the stopped user; with none, it cannot be met and the PC stays stopped.
   check these and pass the results (`sig_ok`, `digest_ok`) to the decision.
 - The facts the services read from root-owned files: the clearance file, the enrolled officers, the stop state, the
   clock.
-- The glue: `zdecide.py`, the parts of keyd and guardd that gather facts and carry out the answer (write the
-  request file, freeze or thaw processes), and the JSON reader in `formal/Main.lean`.
+- The glue: `zdecide.py`, the parts of the services that gather facts and carry out the answer (write the request
+  file, freeze or thaw processes, cut a destination), the folder-level and CIDR lookups, and the readers in
+  `formal/Main.lean`.
+- The network sensor (eBPF/bpftrace) that reports each outbound send.
 - Lean's compiler and runtime, the Linux kernel, Python.
-- What the proofs do not speak about: the other protections of ZENOS (network sentinel, firewall, ledger shipping,
-  trust agent) are tested, not proved.
+- What the proofs do not speak about: the firewall rules themselves, ledger shipping, the trust agent and the
+  messenger are tested, not proved. The signature model in `Protocol.lean` is symbolic (unforgeability and
+  collision resistance are assumed); a computational proof of the cryptography is out of scope.
 
 ## Building and checking
 

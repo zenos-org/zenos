@@ -32,6 +32,10 @@ def read_level():
 
 
 SEALED_LEVEL = int(os.environ.get("ZENOS_SEALED_LEVEL", "0") or 0)
+for _lib in ("/usr/lib/zenos", "/usr/local/lib/zenos"):   # the ZENOS library: installed, else development layout
+    if os.path.isdir(_lib) and _lib not in sys.path:
+        sys.path.append(_lib)
+import zdecide                                            # where content may go (proved: formal/ZenosFormal/Flow.lean)
 
 
 def folder_level(p):
@@ -41,7 +45,7 @@ def folder_level(p):
 
 def sealed_block(path):
     """a file opened from a sealed (.zen) original may only be copied into a folder of the same level or higher"""
-    if SEALED_LEVEL > 1 and folder_level(path) < SEALED_LEVEL:
+    if SEALED_LEVEL and not zdecide.flow(SEALED_LEVEL, "folder", folder_level(path)):
         return "This file is L%d. Save the copy into an L%d (or higher) folder on the desktop." % (SEALED_LEVEL, SEALED_LEVEL)
     if SEALED_LEVEL and ("/dev/shm/" in path):
         return "Choose a folder for the copy."
@@ -132,7 +136,7 @@ class App(Gtk.Window):
                     ceiling = int(v.strip())
         except (OSError, ValueError):
             pass
-        allowed = self.sealed <= ceiling
+        allowed = zdecide.flow(self.sealed, "printer", print_max=ceiling)
         try:
             import zenos
             zenos.audit("print" if allowed else "print-refused", file=os.path.basename(start_file), level=self.sealed)

@@ -723,7 +723,7 @@ def serve():
                     break
                 buf += chunk
             out = handle(json.loads(buf or b"{}"))
-        except Exception as e:
+        except Exception:
             out = {"ok": False, "message": "Bad request."}
         try:
             c.sendall((json.dumps(out, ensure_ascii=False) + "\n").encode())

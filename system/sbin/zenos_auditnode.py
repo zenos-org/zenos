@@ -28,6 +28,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib", "zenos"))
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))       # zenos-grid package: zledger.py sits beside this file
 import zledger                                                     # noqa: E402
+import zdecide                                                     # noqa: E402
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey   # noqa: E402
 from cryptography.hazmat.primitives import serialization          # noqa: E402
 
@@ -133,12 +134,14 @@ class Node:
                     return 409, {"ok": False, "error": "history differs from the copy held here", "index": frm + i}
             new = recs[max(0, n - frm):]
             prev = held[-1] if held else zledger.GENESIS
-            for j, rec in enumerate(new):
-                body = {k: v for k, v in rec.items() if k != "hash"}
-                if rec.get("prev") != prev or hashlib.sha256(prev.encode() + zledger._canon(body)).hexdigest() != rec.get("hash"):
-                    self.alert("broken-chain", machine=machine, chain=chain, index=n + j)
-                    return 422, {"ok": False, "error": "broken chain", "index": n + j}
-                prev = rec["hash"]
+            if not all(isinstance(r, dict) for r in new):
+                return 400, {"ok": False, "error": "malformed batch"}
+            # the batch must continue the chain held here (decided by zenos-decide: formal/ZenosFormal/Ledger.lean)
+            ok, j, _, head = zdecide.chain(prev, zledger.facts(new))
+            if not ok:
+                self.alert("broken-chain", machine=machine, chain=chain, index=n + (j or 0))
+                return 422, {"ok": False, "error": "broken chain", "index": n + (j or 0)}
+            prev = head
             if new:
                 with open(self.chain_path(machine, chain), "a", encoding="utf-8") as f:
                     for rec in new:

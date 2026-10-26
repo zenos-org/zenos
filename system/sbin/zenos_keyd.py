@@ -236,7 +236,7 @@ def handle(msg, uid):
             if c and time.time() - c["t"] > CLIP_TTL:
                 CLIPS.pop(uid, None)
                 c = None
-        if not c or c["level"] > level:
+        if not c or not zdecide.flow(c["level"], "window", level):
             return {"ok": True, "text": None}
         return {"ok": True, "text": c["text"], "level": c["level"], "t": c["t"]}
     return {"ok": False, "error": "unknown op"}
@@ -261,7 +261,7 @@ def client(c):
             if len(buf) > MAX * 4 // 3 + 4096:
                 raise ValueError("too large")
         out = handle(json.loads(buf or b"{}"), uid)
-    except Exception as e:
+    except Exception:
         out = {"ok": False, "error": "bad request"}
     try:
         c.sendall((json.dumps(out) + "\n").encode())

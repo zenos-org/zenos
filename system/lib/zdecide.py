@@ -83,6 +83,76 @@ def required(level):
     return int(ask({"op": "required", "level": int(level)})["required"])
 
 
+def flow(src, sink, level=0, print_max=3):
+    """may content of level `src` go to `sink` ("folder", "window" with a level; "clipboard", "printer",
+    "external-ai", "gov-ai", "ministry-ai")? Refused if the decision cannot be had."""
+    try:
+        return bool(ask({"op": "flow", "src": max(0, int(src)), "sink": sink, "level": max(0, int(level)),
+                         "print_max": max(0, int(print_max))})["allow"])
+    except (Refused, KeyError, TypeError, ValueError):
+        return False
+
+
+def chain(start, records):
+    """records: [{"prev", "hash", "hash_ok"}] oldest first -> (ok, index of the first broken record, reason, head)"""
+    try:
+        a = ask({"op": "chain", "start": str(start),
+                 "records": [{"prev": str(r.get("prev")), "hash": str(r.get("hash")), "hash_ok": bool(r.get("hash_ok"))}
+                             for r in records]})
+        return bool(a["ok"]), a.get("index"), a.get("reason"), a.get("head")
+    except (Refused, KeyError, TypeError, ValueError) as e:
+        return False, 0, "no decision: %s" % e, None
+
+
+def send(sealed, sig_ok, size, huge_max, plan_ok):
+    """(allowed, reason) for the pre-send check"""
+    try:
+        a = ask({"op": "send", "sealed": bool(sealed), "sig_ok": bool(sig_ok), "size": int(size),
+                 "huge_max": int(huge_max), "plan_ok": bool(plan_ok)})
+        return bool(a["allow"]), a.get("reason")
+    except (Refused, KeyError, TypeError, ValueError) as e:
+        return False, "no decision: %s" % e
+
+
+class EgressStream:
+    """the network sentinel's counter: one long-running `zenos-decide egress` that keeps the windows. send() answers
+    whether the destination is cut now. If the program cannot answer, the destination is cut (fail closed)."""
+
+    def __init__(self, window_ms, threshold):
+        self.args = [PROGRAM or "/nonexistent/zenos-decide", "egress", str(int(window_ms)), str(int(threshold))]
+        self.p = None
+
+    def _start(self):
+        self.p = subprocess.Popen(self.args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1,
+                                  env={})
+
+    def send(self, key, dst, allowed, t_ms, size):
+        line = "%s\t%s\t%d\t%d\t%d\n" % (str(key).replace("\t", " ").replace("\n", " "),
+                                           str(dst).replace("\t", " ").replace("\n", " "), 1 if allowed else 0,
+                                           int(t_ms), max(0, int(size)))
+        for _ in range(2):
+            try:
+                if self.p is None or self.p.poll() is not None:
+                    self._start()
+                self.p.stdin.write(line)
+                self.p.stdin.flush()
+                ans = self.p.stdout.readline().strip()
+                if ans in ("cut", "ok"):
+                    return ans == "cut"
+            except (OSError, ValueError):
+                pass
+            self.p = None
+        return True
+
+    def close(self):
+        if self.p is not None:
+            try:
+                self.p.stdin.close()
+                self.p.wait(timeout=5)
+            except Exception:
+                pass
+
+
 def _request(r):
     """the part of a release request the decision reads; each approval carries sig_ok, checked by the caller"""
     return {"id": str(r["id"]), "requester": str(r["requester"]), "level": int(r["level"]),

@@ -24,7 +24,14 @@ chmod 755 "$G/storage/bin/zenos-store.js"
 echo "== audit node"
 mkdir -p "$G/audit"
 install -m 755 "$SRC/system/sbin/zenos_auditnode.py" "$G/audit/"
-install -m 644 "$SRC/system/lib/zledger.py" "$G/audit/"
+install -m 644 "$SRC/system/lib/zledger.py" "$SRC/system/lib/zdecide.py" "$G/audit/"
+# the proven chain check (formal/), built the same way as for the zenos package
+LAKE="${LAKE:-$(command -v lake || echo /opt/lean/lean-4.34.1-linux/bin/lake)}"
+[ -x "$LAKE" ] || { echo "Lean 4 (lake) is needed to build zenos-decide: docs/FORMAL_VERIFICATION.md" >&2; exit 1; }
+rm -rf "$B/formal"; mkdir -p "$B/formal"
+( cd "$SRC/formal" && tar cf - --exclude=.lake . ) | ( cd "$B/formal" && tar xf - )
+( cd "$B/formal" && PATH="$(dirname "$LAKE"):$PATH" "$LAKE" build )
+install -m 755 "$B/formal/.lake/build/bin/zenos-decide" "$G/audit/zenos-decide"
 
 echo "== services (each starts only once its /etc/zenos/*.json exists)"
 mkdir -p "$P/lib/systemd/system"

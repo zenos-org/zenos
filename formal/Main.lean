@@ -1,4 +1,7 @@
 import ZenosFormal.Decide
+import ZenosFormal.Flow
+import ZenosFormal.Ledger
+import ZenosFormal.Egress
 
 /-!
 `zenos-decide`: reads one JSON request on stdin, writes one JSON answer on stdout, runs the proven decision
@@ -17,6 +20,12 @@ functions of `ZenosFormal.Decide` and nothing else. Any input it cannot read is 
   {"op":"release-required", "roster":[..], "requester", "level"}
       -> {"required": n}
   {"op":"required", "level"}       -> {"required": n}   (approvals a level needs; the services' table must agree)
+  {"op":"flow", "src", "sink":"folder"|"window"|"clipboard"|"printer"|"external-ai"|"gov-ai"|"ministry-ai",
+   "level" (folder, window), "print_max"}                       -> {"allow": bool}
+  {"op":"chain", "start", "records":[{"prev","hash","hash_ok"}]} -> {"ok": bool, "index", "reason", "head"}
+  {"op":"send", "sealed", "sig_ok", "size", "huge_max", "plan_ok"} -> {"allow": bool, "reason"}
+  zenos-decide egress W THR   (the network sentinel's stream: one send per line
+      "key<TAB>destination<TAB>allowed 0|1<TAB>time ms<TAB>bytes", one answer per line "cut" | "ok")
 -/
 
 
@@ -55,7 +64,7 @@ def hex (c : Char) : P Nat :=
 
 partial def strBody (acc : List Char) : P String := do
   match ← next with
-  | '"' => return String.mk acc.reverse
+  | '"' => return String.ofList acc.reverse
   | '\\' =>
     match ← next with
     | '"' => strBody ('"' :: acc)
@@ -125,8 +134,8 @@ def esc (s : String) : String :=
   s.foldl (fun acc c =>
     if c == '"' then acc ++ "\\\"" else if c == '\\' then acc ++ "\\\\"
     else if c.toNat < 32 then
-      let d := (Nat.toDigits 16 c.toNat).asString
-      acc ++ "\\u" ++ String.mk (List.replicate (4 - d.length) '0') ++ d
+      let d := String.ofList (Nat.toDigits 16 c.toNat)
+      acc ++ "\\u" ++ String.ofList (List.replicate (4 - d.length) '0') ++ d
     else acc.push c) ""
 
 partial def render : J → String
@@ -223,12 +232,58 @@ def answer (j : J) : Except String J := do
     return .obj [("required", .num (required (← getN j "level")))]
   | "release-required" =>
     return .obj [("required", .num (releaseRequired (← getSs j "roster") (← getS j "requester") (← getN j "level")))]
+  | "flow" =>
+    let sink ← match ← getS j "sink" with
+      | "folder" => pure (Sink.folder (← getN j "level"))
+      | "window" => pure (Sink.window (← getN j "level"))
+      | "clipboard" => pure Sink.systemClipboard
+      | "printer" => pure Sink.printer
+      | "external-ai" => pure Sink.externalAI
+      | "gov-ai" => pure Sink.govAI
+      | "ministry-ai" => pure Sink.ministryAI
+      | k => throw s!"unknown sink {k}"
+    return .obj [("allow", .bool (mayFlow (← getN j "print_max") (← getN j "src") sink))]
+  | "chain" =>
+    let recs ← (← getArr j "records").mapM fun r => do
+      return ({ prev := ← getS r "prev", hash := ← getS r "hash", hashOk := ← getB r "hash_ok" } : Rec)
+    let start ← getS j "start"
+    return match chainCheck start recs 0 with
+      | none => .obj [("ok", .bool true), ("index", .null), ("reason", .str "intact"),
+                      ("head", .str (chainHead start recs))]
+      | some (i, why) => .obj [("ok", .bool false), ("index", .num i), ("reason", .str why), ("head", .null)]
+  | "send" =>
+    let r : SendReq := { sealed := ← getB j "sealed", sigOk := ← getB j "sig_ok", size := ← getN j "size",
+                         hugeMax := ← getN j "huge_max", planOk := ← getB j "plan_ok" }
+    return match decideSend r with
+      | .allow => .obj [("allow", .bool true), ("reason", .str "sealed-ok")]
+      | .deny why => .obj [("allow", .bool false), ("reason", .str why)]
   | op => throw s!"unknown op {op}"
+
+/-- The network sentinel's stream: one send per line, one answer per line, state kept between lines. -/
+partial def egressLoop (w thr : Nat) (inp : IO.FS.Stream) (out : IO.FS.Stream) (st : EState) : IO Unit := do
+  let line ← inp.getLine
+  if line.isEmpty then return
+  let f := (String.ofList (line.toList.filter fun c => c != '\n' && c != '\r')).splitOn "\t"
+  let st' ← match f with
+    | [key, dst, allowed, t, size] =>
+      match t.toNat?, size.toNat? with
+      | some t, some size =>
+        let (st', cut) := egressStep w thr st { key, dst, allowed := allowed == "1", t, size }
+        out.putStrLn (if cut then "cut" else "ok")
+        pure st'
+      | _, _ => out.putStrLn "error"; pure st
+    | _ => out.putStrLn "error"; pure st
+  out.flush
+  egressLoop w thr inp out st'
 
 end ZenosDecide
 
 open ZenosDecide in
-def main : IO UInt32 := do
+def main (args : List String) : IO UInt32 := do
+  if let ["egress", w, thr] := args then
+    match w.toNat?, thr.toNat? with
+    | some w, some thr => egressLoop w thr (← IO.getStdin) (← IO.getStdout) { win := [], cut := [] }; return 0
+    | _, _ => IO.eprintln "usage: zenos-decide egress WINDOW_MS THRESHOLD_BYTES"; return 2
   let input ← (← IO.getStdin).readToEnd
   match (J.parse input).bind answer with
   | .ok j => IO.println j.render; return 0
