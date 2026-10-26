@@ -380,7 +380,9 @@ setInterval(async () => {          // a new request: wake the phone (also when n
   if (!r.ok) return;
   for (const p of r.pending) if (!credSeen.has(p.id)) {
     credSeen.add(p.id);
-    pushTo(Object.keys(devices), { title: p.kind === "save" ? "Save a password?" : "Sign-in request", body: `${String(p.origin).replace(/^https:\/\//, "")} · ${p.account || ""}`, tag: "cred-" + p.id, url: "/", red: true }, { ttl: 120, urgency: "high" });
+    // the notification says only that a request is waiting. The site and the account are shown in ZENOS Messages,
+    // which fetches them from this PC over the linked session: the lock screen and the push service never see them.
+    pushTo(Object.keys(devices), { title: "Sign-in request", body: "Open ZENOS Messages to review it.", tag: "cred", url: "/", red: true }, { ttl: 120, urgency: "high" });
   }
 }, 2000);
 const phoneOrigin = () => { try { return new URL(fs.readFileSync(TUNNEL, "utf8").trim()); } catch { return null; } };
