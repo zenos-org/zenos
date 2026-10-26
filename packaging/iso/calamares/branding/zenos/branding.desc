@@ -1,7 +1,7 @@
 ---
 # ZENOS installer branding (Figma: "Installer — welcome image", "Installer — slide while installing")
 componentName:   zenos
-welcomeStyleCalamares: true
+welcomeStyleCalamares: false   # "Welcome to the ZENOS installer", not the tool's name
 welcomeExpandingLogo: true
 windowExpanding: normal
 windowSize: 860px,600px

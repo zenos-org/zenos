@@ -1,0 +1,18 @@
+/* ZENOS installer: the dark ZENOS look (the installer was the only light window) */
+QWidget { background-color: #17181D; color: #E6E8EC; }
+QLabel { background: transparent; }
+QLineEdit, QComboBox, QListView, QTreeView, QTextBrowser, QPlainTextEdit {
+  background-color: #0E0F13; color: #E6E8EC; border: 1px solid #2A2D37; border-radius: 6px; padding: 3px;
+  selection-background-color: #7C3AED; selection-color: #FFFFFF; }
+QComboBox QAbstractItemView { background-color: #0E0F13; color: #E6E8EC; selection-background-color: #7C3AED; }
+QPushButton { background-color: #2A2D37; color: #E6E8EC; border: 0; border-radius: 6px; padding: 6px 16px; }
+QPushButton:hover { background-color: #343845; }
+QPushButton:disabled { color: #6B6F78; }
+QCheckBox, QRadioButton { background: transparent; }
+QProgressBar { background-color: #0E0F13; border: 1px solid #2A2D37; border-radius: 6px; text-align: center; color: #E6E8EC; }
+QProgressBar::chunk { background-color: #9B3BEF; border-radius: 6px; }
+QScrollBar:vertical { background: transparent; width: 6px; margin: 0; }
+QScrollBar::handle:vertical { background: #9B3BEF; border-radius: 3px; min-height: 24px; }
+QScrollBar:horizontal { background: transparent; height: 6px; margin: 0; }
+QScrollBar::handle:horizontal { background: #9B3BEF; border-radius: 3px; min-width: 24px; }
+QScrollBar::add-line, QScrollBar::sub-line, QScrollBar::add-page, QScrollBar::sub-page { background: none; height: 0; width: 0; }
