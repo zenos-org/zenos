@@ -254,6 +254,30 @@ class CredTest(unittest.TestCase):
         pk = Passkey(uv=False)
         self.assertFalse(enroll(pk)["ok"])
 
+    def test_origin_shapes(self):
+        for o in ("https://evil@bank.example", "https://bank.example/login", "https://bank.example:0", "http://bank.example",
+                  "https://BANK.example", "https://bank..example", "https://-bank.example", "https://bänk.example",
+                  "https://bank.example:99999x", " https://bank.example"):
+            self.assertFalse(C.good_origin(o), o)
+        for o in ("https://bank.example", "https://xn--bnk-sna.example", "https://bank.example:8443", "https://localhost"):
+            self.assertTrue(C.good_origin(o), o)
+
+    def test_only_zenos_programs_may_ask(self):
+        """this test process is neither the installed browser nor ZENOS Messages"""
+        self.assertIsNone(C.caller(os.getpid()))
+        r = C.handle({"op": "ask", "kind": "fill", "origin": SITE, "account": "tanaka", "tls_ok": True},
+                     os.getuid(), os.getpid())
+        self.assertFalse(r["ok"])
+        r = C.handle({"op": "pending"}, os.getuid(), os.getpid())
+        self.assertFalse(r["ok"])
+
+    def test_enrolment_guessing_is_slowed(self):
+        C.save(USER, "enroll.json", {"hash": "x", "expires": C.time.time() + 600, "tries": 0})
+        a = h({"op": "enroll-start", "code": "1", "origin": PHONE, "rp_id": PHONE_HOST}, MESSENGER)
+        b = h({"op": "enroll-start", "code": "2", "origin": PHONE, "rp_id": PHONE_HOST}, MESSENGER)
+        self.assertEqual(a["error"], "wrong enrolment code")
+        self.assertEqual(b["error"], "wait a moment before trying again")
+
     def test_expired(self):
         self.save_pw()
         r = self.ask()

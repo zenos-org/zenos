@@ -26,7 +26,7 @@ Protocol: one JSON line per connection on /run/zenos/credd.sock; the caller is i
 Not protected: a PC already taken over while the person approves (the password is on the screen's page at that
 moment); docs/SECURITY_ARCHITECTURE.md.
 """
-import hashlib, hmac, json, os, pwd, secrets, socket, struct, sys, threading, time
+import hashlib, hmac, json, os, pwd, re, secrets, socket, struct, sys, threading, time
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib", "zenos"))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"))
@@ -42,7 +42,16 @@ DATA = os.environ.get("ZENOS_CRED_DIR", "/var/lib/zenos/cred")
 TTL_MS = 120_000                   # a request is answerable for two minutes
 ASK_WINDOW_MS, ASK_MAX = 60_000, 3 # prompts per person per minute
 ENROLL_TTL = 15 * 60
+ENROLL_TRIES, ENROLL_GAP = 20, 2.0     # wrong enrolment codes: 20 tries, 2 s apart (8 digits: no guessing, no lock-out)
 MAX_LINE = 64 * 1024
+# who may ask: the browser asks for passwords, ZENOS Messages carries the phone's answers. Each is a root-owned
+# program run by the person; another program of the same person is refused (it could show a fake code on screen).
+BROWSERS = os.environ.get("ZENOS_CREDD_BROWSER", "/usr/share/zenos/bin/zenos_webkit.py").split(":")
+MESSENGERS = os.environ.get("ZENOS_CREDD_MESSENGER", "/usr/share/zenos/msg/client.js").split(":")
+BROWSER_OPS = {"accounts", "ask", "wait", "cancel"}
+PHONE_OPS = {"pending", "answer", "enroll-start", "enroll-finish"}
+NODE_OPTIONS_OK = {"", "--require=/usr/lib/zenos/zdistrust.js"}
+ORIGIN_RE = re.compile(r"^https://(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?::[1-9][0-9]{0,4})?$")
 
 LOCK = threading.Lock()
 REQ = {}                           # request id -> request (in memory only: a restart forgets every open request)
@@ -125,7 +134,51 @@ def entry_aad(origin, account):
 
 
 def good_origin(o):
-    return isinstance(o, str) and o.startswith("https://") and "/" not in o[8:] and 8 < len(o) < 300 and o == o.strip()
+    """https://host[:port], host in ASCII (international names in their xn-- form), no user part, no path"""
+    return isinstance(o, str) and len(o) < 300 and ORIGIN_RE.match(o) is not None
+
+
+def _proc(pid, name):
+    with open("/proc/%d/%s" % (pid, name), "rb") as f:
+        return f.read()
+
+
+def caller(pid):
+    """'browser', 'messenger' or None: which ZENOS program the connecting process runs. The program file must be one
+    of the installed, root-owned ones, run by the plain interpreter: no code injected through the environment
+    (PYTHONPATH, LD_PRELOAD, NODE_OPTIONS beyond the system's own), no interpreter options that run other code, and
+    not being traced by a debugger."""
+    try:
+        exe = os.path.basename(os.path.realpath("/proc/%d/exe" % pid))
+        argv = [a.decode() for a in _proc(pid, "cmdline").split(b"\0") if a]
+        env = dict(e.decode(errors="replace").partition("=")[::2] for e in _proc(pid, "environ").split(b"\0") if e)
+        status = _proc(pid, "status").decode()
+        cwd = os.path.realpath("/proc/%d/cwd" % pid)
+    except (OSError, ValueError):
+        return None
+    if re.search(r"^TracerPid:\s*[1-9]", status, re.M):
+        return None
+    if any(k in env for k in ("LD_PRELOAD", "LD_LIBRARY_PATH", "LD_AUDIT", "PYTHONPATH", "PYTHONHOME",
+                              "PYTHONSTARTUP", "PYTHONINSPECT", "PYTHONUSERBASE")):
+        return None
+    args = argv[1:]
+    if re.fullmatch(r"python3(\.\d+)?", exe):
+        while args and args[0] in ("-E", "-s", "-B", "-I", "-Es", "-sE"):
+            args = args[1:]
+        script, kinds = (args[0] if args else ""), (("browser", BROWSERS),)
+    elif exe == "node":
+        if env.get("NODE_OPTIONS", "") not in NODE_OPTIONS_OK:
+            return None
+        script, kinds = (args[0] if args else ""), (("messenger", MESSENGERS),)
+    else:
+        return None
+    path = os.path.realpath(os.path.join(cwd, script)) if script and not script.startswith("-") else ""
+    for kind, allowed in kinds:
+        if path and path in [os.path.realpath(a) for a in allowed if a]:
+            st = os.stat(path)
+            if st.st_uid == 0 and not st.st_mode & 0o022:           # a file only root can change
+                return kind
+    return None
 
 
 # ---------- browser side
@@ -304,9 +357,11 @@ def op_enroll_start(user, m):
         return {"ok": False, "error": "the phone page must be served over HTTPS from its own host"}
     with LOCK:
         en = load(user, "enroll.json", {})
-        if en.get("tries", 0) >= 5 or time.time() > en.get("expires", 0):
+        if en.get("tries", 0) >= ENROLL_TRIES or time.time() > en.get("expires", 0):
             return {"ok": False, "error": "no valid enrolment code: ask the administrator for a new one"}
-        en["tries"] = en.get("tries", 0) + 1
+        if time.time() - en.get("last", 0) < ENROLL_GAP:
+            return {"ok": False, "error": "wait a moment before trying again"}
+        en["tries"], en["last"] = en.get("tries", 0) + 1, time.time()
         save(user, "enroll.json", en)
         code = str(m.get("code") or "").strip()
         if not hmac.compare_digest(hashlib.sha256(code.encode()).hexdigest(), en.get("hash", "")):
@@ -345,6 +400,11 @@ def handle(m, uid, pid):
         user = pwd.getpwuid(uid).pw_name
     except KeyError:
         return {"ok": False, "error": "unknown user"}
+    kind = caller(pid)
+    op = m.get("op")
+    if (op in BROWSER_OPS and kind != "browser") or (op in PHONE_OPS and kind != "messenger"):
+        log(event="cred-caller-refused", user=user, op=str(op)[:20], pid=pid)
+        return {"ok": False, "error": "only the ZENOS Browser and ZENOS Messages may use the sign-in service"}
     return dispatch(user, m, pid)
 
 

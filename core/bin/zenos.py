@@ -172,7 +172,7 @@ def seal(data: bytes, level: int, name: str) -> bytes:
     if use_keyd():
         r = keyd({"op": "seal", "level": level, "name": name, "data": base64.b64encode(data).decode()})
         if not r.get("ok"):
-            raise RuntimeError("The key agent refused to seal: " + str(r.get("error")))
+            raise RuntimeError(r.get("message") or "The key agent refused to seal: " + str(r.get("error")))
         return base64.b64decode(r["blob"])
     ensure_keys()
     base = {"zenos": 1, "level": level, "label": LABEL[level], "name": name,

@@ -193,6 +193,10 @@ def handle(msg, uid):
         level = int(msg.get("level", 0))
         if level not in LABEL:
             return {"ok": False, "error": "bad level"}
+        if level > clearance(user):   # the device signature vouches for the label: only someone cleared for it may set it
+            log(event="seal-refused", user=user, level=level, clearance=clearance(user))
+            return {"ok": False, "error": "clearance",
+                    "message": "You are not cleared for L%d, so you cannot seal a file at that level." % level}
         data = base64.b64decode(msg.get("data", ""))
         name = re.sub(r'[/\\\n\r\t]', "", str(msg.get("name", "")))[:200] or "Untitled"
         blob = seal(data, level, name, user)

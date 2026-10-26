@@ -206,9 +206,22 @@ class KeyAgent(unittest.TestCase):
         return self.K.handle(m, os.getuid())
 
     def seal(self, level, data=b"secret"):
-        r = self.call(op="seal", level=level, name="f.txt", data=base64.b64encode(data).decode())
+        """a file sealed by someone cleared for its level (this test user is cleared for L2 only)"""
+        cl = TMP / "keyd" / "clearance"
+        cl.write_text(f"{self.user} = 5\n")
+        try:
+            r = self.call(op="seal", level=level, name="f.txt", data=base64.b64encode(data).decode())
+        finally:
+            cl.write_text(f"{self.user} = 2\n")
         self.assertTrue(r["ok"])
         return base64.b64decode(r["blob"])
+
+    def test_no_sealing_above_clearance(self):
+        """the device signature vouches for the label, so a user cleared for L2 cannot make an "L5" file"""
+        r = self.call(op="seal", level=5, name="forged.txt", data=base64.b64encode(b"x").decode())
+        self.assertFalse(r["ok"])
+        self.assertEqual(r["error"], "clearance")
+        self.assertTrue(self.call(op="seal", level=2, name="ok.txt", data=base64.b64encode(b"x").decode())["ok"])
 
     def grant_for(self, blob, level, signers):
         core = {"id": "r1", "requester": self.user, "file": "/x/f.zen", "file_hash": hashlib.sha256(blob).hexdigest(),

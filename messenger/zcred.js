@@ -9,7 +9,7 @@
   const b64u = (b) => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const unb64u = (s) => Uint8Array.from(atob(String(s).replace(/-/g, "+").replace(/_/g, "/") + "===".slice((String(s).length + 3) % 4)), (c) => c.charCodeAt(0));
   const enc = new TextEncoder();
-  const host = (o) => String(o || "").replace(/^https:\/\//, "");
+  const host = (o) => { try { const u = new URL(String(o)); return u.username || u.password ? "(invalid site)" : u.host; } catch { return "(invalid site)"; } };
   const MSG = {
     "code-mismatch": "That was not the number on your PC. Nothing was released. Start again on the PC.",
     "expired": "The request expired. Start again on the PC.",
