@@ -2,6 +2,7 @@
 name = "zenos-feedback"
 main = "src/worker.js"
 compatibility_date = "2026-10-01"
+routes = [{ pattern = "feedback.zenos-os.org", custom_domain = true }]
 
 [assets]
 directory = "./public"
@@ -10,7 +11,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "zenos-feedback"
-database_id = "REPLACE_AFTER_wrangler_d1_create"
+database_id = "d9dc5bbc-c265-4d9a-ba31-f13d65b23783"
 
 [triggers]
 crons = ["*/5 * * * *"]
