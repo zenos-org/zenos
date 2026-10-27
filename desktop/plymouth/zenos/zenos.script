@@ -13,7 +13,7 @@ name.sprite = Sprite(name.image);
 name.sprite.SetX(X0 + W / 2 - name.image.GetWidth() / 2);
 name.sprite.SetY(Y0 + H / 2 - 40);
 
-foot.image = Image.Text("Developer Preview \u00b7 not yet for classified data", 0.55, 0.56, 0.6, 1, "Sans 10");
+foot.image = Image.Text("Developer Preview - not yet for classified data", 0.55, 0.56, 0.6, 1, "Sans 10");
 foot.sprite = Sprite(foot.image);
 foot.sprite.SetX(X0 + W / 2 - foot.image.GetWidth() / 2);
 foot.sprite.SetY(Y0 + H - 48);
