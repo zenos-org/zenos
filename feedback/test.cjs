@@ -48,7 +48,7 @@ const rv = (p, body) => call("rev", p, body, { Authorization: "Bearer " + REVIEW
   r = await call("adm", "/api/admin/login", { token: "wrong" }); assert.equal(r.status, 403);
   r = await call("adm", "/api/admin/login", { token: ADMIN }); assert.equal(r.status, 204); ok("maintainer sign-in");
   r = await call("adm", "/api/admin/decide", { id: ps[0].proposal.id, status: "building", pr: "https://evil.example/x" }); assert.equal(r.status, 400); ok("links only to GitHub");
-  r = await call("adm", "/api/admin/decide", { id: ps[0].proposal.id, status: "building", change: "Up to two approver devices", pr: "https://github.com/zenosos/zenos/pull/18" });
+  r = await call("adm", "/api/admin/decide", { id: ps[0].proposal.id, status: "building", change: "Up to two approver devices", pr: "https://github.com/zenos-org/zenos/pull/18" });
   assert.equal(r.j.status, "building"); assert.deepEqual(r.j.steps.map((s) => s[1]), [true, true, true, true, false]); ok("decision and progress steps");
   r = await call("anon", "/api/thread?t=accepted"); assert.equal(r.j.proposals.length, 1); ok("accepted view lists it");
   r = await call("adm", "/api/post", { thread: "release-notes", text: "0.9: watch approvals (proposal #1)" }); assert.ok(r.j.ok); ok("project posts release notes");

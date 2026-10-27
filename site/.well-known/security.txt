@@ -1,5 +1,5 @@
-Contact: https://github.com/zenosos/zenos/security/advisories/new
-Policy: https://github.com/zenosos/zenos/security/policy
+Contact: https://github.com/zenos-org/zenos/security/advisories/new
+Policy: https://github.com/zenos-org/zenos/security/policy
 Preferred-Languages: en, ja
 Canonical: https://zenos-os.org/.well-known/security.txt
 Expires: 2027-10-01T00:00:00.000Z
