@@ -1,11 +1,12 @@
 # ZENOS
 
-ZENOS is a desktop operating system for handling classified information at work, built so that ordinary staff
-can use it the way they use any computer today. Every file carries a security level. Opening, moving and sending
+ZENOS is an open-source desktop OS that aims to keep information and data from leaking, by building the protection
+into the operating system itself. It is for anyone: companies, public offices, families and individuals, and people
+use it the way they use any computer today. Every file carries a security level. Opening, moving and sending
 files is governed by that level, key issuance goes through an approval request, and anything that looks like a
 leak stops the machine until responsible officers release it from their own devices.
 
-> **Status: Developer Preview (proof of concept).** ZENOS is not yet safe for real classified data.
+> **Status: Developer Preview (proof of concept).** ZENOS is not yet safe for real sensitive data.
 > Several protections are demonstrations that run with ordinary user privileges. Read
 > [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) before you evaluate it, and do not describe it as secure.
 

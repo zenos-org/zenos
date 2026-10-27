@@ -71,7 +71,7 @@ h1,h2{word-break:auto-phrase}h1{word-break:keep-all;overflow-wrap:anywhere}
 <main id="top">
 <section class="hero"><div class="wrap">
 <span class="pill">開発者向けプレビュー版 · 試用と評価のための版です</span>
-<h1>仕組みでデータを守り、<wbr>誰でも使える<wbr>オペレーティング<wbr>システム。</h1>
+<h1>情報やデータが<wbr>流出しない OS を<wbr>めざして。<wbr>仕組みで守り、<wbr>誰でも使える。</h1>
 <p class="lead">すべてのファイルがレベルを持ちます。自分のレベルより上のファイルを開くには、信頼できる人の承認が要り、その承認は本人の端末で署名されます。漏えいに見える動きがあれば、PC は止まります。中核の判定は数学的に証明されており、システム全体がオープンソースです。</p>
 <div class="ctas"><a class="btn p" href="#download">プレビュー版をダウンロード</a><a class="btn" href="https://github.com/zenos-org/zenos">GitHub でソースを見る</a><a class="btn" href="https://feedback.zenos-os.org">意見を送る</a></div>
 <img class="hero-img" src="../img/desktop.png" width="1200" height="800" alt="ZENOS のデスクトップ。スタートメニュー、L1〜L5 のレベル別フォルダ、タスクバーに表示されたレベル">
@@ -80,9 +80,9 @@ h1,h2{word-break:auto-phrase}h1{word-break:keep-all;overflow-wrap:anywhere}
 <section class="alt" id="vision"><div class="wrap">
 <p class="eyebrow">考え方</p>
 <h2>守りを、人が規則を覚えていることに頼らない</h2>
-<p class="lead">漏えいの多くは、巧妙な攻撃ではありません。宛先を間違えたファイル、ノート PC に残ったコピー、使い回したパスワードです。研修ではこれは防げません。ZENOS は規則をシステムそのものに組み込みます。安全なやり方しかできないようにしながら、画面の見た目と使い方は、いつものパソコンと変えません。</p>
+<p class="lead">サイバー攻撃は世界中で起きていて、多くの人がコードを直して防ごうとしています。その取り組みは欠かせません。ZENOS はそれと並んで、OS のレベルでも守ります。一つのプログラムの弱点が、そのまま流出につながらないようにするためです。攻撃ですらない漏えいも多くあります。宛先を間違えたファイル、ノート PC に残ったコピー、使い回したパスワードです。研修ではこれは防げません。ZENOS は規則をシステムそのものに組み込みます。安全なやり方しかできないようにしながら、画面の見た目と使い方は、いつものパソコンと変えません。</p>
 <div class="grid g4">
-<div class="card"><h3>使い慣れた形をまず</h3><p>Windows に近い配置と、ふつうのアプリ。職員に研修は要りません。守りは下で働きます。</p></div>
+<div class="card"><h3>使い慣れた形をまず</h3><p>Windows に近い配置と、ふつうのアプリ。使う人に研修は要りません。守りは下で働きます。</p></div>
 <div class="card"><h3>一人では動かせない</h3><p>自分のレベルより上を開く、止まった PC を解除する、保存したパスワードでサインインする。どれも、別の人が自分の端末で承認する必要があります。</p></div>
 <div class="card"><h3>約束ではなく証明</h3><p>ファイルを開き、鍵を渡す判定は、Lean で証明として書かれ、証明したとおりに動きます。</p></div>
 <div class="card"><h3>公開、一社に依存しない</h3><p>土台は Debian、KDE、WebKitGTK。Apache-2.0。誰でも中身を確かめ、動かし、フォークできます。</p></div>
@@ -176,7 +176,7 @@ h1,h2{word-break:auto-phrase}h1{word-break:keep-all;overflow-wrap:anywhere}
 <section id="status"><div class="wrap">
 <p class="eyebrow">現状</p>
 <h2>どこまでできているか、そのまま</h2>
-<p class="lead">ZENOS は開発者向けプレビュー版です。試して、穴を探して、意見をもらうための版で、そのための試用は歓迎します。いくつかの守りはまだ実演の段階なので、外部の独立した監査が終わるまでは、本番の機密業務には導入しないでください。</p>
+<p class="lead">ZENOS は開発者向けプレビュー版です。試して、穴を探して、意見をもらうための版で、そのための試用は歓迎します。いくつかの守りはまだ実演の段階なので、外部の独立した監査が終わるまでは、大切なデータを扱う本番の業務には使わないでください。</p>
 <div class="grid g2">
 <div class="card"><span class="tag t-ok">完了</span><h3>今動いているもの</h3><p>レベル付きで封印されるファイル、責任者の端末で署名する承認、停止と解除、改ざんが分かる台帳、暗号化されたメッセンジャーと通話、証明された判定、ディスクを暗号化するインストーラー。スマートフォンでのサインインは仮想パスキーで動いており、実機ではまだ試していません。</p></div>
 <div class="card"><span class="tag t-warn">次</span><h3>これから</h3><p>鍵を TPM に封じること、責任者用の FIDO2 キー、強制アクセス制御（SELinux MLS）、共有の鍵サービス、Office 形式との互換性の向上、外部のセキュリティ監査。</p></div>
