@@ -10,6 +10,8 @@
 <meta property="og:image" content="https://zenos-os.org/img/desktop.png">
 <meta property="og:url" content="https://zenos-os.org/">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" hreflang="en" href="https://zenos-os.org/">
+<link rel="alternate" hreflang="ja" href="https://zenos-os.org/ja/">
 <link rel="icon" href="img/logo.svg">
 <style>
 :root{--bg:#000;--nav:#0B0B0F;--card:rgba(255,255,255,.04);--cardline:rgba(255,255,255,.10);--line:rgba(255,255,255,.08);
@@ -59,13 +61,13 @@ footer{border-top:1px solid var(--line);padding:40px 0;font-size:13px;color:#8A8
 <body>
 <nav id="nav"><div class="wrap">
 <a class="logo" href="#top"><img src="img/logo.svg" alt="">ZENOS</a>
-<div class="links"><a href="#vision">Vision</a><a href="#protects">How it protects</a><a href="#editions">Editions</a><a href="#feedback">Feedback</a><a href="https://feedback.zenos-os.org">Board</a><a href="#status">Status</a><a href="#download">Download</a></div>
+<div class="links"><a href="#vision">Vision</a><a href="#protects">How it protects</a><a href="#editions">Editions</a><a href="#feedback">Feedback</a><a href="https://feedback.zenos-os.org">Board</a><a href="#status">Status</a><a href="#download">Download</a><a class="lang" href="ja/" hreflang="ja" lang="ja">日本語</a></div>
 <a class="btn navgh" href="https://github.com/zenos-org/zenos">GitHub →</a>
 <button class="menu" id="menu" aria-label="Menu" aria-expanded="false">☰</button>
 </div></nav>
 <main id="top">
 <section class="hero"><div class="wrap">
-<span class="pill">Developer Preview · not yet for real classified data</span>
+<span class="pill">Developer Preview · for testing and evaluation</span>
 <h1>An operating system that protects data by how it works — and that anyone can use.</h1>
 <p class="lead">Every file carries a level. Opening it above your level needs approval from people you trust, signed on their own devices. Anything that looks like a leak stops the machine. The core decisions are proven mathematically, and the whole system is open source.</p>
 <div class="ctas"><a class="btn p" href="#download">Download the preview</a><a class="btn" href="https://github.com/zenos-org/zenos">View source on GitHub</a><a class="btn" href="https://feedback.zenos-os.org">Give feedback</a></div>
@@ -171,7 +173,7 @@ footer{border-top:1px solid var(--line);padding:40px 0;font-size:13px;color:#8A8
 <section id="status"><div class="wrap">
 <p class="eyebrow">Status</p>
 <h2>Where it stands, plainly</h2>
-<p class="lead">ZENOS is a Developer Preview. Several protections run as demonstrations. Do not use it for real classified data and do not describe it as secure until an independent audit is done.</p>
+<p class="lead">ZENOS is a Developer Preview: a release for trying it, looking for holes and telling us what you find, and that kind of testing is welcome. Several protections are still demonstrations, so do not deploy it for real classified work until an independent audit is done.</p>
 <div class="grid g2">
 <div class="card"><span class="tag t-ok">Done</span><h3>Working today</h3><p>Sealed level files, approvals signed on officers' devices, stop-and-release, the tamper-evident ledger, encrypted messenger and calls, proven decisions, an installer that encrypts the disk. Phone sign-in works with virtual passkeys and is not yet tested on a physical phone.</p></div>
 <div class="card"><span class="tag t-warn">Next</span><h3>Still ahead</h3><p>Keys sealed to the TPM and FIDO2 keys for officers; mandatory access control (SELinux MLS); a shared key service; better Office compatibility; an external security audit.</p></div>

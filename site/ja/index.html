@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZENOS — 仕組みでデータを守るオペレーティングシステム</title>
+<meta name="description" content="ZENOS は、すべてのファイルにレベルを持たせ、自分のレベルより上のファイルを開くには信頼できる人の承認が要る、オープンソースのデスクトップ OS（Debian + KDE）です。中核の判定は Lean で証明しています。開発者向けプレビュー版。">
+<meta property="og:title" content="ZENOS — 仕組みでデータを守るオペレーティングシステム">
+<meta property="og:description" content="レベル付きで封印されるファイル。本人の端末で署名する承認。Lean で証明された判定。オープンソース。開発者向けプレビュー版。">
+<meta property="og:image" content="https://zenos-os.org/img/desktop.png">
+<meta property="og:url" content="https://zenos-os.org/ja/">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" hreflang="en" href="https://zenos-os.org/">
+<link rel="alternate" hreflang="ja" href="https://zenos-os.org/ja/">
+<link rel="icon" href="../img/logo.svg">
+<style>
+:root{--bg:#000;--nav:#0B0B0F;--card:rgba(255,255,255,.04);--cardline:rgba(255,255,255,.10);--line:rgba(255,255,255,.08);
+--t:#fff;--body:#B8B8C4;--nav-t:#C9CCD3;--eyebrow:#9B8CFF;--acc:#7C3AED;--ok:#5AD08A;--warn:#F0C060;--mute:#9999A8}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{margin:0;background:var(--bg);color:var(--body);font-family:Inter,'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic UI','Yu Gothic',Meiryo,system-ui,sans-serif;line-height:1.75;-webkit-font-smoothing:antialiased}
+*{scrollbar-width:thin;scrollbar-color:#7C3AED transparent}::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#7C3AED;border-radius:4px}::-webkit-scrollbar-track{background:transparent}
+a{color:inherit}img{max-width:100%;height:auto;display:block}
+:focus-visible{outline:2px solid #A78BFA;outline-offset:3px;border-radius:6px}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+nav{position:sticky;top:0;z-index:10;background:rgba(11,11,15,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:28px;height:68px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;color:var(--t);text-decoration:none}.logo img{width:26px;height:26px}
+.links{display:flex;gap:28px;margin-left:auto}.links a{font-size:14px;color:var(--nav-t);text-decoration:none}.links a:hover{color:var(--t)}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 20px;border-radius:8px;font-size:15px;font-weight:600;color:var(--t);text-decoration:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.14)}.btn.p{background:var(--acc);border-color:var(--acc)}.btn.p:hover{background:#8B4CF7}
+.menu{display:none;margin-left:auto;background:none;border:0;color:var(--t);font-size:22px;min-width:44px;min-height:44px;cursor:pointer}
+section{padding:96px 0}.hero{padding-top:110px}section.alt{background:rgba(255,255,255,.02)}section.tint{background:rgba(155,59,239,.06)}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.08em;color:var(--eyebrow);text-transform:uppercase;margin:0 0 16px}
+h1{font-size:56px;line-height:1.2;letter-spacing:0;color:var(--t);margin:24px 0}
+h2{font-size:36px;line-height:1.35;letter-spacing:0;color:var(--t);margin:0 0 20px;max-width:900px}
+.lead{font-size:18px;max-width:880px;margin:0 0 32px}
+.pill{display:inline-block;font-size:13px;font-weight:600;color:var(--warn);background:rgba(240,192,96,.12);border:1px solid rgba(240,192,96,.5);border-radius:999px;padding:5px 12px}
+.ctas{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 48px}
+.hero-img{border-radius:12px;border:1px solid var(--line);box-shadow:0 30px 80px rgba(124,58,237,.18)}
+.grid{display:grid;gap:20px}.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.grid+.grid{margin-top:20px}
+.card{background:var(--card);border:1px solid var(--cardline);border-radius:14px;padding:24px}
+.card h3{font-size:18px;font-weight:600;color:var(--t);margin:0 0 10px}.card p{font-size:15px;margin:0}
+.tag{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;margin-bottom:12px}
+.t-ok{color:var(--ok);background:rgba(90,208,138,.15)}.t-warn{color:var(--warn);background:rgba(240,192,96,.15)}.t-acc{color:#B9AEFF;background:rgba(155,140,255,.15)}
+.credit{font-size:14px;color:var(--mute);margin:28px 0 0;max-width:1000px}
+.later{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:24px}.later b{font-size:15px;color:var(--nav-t)}.later span{font-size:14px;font-weight:500;color:#E6E8EC;border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:5px 14px}
+.flow{display:flex;align-items:stretch;gap:0}.flow .step{flex:1;background:#0B0B0F;border:1px solid rgba(155,140,255,.45);border-radius:14px;padding:20px}
+.flow .arr{display:flex;align-items:center;justify-content:center;width:32px;color:var(--eyebrow);font-weight:700;font-size:22px}
+.num{width:28px;height:28px;border-radius:14px;background:var(--acc);color:#fff;font-size:13px;font-weight:700;display:grid;place-items:center;margin-bottom:8px}
+.step h3{font-size:16px;margin:0 0 6px;color:var(--t)}.step p{font-size:13px;margin:0}
+.board{margin:20px 0}.board .cap{font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--eyebrow);margin:0 0 10px}.board img{border-radius:12px;border:1px solid var(--line)}
+.rules ul{margin:6px 0 0;padding-left:20px}.rules li{font-size:15px;margin:6px 0}
+footer{border-top:1px solid var(--line);padding:40px 0;font-size:13px;color:#8A8A96}footer a{color:#C9CCD3}
+@media(max-width:1000px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}h1{font-size:42px}.flow{flex-direction:column}.flow .arr{width:auto;height:28px;transform:rotate(90deg)}}
+@media(max-width:860px){.links,.navgh{display:none}.menu{display:block}nav.open .links{display:flex;position:absolute;top:68px;left:0;right:0;flex-direction:column;gap:0;background:#0B0B0F;border-bottom:1px solid var(--line);padding:8px 16px 16px}nav.open .links a{padding:12px 4px;font-size:16px}}
+@media(max-width:640px){section{padding:64px 0}.hero{padding-top:28px}.wrap{padding:0 16px}h1{font-size:30px}h2{font-size:24px}.lead{font-size:16px}.g2,.g3,.g4{grid-template-columns:1fr}.ctas .btn{flex:1 1 100%}}
+.lang{font-weight:600}
+h1,h2{word-break:auto-phrase}h1{word-break:keep-all;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<nav id="nav"><div class="wrap">
+<a class="logo" href="#top"><img src="../img/logo.svg" alt="">ZENOS</a>
+<div class="links"><a href="#vision">考え方</a><a href="#protects">守り方</a><a href="#editions">エディション</a><a href="#feedback">フィードバック</a><a href="https://feedback.zenos-os.org">ボード</a><a href="#status">現状</a><a href="#download">ダウンロード</a><a class="lang" href="../" hreflang="en" lang="en">English</a></div>
+<a class="btn navgh" href="https://github.com/zenos-org/zenos">GitHub →</a>
+<button class="menu" id="menu" aria-label="メニュー" aria-expanded="false">☰</button>
+</div></nav>
+<main id="top">
+<section class="hero"><div class="wrap">
+<span class="pill">開発者向けプレビュー版 · 実際の機密データにはまだ使えません</span>
+<h1>仕組みでデータを守り、<wbr>誰でも使える<wbr>オペレーティング<wbr>システム。</h1>
+<p class="lead">すべてのファイルがレベルを持ちます。自分のレベルより上のファイルを開くには、信頼できる人の承認が要り、その承認は本人の端末で署名されます。漏えいに見える動きがあれば、PC は止まります。中核の判定は数学的に証明されており、システム全体がオープンソースです。</p>
+<div class="ctas"><a class="btn p" href="#download">プレビュー版をダウンロード</a><a class="btn" href="https://github.com/zenos-org/zenos">GitHub でソースを見る</a><a class="btn" href="https://feedback.zenos-os.org">意見を送る</a></div>
+<img class="hero-img" src="../img/desktop.png" width="1200" height="800" alt="ZENOS のデスクトップ。スタートメニュー、L1〜L5 のレベル別フォルダ、タスクバーに表示されたレベル">
+</div></section>
+
+<section class="alt" id="vision"><div class="wrap">
+<p class="eyebrow">考え方</p>
+<h2>守りを、人が規則を覚えていることに頼らない</h2>
+<p class="lead">漏えいの多くは、巧妙な攻撃ではありません。宛先を間違えたファイル、ノート PC に残ったコピー、使い回したパスワードです。研修ではこれは防げません。ZENOS は規則をシステムそのものに組み込みます。安全なやり方しかできないようにしながら、画面の見た目と使い方は、いつものパソコンと変えません。</p>
+<div class="grid g4">
+<div class="card"><h3>使い慣れた形をまず</h3><p>Windows に近い配置と、ふつうのアプリ。職員に研修は要りません。守りは下で働きます。</p></div>
+<div class="card"><h3>一人では動かせない</h3><p>自分のレベルより上を開く、止まった PC を解除する、保存したパスワードでサインインする。どれも、別の人が自分の端末で承認する必要があります。</p></div>
+<div class="card"><h3>約束ではなく証明</h3><p>ファイルを開き、鍵を渡す判定は、Lean で証明として書かれ、証明したとおりに動きます。</p></div>
+<div class="card"><h3>公開、一社に依存しない</h3><p>土台は Debian、KDE、WebKitGTK。Apache-2.0。誰でも中身を確かめ、動かし、フォークできます。</p></div>
+</div></div></section>
+
+<section id="protects"><div class="wrap">
+<p class="eyebrow">守り方</p>
+<h2>六つの層、一つの規則：データはそのレベルにとどまる</h2>
+<div class="grid g3">
+<div class="card"><span class="tag t-ok">動作中</span><h3>レベル付きで封印されるファイル</h3><p>レベル別フォルダ（L1〜L5）に保存すると、ファイルは暗号化され、署名付きのヘッダーにレベルが記録されます。中身が平文になるのは、開いている間のメモリ上だけです。</p></div>
+<div class="card"><span class="tag t-ok">動作中</span><h3>開くには承認</h3><p>自分のレベルより上は、責任者に申請が届きます。レベルが高いほど承認者が増え、自分の申請を自分で承認することはできません。</p></div>
+<div class="card"><span class="tag t-ok">動作中</span><h3>漏えいの兆候で停止</h3><p>大量の読み出し、USB メモリなどへの持ち出し、不自然な通信があると、作業は凍結されます。複数の責任者がそれぞれの端末から解除するまで動きません。</p></div>
+</div>
+<div class="grid g3">
+<div class="card"><span class="tag t-ok">動作中</span><h3>改ざんが分かる台帳</h3><p>すべての操作はハッシュの鎖につながり、別々の組織が運用する監査ノードに写されます。履歴を書き換えれば検出されます。</p></div>
+<div class="card"><span class="tag t-warn">試作</span><h3>分散保存</h3><p>封印されたファイルは暗号化された断片に分けられ、認証されたノードに散らばります。一台のマシンがファイル全体を持つことはありません。</p></div>
+<div class="card"><span class="tag t-acc">証明済み</span><h3>中身がどこへ行けるか</h3><p>フォルダ、ウィンドウ、クリップボード、プリンター、AI の種類ごとに、一つの規則がすべての複製を判定します。L5 は印刷されません。</p></div>
+</div></div></section>
+
+<section class="tint" id="proofs"><div class="wrap">
+<p class="eyebrow">証明された判定</p>
+<h2>判定は数学であり、プログラムはその数学を実行する</h2>
+<p class="lead">ファイルが開くか、承認が有効か、止まった PC を解除してよいか、中身がどこへ流れてよいか、台帳が無傷か、何が PC の外へ出てよいか、パスワードを渡してよいか。これらを決める規則は Lean 4 で書かれ、機械で検査された証明を持ちます。各サービスは、その証明から作られた一つの小さなプログラムを呼び出します。答えが出せないときの答えは「いいえ」です。</p>
+<div class="grid g3">
+<div class="card"><h3>証明していること</h3><p>ファイルが開くのは、許可されたレベルの範囲内か、そのファイルだけに対する有効な承認があるときだけ。承認を別の申請に使い回すことはできません。中身が下のレベルへ移ることはありません。どの申請にも、答えは一度だけです。</p></div>
+<div class="card"><h3>証明ではなく信頼しているもの</h3><p>暗号（Ed25519、AES-GCM、パスキー）、サービスが読み取る事実、つなぎのコード、カーネルとコンパイラ。これらはテストし、一覧にして公開しています。</p></div>
+<div class="card"><h3>毎回のビルドで検査</h3><p>証明はリリースのたびに組み直されます。証明を壊す変更は出荷されません。</p></div>
+</div>
+<p class="credit">謝辞：これらの判定を Lean で証明するという発想は、Web バックエンドの認可を証明する Nyx Foundation の <a href="https://github.com/NyxFoundation/nyxis">Nyxis</a> から得ました。Nyxis は、認可器を Lean で検証した Amazon の Cedar ポリシー言語や、検証済みカーネル seL4 などの先行研究の上に立っています。ZENOS はそれらのコードを一切使っていません。</p>
+</div></section>
+
+<section id="phone"><div class="wrap">
+<p class="eyebrow">スマートフォンでサインイン</p>
+<h2>スマートフォンでしか開かないパスワード</h2>
+<p class="lead">保存したパスワードは、あなたのスマートフォンだけが作れる鍵で暗号化されます。PC を盗まれても、ディスクを複製されても、パスワードは出てきません。仮想パスキーで検証済みで、実機のスマートフォンではまだ試していません。</p>
+<div class="grid g4">
+<div class="card"><span class="tag t-acc">手順 1</span><h3>ブラウザが求める</h3><p>検証済みの HTTPS のサインイン画面。ブラウザに 2 桁の番号が出ます。</p></div>
+<div class="card"><span class="tag t-acc">手順 2</span><h3>スマートフォンに依頼が届く</h3><p>サイト、アカウント、三つの番号が、ZENOS Messages に表示されます。</p></div>
+<div class="card"><span class="tag t-acc">手順 3</span><h3>あなたが承認する</h3><p>PC に出ている番号をタップし、指紋か顔で認証します。</p></div>
+<div class="card"><span class="tag t-acc">手順 4</span><h3>その画面にだけ入力</h3><p>パスワードは同じタブの同じ画面にだけ届き、ほかへは行きません。</p></div>
+</div></div></section>
+
+<section class="alt" id="editions"><div class="wrap">
+<p class="eyebrow">エディション</p>
+<h2>一つの中核、用途ごとのエディション</h2>
+<p class="lead">計画：エディションは、同じ中核の上に設定とアプリの組み合わせを載せたものになります。中核を直せば、すべてのエディションに一度に届きます。今のプレビュー版は一つのシステムで、Office にいちばん近い形です。</p>
+<div class="grid g3">
+<div class="card"><span class="tag t-acc">最初に計画</span><h3>ZENOS Office</h3><p>企業と官公庁向け。レベル、管理職と責任者による承認、台帳、レベルで選ばれる AI。政府向けは、その最も厳しい設定です。</p></div>
+<div class="card"><span class="tag t-acc">最初に計画</span><h3>ZENOS Family</h3><p>家庭向け。新しいアプリや新しい連絡先は、親のスマートフォンが承認します。家族の書類とパスワードは、スマートフォンの承認のあとにだけ開きます。</p></div>
+<div class="card"><span class="tag t-acc">最初に計画</span><h3>ZENOS Personal</h3><p>一人で使う人向け。承認者はあなたのスマートフォンだけ。レベルは日常用と私用の二つ。Web サイトへのサインインもスマートフォンで。</p></div>
+</div>
+<div class="later"><b>今後：</b><span>Academy</span><span>Creator</span><span>Educational</span><span>Hobby</span></div>
+</div></section>
+
+<section id="forks"><div class="wrap">
+<p class="eyebrow">フォーク</p>
+<h2>違う使い方が必要なら、フォークを</h2>
+<p class="lead">どのエディションにも合わない要望は、新しいエディションになるか、あなた自身のフォークになります。ZENOS は Apache-2.0（メッセンジャーは AGPL-3.0）なので、誰でもフォークできます。中核の安全性（封印されたレベル、承認、証明された判定、台帳）を保ったフォークは、公式エディションと並べてここに掲載します。</p>
+<div class="grid g3">
+<div class="card"><span class="tag t-acc">保守</span><h3>公式エディション</h3><p>ZENOS プロジェクトが共通の中核から作るもの。セキュリティの修正は、すべてに同時に届きます。</p></div>
+<div class="card"><span class="tag t-ok">コミュニティ</span><h3>掲載されたフォーク</h3><p>ほかの人が自分の用途のために作ったもの。中核の性質を保ち、何を変えたかを示していれば掲載します。</p></div>
+<div class="card"><span class="tag t-warn">受付中</span><h3>あなたのフォーク</h3><p>中核から始めて、アプリと設定を変え、証明が通る状態を保つ。知らせてもらえれば、掲載できます。</p></div>
+</div></div></section>
+
+<section class="tint" id="feedback"><div class="wrap">
+<p class="eyebrow">フィードバック</p>
+<h2>変えてほしいことを教えてください。AI がすべての投稿を読み、人が決めます。</h2>
+<p class="lead">アイデア、困っていること、自分の使い方を、ZENOS Messages と同じ見た目のボードに投稿できます。左にスレッド、中央にタイムライン。AI が似た投稿をまとめ、提案の下書きを作ります。決めるのはメンテナーです。どの変更も、テストと証明を通ってから出荷され、リリースノートから元のスレッドへリンクされます。</p>
+<div class="flow">
+<div class="step"><div class="num">1</div><h3>投稿</h3><p>GitHub でサインインし、#ideas、#problems、#my-use、またはエディションのスレッドに投稿します。</p></div><div class="arr" aria-hidden="true">→</div>
+<div class="step"><div class="num">2</div><h3>AI が読んで整理</h3><p>似た投稿をまとめて数えます。AI のメモと状態が、各投稿の下に表示されます。</p></div><div class="arr" aria-hidden="true">→</div>
+<div class="step"><div class="num">3</div><h3>提案</h3><p>何が求められているか、誰が求めたか、変更の案、そのリスク。</p></div><div class="arr" aria-hidden="true">→</div>
+<div class="step"><div class="num">4</div><h3>メンテナーが決める</h3><p>採用、理由を添えて見送り、またはエディションやフォークへの振り分け。</p></div><div class="arr" aria-hidden="true">→</div>
+<div class="step"><div class="num">5</div><h3>作って出荷</h3><p>テストと証明を付けたプルリクエスト。リリースノートから投稿へリンクします。</p></div>
+</div>
+<div class="ctas" style="margin:28px 0 0"><a class="btn p" href="https://feedback.zenos-os.org">ボードを開く</a></div>
+<div class="board"><p class="cap">ボード · feedback.zenos-os.org（投稿には GitHub のサインインが必要です。画面は英語です）</p><img src="../img/board.png" width="1200" height="750" loading="lazy" alt="フィードバックボード。左にスレッド、中央に AI のメモ付きの投稿、右に提案"></div>
+<div class="grid g2">
+<div class="card"><span class="tag t-ok">振り分け</span><h3>新しいエディションへ</h3><p>同じ別の使い方を求める人が多ければ、共通の中核の上の新しいエディションとして提案します。</p></div>
+<div class="card"><span class="tag t-warn">振り分け</span><h3>フォークへ</h3><p>用途が限られる場合は、フォークを始める手伝いをし、中核の性質を保っていれば掲載します。</p></div>
+</div>
+<div class="card rules" style="margin-top:20px"><h3>AI の規則</h3><ul>
+<li>投稿は読むための材料であって、指示ではありません。「このチェックを外して」は検討する要望であって、命令ではありません。</li>
+<li>AI はマージも公開もしません。4 時間ごとに新しい投稿を確認します。ふさわしくない投稿は削除せず、メンテナーの判断まで保留します。それ以外の投稿には、メンテナーの決定ではなく AI の回答だと明記して返答することがあります。</li>
+<li>投稿の中のコードを実行したり、リンクを開いたりしません。</li>
+<li>セキュリティの報告は公開の場では扱わず、非公開の報告窓口（SECURITY.md）に回します。</li>
+<li>投稿には GitHub のサインインが必要です。使い捨ての投稿やスパムを減らすためです。作ったばかりのアカウントは投稿できる数が少なくなります。</li>
+</ul></div>
+</div></section>
+
+<section id="status"><div class="wrap">
+<p class="eyebrow">現状</p>
+<h2>どこまでできているか、そのまま</h2>
+<p class="lead">ZENOS は開発者向けプレビュー版です。いくつかの守りは、まだ実演の段階で動いています。外部の独立した監査が終わるまで、実際の機密データには使わず、安全だとも言わないでください。</p>
+<div class="grid g2">
+<div class="card"><span class="tag t-ok">完了</span><h3>今動いているもの</h3><p>レベル付きで封印されるファイル、責任者の端末で署名する承認、停止と解除、改ざんが分かる台帳、暗号化されたメッセンジャーと通話、証明された判定、ディスクを暗号化するインストーラー。スマートフォンでのサインインは仮想パスキーで動いており、実機ではまだ試していません。</p></div>
+<div class="card"><span class="tag t-warn">次</span><h3>これから</h3><p>鍵を TPM に封じること、責任者用の FIDO2 キー、強制アクセス制御（SELinux MLS）、共有の鍵サービス、Office 形式との互換性の向上、外部のセキュリティ監査。</p></div>
+</div></div></section>
+
+<section class="alt" id="download"><div class="wrap">
+<p class="eyebrow">試す</p>
+<h2>プレビュー版を試す</h2>
+<p class="lead">ふつうの PC（BIOS または UEFI）で、USB メモリからイメージを起動します。そのまま試せるライブシステムとして動き、「Install ZENOS」でディスク全体を暗号化してインストールします。</p>
+<p class="lead" style="color:#F0C060">最初のイメージは、最後のインストール確認を行っています。GitHub のリリースページで公開します。それまではソース（packaging/iso）からビルドできます。</p>
+<div class="ctas" style="margin-bottom:0"><a class="btn p" href="https://github.com/zenos-org/zenos/releases">GitHub のリリース</a><a class="btn" href="https://github.com/zenos-org/zenos/blob/main/docs/THREAT_MODEL.md">脅威モデルを読む（英語）</a><a class="btn" href="https://github.com/zenos-org/zenos/discussions">議論に参加する</a></div>
+</div></section>
+</main>
+<footer><div class="wrap">ZENOS · zenos-os.org · Apache-2.0（メッセンジャーは AGPL-3.0） · <a href="https://github.com/zenos-org/zenos">github.com/zenos-org/zenos</a> · セキュリティの問題は非公開で報告してください：<a href="https://github.com/zenos-org/zenos/security/policy">SECURITY.md</a><br>ZENOS は Debian を土台にし、KDE Plasma を使っています。Debian および KDE とは提携しておらず、承認も受けていません。</div></footer>
+<script>
+const n=document.getElementById('nav'),m=document.getElementById('menu');
+m.addEventListener('click',()=>{const o=n.classList.toggle('open');m.setAttribute('aria-expanded',o)});
+n.querySelectorAll('.links a').forEach(a=>a.addEventListener('click',()=>{n.classList.remove('open');m.setAttribute('aria-expanded','false')}));
+</script>
+</body>
+</html>
