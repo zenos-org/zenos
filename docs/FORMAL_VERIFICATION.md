@@ -105,3 +105,11 @@ python3 -m unittest tests/test_decide.py
 
 `packaging/build-deb.sh` builds it the same way and installs the program as `/usr/lib/zenos/zenos-decide`.
 Lean 4 v4.34.1 (`formal/lean-toolchain`); no other dependency.
+
+## Credit
+
+The idea of proving these decisions in Lean came from [Nyxis](https://github.com/NyxFoundation/nyxis) by Nyx
+Foundation, which proves the authorization of a web backend. It builds on earlier work, among it Amazon's
+[Cedar](https://github.com/cedar-policy/cedar-spec) policy language, whose authorizer is formalized and verified in
+Lean, and the [seL4](https://sel4.systems/) verified kernel. ZENOS uses none of their code; the proofs in `formal/`
+were written for ZENOS.
