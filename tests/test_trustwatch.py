@@ -44,10 +44,15 @@ class TrustWatch(unittest.TestCase):
         bad = T.compromised_pems()
         self.assertEqual(len(bad), 16)
         # the AAA root that cross-signed the eMudhra intermediates is in Node's built-in list
-        import subprocess, ssl
-        out = subprocess.run(["node", "-p", "JSON.stringify(require('tls').rootCertificates)"],
-                             capture_output=True, text=True, env={"PATH": os.environ["PATH"]}).stdout
-        roots = T.certs_of([ssl.PEM_cert_to_DER_cert(p) for p in json.loads(out)])
+        import subprocess, ssl, tempfile
+        # written to a file: `node -p` into a pipe can cut its output at 64 KiB when node exits
+        with tempfile.TemporaryDirectory() as d:
+            f = os.path.join(d, "roots.json")
+            subprocess.run(["node", "-e", "require('fs').writeFileSync(process.argv[1], JSON.stringify(require('tls').rootCertificates))", f],
+                           check=True, env={"PATH": os.environ["PATH"]})
+            with open(f) as fh:
+                pems = json.load(fh)
+        roots = T.certs_of([ssl.PEM_cert_to_DER_cert(p) for p in pems])
         hits = {T.vouches(r, bad) for r in roots} - {None}
         # every compromised certificate whose issuer is among Node's roots must be found (Node 20 still carried the
         # AAA root that cross-signed them; later Node releases may not)
