@@ -187,8 +187,13 @@ cat > config/hooks/live/0950-zenos-plymouth.hook.chroot <<'EOF'
 #!/bin/sh
 set -e
 plymouth-set-default-theme zenos
-sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash loglevel=3"/' /etc/default/grub
-grep -q 'quiet splash' /etc/default/grub
+# the live image has no /etc/default/grub (the installer writes it, with its own parameters); grub-mkconfig sources
+# grub.d after it, so this appends the splash to whatever the installer put there
+mkdir -p /etc/default/grub.d
+printf 'GRUB_CMDLINE_LINUX_DEFAULT="$GRUB_CMDLINE_LINUX_DEFAULT quiet splash loglevel=3"\n' > /etc/default/grub.d/zenos-splash.cfg
+if [ -f /etc/default/grub ]; then
+  sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash loglevel=3"/' /etc/default/grub
+fi
 EOF
 chmod +x config/hooks/live/0950-zenos-plymouth.hook.chroot
 mkdir -p config/includes.chroot/etc/calamares/modules

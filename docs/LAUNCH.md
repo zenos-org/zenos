@@ -5,7 +5,7 @@ Checked 2026-10-27. Sources are the primary pages linked; "unconfirmed" means no
 ## Name and accounts (decide first)
 
 - GitHub organization:  (decided 2026-10-27;  is taken by a dormant 2019 hobby OS).
-  (probably free; unconfirmed until created). The links in `site/` use `zenos-os`; change them with one `sed`.
+  `zenosos` returned 404 on 2026-10-27 (probably free; confirmed only when the organization is created).
 - Other projects called ZenOS/zenOS exist (github.com/zenos-project, codeberg.org/Kripiron/ZenOS, an itch.io zenOS).
   Trademark "ZEN OS" filed in Australia, classes 9 and 42 (IP Australia 2674430). A class 9/42 check in Japan
   (J-PlatPat), the EU (EUIPO) and the US (USPTO) is still to be done by hand.
