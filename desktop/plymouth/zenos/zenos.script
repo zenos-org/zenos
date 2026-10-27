@@ -13,38 +13,45 @@ name.sprite = Sprite(name.image);
 name.sprite.SetX(X0 + W / 2 - name.image.GetWidth() / 2);
 name.sprite.SetY(Y0 + H / 2 - 40);
 
-foot.image = Image.Text("Developer Preview - not yet for classified data", 0.55, 0.56, 0.6, 1, "Sans 10");
+foot.image = Image.Text("Developer Preview - for testing and evaluation", 0.55, 0.56, 0.6, 1, "Sans 10");
 foot.sprite = Sprite(foot.image);
 foot.sprite.SetX(X0 + W / 2 - foot.image.GetWidth() / 2);
 foot.sprite.SetY(Y0 + H - 48);
 
 field.image = Image("field.png");
 
+# Plymouth script variables are local to a function unless written as global.x:
+# a sprite kept in a local is freed when the function returns, and nothing shows.
 fun show_password(prompt, bullets) {
-    ask.image = Image.Text("Enter the disk passphrase to start this PC", 0.79, 0.8, 0.83, 1, "Sans 12");
-    ask.sprite = Sprite(ask.image);
-    ask.sprite.SetX(X0 + W / 2 - ask.image.GetWidth() / 2);
-    ask.sprite.SetY(Y0 + H / 2 + 12);
-    box.sprite = Sprite(field.image);
-    box.sprite.SetX(X0 + W / 2 - field.image.GetWidth() / 2);
-    box.sprite.SetY(Y0 + H / 2 + 40);
+    global.ask.image = Image.Text("Enter the disk passphrase to start this PC", 0.79, 0.8, 0.83, 1, "Sans 12");
+    global.ask.sprite = Sprite(global.ask.image);
+    global.ask.sprite.SetX(X0 + W / 2 - global.ask.image.GetWidth() / 2);
+    global.ask.sprite.SetY(Y0 + H / 2 + 12);
+    global.box.sprite = Sprite(field.image);
+    global.box.sprite.SetX(X0 + W / 2 - field.image.GetWidth() / 2);
+    global.box.sprite.SetY(Y0 + H / 2 + 40);
     s = "";
-    for (i = 0; i < bullets && i < 32; i++) s += "\u25cf";
-    dots.image = Image.Text(s, 1, 1, 1, 1, "Sans 11");
-    dots.sprite = Sprite(dots.image);
-    dots.sprite.SetX(X0 + W / 2 - field.image.GetWidth() / 2 + 14);
-    dots.sprite.SetY(Y0 + H / 2 + 40 + field.image.GetHeight() / 2 - dots.image.GetHeight() / 2);
+    i = 0;
+    while (i < bullets && i < 32) { s = s + "*"; i++; }
+    if (bullets > 0) {
+        global.dots.image = Image.Text(s, 1, 1, 1, 1, "Sans Bold 14");
+        global.dots.sprite = Sprite(global.dots.image);
+        global.dots.sprite.SetX(X0 + W / 2 - field.image.GetWidth() / 2 + 14);
+        global.dots.sprite.SetY(Y0 + H / 2 + 40 + field.image.GetHeight() / 2 - global.dots.image.GetHeight() / 2);
+    } else {
+        global.dots.sprite = NULL;
+    }
 }
 
 fun show_normal() {
-    ask.sprite = NULL; box.sprite = NULL; dots.sprite = NULL;
+    global.ask.sprite = NULL; global.box.sprite = NULL; global.dots.sprite = NULL;
 }
 
 fun show_message(text) {
-    msg.image = Image.Text(text, 0.79, 0.8, 0.83, 1, "Sans 11");
-    msg.sprite = Sprite(msg.image);
-    msg.sprite.SetX(X0 + W / 2 - msg.image.GetWidth() / 2);
-    msg.sprite.SetY(Y0 + H / 2 + 96);
+    global.msg.image = Image.Text(text, 0.79, 0.8, 0.83, 1, "Sans 11");
+    global.msg.sprite = Sprite(global.msg.image);
+    global.msg.sprite.SetX(X0 + W / 2 - global.msg.image.GetWidth() / 2);
+    global.msg.sprite.SetY(Y0 + H / 2 + 96);
 }
 
 Plymouth.SetDisplayPasswordFunction(show_password);
