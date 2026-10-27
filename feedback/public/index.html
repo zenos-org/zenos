@@ -52,6 +52,12 @@ textarea,input,select{background:var(--bg);color:var(--t-strong);border:1px soli
 .adm{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:14px}.adm .row{display:flex;gap:8px}.adm input,.adm select,.adm textarea{width:100%}
 .plink{font-size:12px;color:#93C5FD;text-decoration:none;overflow-wrap:anywhere}
 .mtop{display:none}
+.mintro{display:none}
+.cta{display:flex;flex-direction:column;gap:8px;width:100%}.cta span{font-size:13px;color:var(--t-sub);line-height:1.4}
+@media(max-width:1100px){.mintro{display:block;position:relative;background:rgba(155,59,239,.08);border:1px solid rgba(155,59,239,.35);border-radius:12px;padding:12px 44px 12px 14px;font-size:14px;line-height:1.55;color:var(--t-body)}
+.mintro b{color:var(--t-strong)}.mintro ol{margin:6px 0 4px;padding-left:20px}.mintro li{margin:2px 0}
+.mintro .more{background:none;border:0;padding:6px 0 0;color:#C4B5FD;font-size:14px;font-weight:600;min-height:36px}
+.mintro .x{position:absolute;top:2px;right:2px;background:none;border:0;color:var(--t-sub);font-size:20px;min-width:44px;min-height:44px}}
 @media(pointer:coarse),(max-width:1100px) and (min-width:761px){.txt{font-size:16px}.ph b{font-size:15px}.ai span{font-size:13px}textarea,input,select{font-size:16px}
 .acts{gap:22px}.acts button{min-height:44px;font-size:14px}.th{min-height:44px;font-size:15px}.send{min-height:40px}}
 @media(max-width:1100px){#side{display:none}#side .x{display:block}#side.open{display:flex;position:fixed;inset:0 0 0 auto;width:min(380px,100vw);z-index:5;box-shadow:-12px 0 32px rgba(0,0,0,.5)}}
@@ -63,11 +69,11 @@ textarea,input,select{font-size:16px}
 .acts{gap:22px}.acts button{min-height:44px;font-size:14px}
 .mtop{min-width:44px;min-height:44px}
 #scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:4}#scrim.on{display:block}
-aside{display:none}aside.open{display:flex;position:fixed;inset:0 auto 0 0;z-index:6;width:min(300px,86vw)}.mtop{display:inline-block;background:none;border:0;color:var(--t-strong);font-size:18px;margin-right:8px}header{display:flex;align-items:center}}
+aside{display:none}aside.open{display:flex;position:fixed;inset:0 auto 0 0;z-index:6;width:min(300px,86vw)}.mtop{display:inline-block;background:none;border:0;color:var(--t-strong);font-size:18px;margin-right:8px}header{display:flex;align-items:center}#thead{cursor:pointer}#tname::after{content:" ▾";color:var(--t-mute);font-size:14px}}
 </style></head>
 <body>
 <aside id="threads"><div class="brand"><img src="/logo.svg" alt=""><div><b>ZENOS Feedback</b><span>Developer Preview</span></div></div><div id="list"></div><div class="mebox" id="mebox"></div></aside>
-<main><header><button class="mtop" id="menu" aria-label="Threads">☰</button><div><b id="tname"># ideas</b><p id="tabout"></p></div></header>
+<main><header><button class="mtop" id="menu" aria-label="Threads">☰</button><div id="thead"><b id="tname"># ideas</b><p id="tabout"></p></div></header>
 <div id="tl" aria-live="polite"></div><div class="cw" id="cw"></div></main>
 <div id="scrim"></div><section id="side" aria-label="Proposal"></section>
 <script src="/board.js"></script>

@@ -75,7 +75,19 @@ function repliesEl(p) {
   });
   return box;
 }
-function need() { const e = $("perr"); if (e) e.textContent = S.signin === "github" ? "Sign in with GitHub to post (bottom left)." : "Use the test sign-in (bottom left) to post."; }
+function need() { const e = $("perr"); if (e) e.textContent = S.signin === "github" ? "Sign in with GitHub to post." : "Use the test sign-in (bottom left) to post."; }
+const narrow = () => matchMedia("(max-width:760px)").matches;
+let introHidden = false; try { introHidden = localStorage.getItem("zf-intro") === "hidden"; } catch (e) {}
+function introEl() {
+  if (introHidden) return null;
+  const box = h("div", { cls: "mintro" },
+    h("b", {}, "How this board works"),
+    h("ol", {}, h("li", {}, "Pick a thread. On a phone, tap the title at the top."), h("li", {}, "Say what you need and why. Posting needs a GitHub sign-in."),
+      h("li", {}, "Every 4 hours an AI groups similar posts and answers them."), h("li", {}, "A maintainer decides what gets built.")),
+    h("button", { cls: "more", on: { click: () => { sideIntro(); $("side").classList.add("open"); } } }, "More about how it works →"),
+    h("button", { cls: "x", "aria-label": "Hide", on: { click: () => { introHidden = true; try { localStorage.setItem("zf-intro", "hidden"); } catch (e) {} box.remove(); } } }, "×"));
+  return box;
+}
 
 async function render() {
   await loadState();
@@ -84,6 +96,7 @@ async function render() {
   $("tabout").textContent = t.about;
   const r = await get("/api/thread?t=" + cur);
   const TL = $("tl"); TL.replaceChildren();
+  const ie = introEl(); if (ie) TL.append(ie);
   if (r.proposals) {
     if (!r.proposals.length) TL.append(h("div", { cls: "empty" }, "No proposal has been accepted yet. Accepted proposals appear here with where they stand."));
     for (const pr of r.proposals) TL.append(h("div", { cls: "ai", on: { click: () => showProposal(pr.id) } }, h("em", {}, "#" + pr.id),
@@ -100,6 +113,11 @@ async function render() {
 function composer(t) {
   const C = $("cw"); C.replaceChildren();
   if (t.view || (t.staff && !S.admin)) return;
+  if (!S.me && !S.admin && S.signin === "github") {
+    C.append(h("div", { cls: "composer" }, h("div", { cls: "cta" }, h("span", {}, `To post in #${t.id} or reply, sign in with GitHub. The board reads only your public profile.`),
+      h("button", { cls: "signin", on: { click: () => { location.href = "/auth/github/start"; } } }, "Sign in with GitHub"))));
+    return;
+  }
   const ta = h("textarea", { rows: "1", "aria-label": "Your post", maxlength: "2000", placeholder: t.staff ? `Post in ${t.id} as the project` : `Share in #${t.id}: what you need, for which edition, and why` });
   ta.addEventListener("input", () => { ta.style.height = "auto"; ta.style.height = Math.min(160, ta.scrollHeight) + "px"; });
   const ed = t.group === "Share" ? h("select", { title: "Edition", "aria-label": "Edition" }, h("option", { value: "" }, "All editions"), ["office", "family", "personal"].map((e) => h("option", { value: e }, cap(e)))) : null;
@@ -157,6 +175,7 @@ const scrim = () => $("scrim").classList.toggle("on", $("threads").classList.con
 new MutationObserver(scrim).observe($("threads"), { attributes: true }); new MutationObserver(scrim).observe($("side"), { attributes: true });
 $("scrim").addEventListener("click", () => { $("threads").classList.remove("open"); $("side").classList.remove("open"); openProp = null; sideIntro(); });
 $("menu").addEventListener("click", () => $("threads").classList.toggle("open"));
+$("thead").addEventListener("click", () => { if (narrow()) $("threads").classList.add("open"); });
 window.addEventListener("hashchange", () => { const t = location.hash.slice(1); if (t && t !== cur) { cur = t; render(); } });
 render();
 setInterval(() => { if (!document.hidden && !document.activeElement.matches("textarea,input,select")) render(); }, 15000);
