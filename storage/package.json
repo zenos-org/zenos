@@ -5,7 +5,7 @@
   "description": "ZENOS storage layer: encryption, erasure coding and certified P2P storage nodes",
   "main": "lib/client.js",
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test test/*.test.js"
   },
   "license": "Apache-2.0",
   "dependencies": {
