@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=ZENOS
+Description=ZENOS boot screen: the ZENOS mark on the desktop gradient, and the disk passphrase
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/zenos
+ScriptFile=/usr/share/plymouth/themes/zenos/zenos.script

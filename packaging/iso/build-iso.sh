@@ -45,6 +45,8 @@ plasma-workspace
 kwin-x11
 sddm
 sddm-theme-breeze
+plymouth
+plymouth-label
 xorg
 plasma-nm
 network-manager
@@ -100,7 +102,7 @@ cat > config/includes.chroot/etc/sddm.conf.d/zenos.conf <<'EOF'
 [General]
 DefaultSession=plasmax11.desktop
 [Theme]
-Current=breeze
+Current=zenos
 EOF
 # live session: log the live user straight into Plasma (X11). live-config's own sddm step names the Wayland session
 # (plasma.desktop, in Plasma 6) or none at all, and its /etc/sddm.conf overrides the conf.d files. This runs at
@@ -179,6 +181,18 @@ for f in boot/grub/config.cfg boot/grub/grub.cfg; do
 done
 EOF
 chmod +x config/hooks/normal/0900-zenos-boot-timeout.hook.binary
+
+# the ZENOS boot screen (also asks the disk passphrase), in the image and so on the installed system
+cat > config/hooks/live/0950-zenos-plymouth.hook.chroot <<'EOF'
+#!/bin/sh
+set -e
+plymouth-set-default-theme zenos
+sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash loglevel=3"/' /etc/default/grub
+grep -q 'quiet splash' /etc/default/grub
+EOF
+chmod +x config/hooks/live/0950-zenos-plymouth.hook.chroot
+mkdir -p config/includes.chroot/etc/calamares/modules
+printf -- '---\nplymouth_theme: zenos\n' > config/includes.chroot/etc/calamares/modules/plymouthcfg.conf
 
 lb build 2>&1 | tee build.log
 ls -la "$W"/*.iso

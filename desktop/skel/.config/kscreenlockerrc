@@ -1,4 +1,2 @@
-[Daemon]
-Autolock=true
-LockOnResume=true
-Timeout=5
+[Greeter][Wallpaper][org.kde.image][General]
+Image=file:///usr/share/zenos/wallpaper.jpg

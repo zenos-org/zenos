@@ -16,6 +16,10 @@ Z="$P/usr/share/zenos"
 echo "== core"
 mkdir -p "$Z/apps"
 cp -a "$SRC/core/bin" "$SRC/core/shell" "$SRC/core/icons" "$SRC/core/templates" "$Z/"
+# boot screen and login screen in the ZENOS look
+mkdir -p "$P/usr/share/plymouth/themes" "$P/usr/share/sddm/themes"
+cp -a "$SRC/desktop/plymouth/zenos" "$P/usr/share/plymouth/themes/"
+cp -a "$SRC/desktop/sddm/zenos" "$P/usr/share/sddm/themes/"
 cp "$SRC"/core/wallpaper.* "$Z/"
 chmod 755 "$Z"/bin/*.sh "$Z"/bin/*.py
 
