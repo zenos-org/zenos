@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=ZENOS desktop layout
+Exec=/usr/share/zenos/bin/zenos-desktop-layout.sh
+NoDisplay=true
+X-KDE-autostart-phase=2
