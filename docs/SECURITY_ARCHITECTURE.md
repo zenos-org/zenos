@@ -122,6 +122,10 @@ Saving a password takes the same approval. At most 3 prompts per minute reach th
 Phones are registered with a one-time enrolment code from the administrator (`sudo zenos_credd.py --enroll USER`);
 `--phones USER` lists them and `--revoke USER PHONE` removes one (passwords saved with it can no longer be opened).
 
+The service answers only the installed ZENOS Browser and ZENOS Messages (it checks the connecting process's program
+file, interpreter, environment and debugger state). That is a hurdle, not a wall: a program of the same user can
+rewrite how its own command line looks, so the check stops casual misuse, not a determined local attacker.
+
 Not protected: a PC already taken over at the moment of signing in (the password is in the page then), and a program
 of the same user that imitates the browser's request (the person still sees the site on the phone and must pick the
 code shown by the ZENOS Browser). The phone page is served by the PC's ZENOS Messages through the tunnel, and its

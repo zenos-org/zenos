@@ -46,6 +46,7 @@ ENROLL_TRIES, ENROLL_GAP = 20, 2.0     # wrong enrolment codes: 20 tries, 2 s ap
 MAX_LINE = 64 * 1024
 # who may ask: the browser asks for passwords, ZENOS Messages carries the phone's answers. Each is a root-owned
 # program run by the person; another program of the same person is refused (it could show a fake code on screen).
+# A hurdle, not a wall: a same-user program can rewrite its own command line (docs/SECURITY_ARCHITECTURE.md).
 BROWSERS = os.environ.get("ZENOS_CREDD_BROWSER", "/usr/share/zenos/bin/zenos_webkit.py").split(":")
 MESSENGERS = os.environ.get("ZENOS_CREDD_MESSENGER", "/usr/share/zenos/msg/client.js").split(":")
 BROWSER_OPS = {"accounts", "ask", "wait", "cancel"}
