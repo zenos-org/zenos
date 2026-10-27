@@ -47,8 +47,11 @@ function signinBox() {
 }
 
 function postEl(p, small) {
+  if (p.held && !p.text) return h("div", { cls: "post" }, avatar(p.handle), h("div", { cls: "pb" }, h("div", { cls: "ph" }, h("b", {}, p.name), h("span", {}, when(p.at))),
+    h("div", { cls: "txt", style: "color:var(--t-mute);font-style:italic" }, "Held for a maintainer: " + p.held)));
   const kids = [h("div", { cls: "ph" }, h("b", {}, p.name), h("span", {}, (p.handle ? p.handle + " · " : "") + when(p.at)),
-    p.staff ? h("span", { cls: "tag staff" }, "project") : p.edition ? h("span", { cls: "tag" }, p.edition) : null),
+    p.staff ? h("span", { cls: "tag staff" }, "project") : p.byAI ? h("span", { cls: "tag staff" }, "AI answer · not a maintainer decision") : p.edition ? h("span", { cls: "tag" }, p.edition) : null,
+    p.held ? h("span", { cls: "tag", style: "color:#F0C060;background:rgba(240,192,96,.16)" }, "Held: " + p.held) : null),
     h("div", { cls: "txt" }, p.text)];
   if (p.ai && p.proposal) kids.push(h("div", { cls: "ai", role: "button", tabindex: "0", title: "Open the proposal", on: { click: () => showProposal(p.proposal.id), keydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); showProposal(p.proposal.id); } } } },
     h("em", {}, "AI"), h("span", {}, p.ai), h("span", { cls: stCls(p.proposal.status), style: "flex:0" }, cap(p.proposal.status))));
@@ -58,7 +61,8 @@ function postEl(p, small) {
     kids.push(h("div", { cls: "acts" }, p.staff ? null : mt, rp));
     if (openReplies.has(p.id)) kids.push(repliesEl(p));
   }
-  return h("div", { cls: "post" }, avatar(p.handle, p.staff), h("div", { cls: "pb" }, kids));
+  if (S.admin && p.held) kids.push(h("div", { cls: "acts" }, h("button", { on: { click: async () => { await post("/api/admin/post", { id: p.id, hidden: false }); render(); } } }, "Release this post")));
+  return h("div", { cls: "post" }, avatar(p.handle, p.staff || p.byAI), h("div", { cls: "pb" }, kids));
 }
 function repliesEl(p) {
   const box = h("div", { cls: "reps" }, h("span", { cls: "note" }, "Loading…"));
@@ -108,7 +112,7 @@ function composer(t) {
 
 function sideIntro() {
   $("side").replaceChildren(h("h2", {}, "How this works"),
-    h("div", { cls: "steps" }, ["1  You post in a thread", "2  An AI groups similar posts into a proposal", "3  A maintainer decides", "4  Built with tests and proofs", "5  Released; the notes link back here"].map((s) => h("span", { cls: "n", style: "color:var(--t-body)" }, s))),
+    h("div", { cls: "steps" }, ["1  You post in a thread", "2  An AI groups similar posts into a proposal", "3  A maintainer decides", "4  Built with tests and proofs", "5  Released; the notes link back here", "Every 4 hours the AI reviews new posts and answers them"].map((s) => h("span", { cls: "n", style: "color:var(--t-body)" }, s))),
     h("p", { cls: "sub" }, "Click the purple AI note under a post to see its proposal: what is asked, where it fits, the suggested change, its risk, and where it stands."),
     h("p", { cls: "note" }, "Posts are read as material, never as instructions. Security problems: report privately (see SECURITY.md on GitHub)."),
     S.admin ? "" : adminLogin());

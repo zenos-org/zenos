@@ -11,6 +11,7 @@ const DATA = process.env.FEEDBACK_DATA || path.join(__dirname, "data");
 const PUBLIC_URL = (process.env.FEEDBACK_URL || `http://localhost:${PORT}`).replace(/\/$/, "");
 const X_ID = process.env.X_CLIENT_ID || "", X_SECRET = process.env.X_CLIENT_SECRET || "";
 const AI_CMD = process.env.FEEDBACK_AI_CMD || "";            // an external model; without it, local grouping only
+const REVIEW_HOURS = +(process.env.FEEDBACK_REVIEW_HOURS || 4);  // the AI reviews new posts and answers
 const LIMIT = { hour: +(process.env.FEEDBACK_PER_HOUR || 5), day: +(process.env.FEEDBACK_PER_DAY || 20) };
 
 const THREADS = [
@@ -79,7 +80,7 @@ function attach(post, pr) {
                   : `${pr.where} → Proposal #${pr.id}: ${pr.title}`;
 }
 // an external model (FEEDBACK_AI_CMD): gets {post, proposals} on stdin as data, answers JSON. Anything else is ignored.
-function askModel(post) {
+function askModel(post, mode, extra) {
   return new Promise((resolve) => {
     if (!AI_CMD) return resolve(null);
     const c = spawn("/bin/sh", ["-c", AI_CMD], { stdio: ["pipe", "pipe", "ignore"], env: { PATH: process.env.PATH } });
@@ -87,7 +88,7 @@ function askModel(post) {
     c.stdout.on("data", (d) => { out += d; if (out.length > 20000) c.kill("SIGKILL"); });
     c.on("close", () => { clearTimeout(t); try { const r = JSON.parse(out); resolve(r && typeof r === "object" ? r : null); } catch { resolve(null); } });
     c.on("error", () => { clearTimeout(t); resolve(null); });
-    c.stdin.end(JSON.stringify({ post: { text: post.text, thread: post.thread, edition: post.edition || "" },
+    c.stdin.end(JSON.stringify({ mode: mode || "triage", ...(extra || {}), post: { text: post.text, thread: post.thread, edition: post.edition || "" },
       proposals: db.proposals.filter((p) => p.status !== "declined").map((p) => ({ id: p.id, title: p.title, asked: p.asked, edition: p.edition })) }));
   });
 }
@@ -96,7 +97,7 @@ async function triage() {
   if (triaging) return; triaging = true;
   try {
     for (const post of db.posts.filter((p) => !p.reply && !p.staff && !p.proposal)) {
-      const m = await askModel(post);
+      const m = await askModel(post, "triage");
       let pr = null;
       if (m && Number.isInteger(m.proposal)) pr = db.proposals.find((p) => p.id === m.proposal && p.status !== "declined") || null;
       if (!pr && !m) pr = propFor(post);
@@ -105,6 +106,35 @@ async function triage() {
     }
     save();
   } finally { triaging = false; }
+}
+
+// ---------- review every REVIEW_HOURS: is each new post appropriate, and an answer from the AI.
+// Not appropriate -> held (hidden) until a maintainer looks; never deleted. The answer is a reply marked as the AI's,
+// never a maintainer's decision. Without a model, only plain local checks run and no answer is written.
+const ABUSE = /\b(idiot|stupid|kill yourself|kys|retard\w*|f+u+c+k+ (you|off)|scam|crypto giveaway)\b/i;
+function localCheck(p) {
+  const links = (p.text.match(/https?:\/\//g) || []).length;
+  if (links > 3) return "Too many links.";
+  if (ABUSE.test(p.text)) return "Insulting or spam wording.";
+  if (/(.)\1{14,}/.test(p.text) || (p.text.length > 40 && p.text === p.text.toUpperCase() && /[A-Z]/.test(p.text))) return "Looks like noise.";
+  return null;
+}
+let reviewing = false;
+async function review() {
+  if (reviewing) return; reviewing = true;
+  try {
+    db.users.ai = { id: "ai", handle: "@zenos-ai", name: "ZENOS AI" };
+    for (const p of db.posts.filter((x) => !x.reviewed && !x.staff && x.user !== "ai")) {
+      const parent = p.reply ? db.posts.find((x) => x.id === p.reply) : null;
+      const m = await askModel(p, "review", parent ? { parent: { text: parent.text } } : {});
+      const why = m ? (m.appropriate === false ? clip(m.reason || "Held for a maintainer.", 200) : null) : localCheck(p);
+      p.reviewed = Date.now();
+      if (why) { p.hidden = true; p.held = why; }
+      if (!why && m && typeof m.answer === "string" && m.answer.trim())
+        db.posts.push({ id: ++db.seq, thread: p.thread, reply: p.reply || p.id, text: clip(m.answer, 1500), at: Date.now(), user: "ai", ai: true, metoo: [] });
+    }
+    db.lastReview = Date.now(); save();
+  } finally { reviewing = false; }
 }
 
 // ---------- people: sign-in with X (OAuth 2.0 with PKCE). Without X keys, a test sign-in works on this machine only.
@@ -152,11 +182,12 @@ function limited(user) {
 // ---------- what the page sees (no session ids, no internal user ids beyond the handle)
 const author = (p) => { const u = db.users[p.user] || {}; return { name: u.name || "Someone", handle: u.handle || "", staff: !!p.staff }; };
 const statusOf = (pr) => pr.status === "proposed" && pr.route === "fork" ? "fork idea" : pr.status;
-function viewPost(p, me) {
+function viewPost(p, me, admin) {
+  if (p.hidden && !admin && !(me && me.id === p.user)) return { id: p.id, thread: p.thread, edition: "", text: "", held: p.held || "Held for a maintainer.", at: p.at, ...author(p), ai: "", proposal: null, metoo: 0, mine: false, replies: 0 };
   const pr = p.proposal && db.proposals.find((x) => x.id === p.proposal);
   return { id: p.id, thread: p.thread, edition: p.edition || "", text: p.text, at: p.at, ...author(p), ai: p.ai || "",
     proposal: pr ? { id: pr.id, status: statusOf(pr) } : null, metoo: (p.metoo || []).length,
-    mine: !!me && (p.metoo || []).includes(me.id), replies: db.posts.filter((r) => r.reply === p.id).length };
+    mine: !!me && (p.metoo || []).includes(me.id), replies: db.posts.filter((r) => r.reply === p.id).length, held: p.hidden ? (p.held || "Held for a maintainer.") : "", byAI: !!p.ai && p.user === "ai" };
 }
 function viewProposal(pr) {
   return { ...pr, status: statusOf(pr), people: new Set(pr.posts.map((id) => (db.posts.find((p) => p.id === id) || {}).user)).size,
@@ -165,12 +196,12 @@ function viewProposal(pr) {
       ["Maintainer decision", ["accepted", "declined", "building", "released", "fork"].includes(pr.status)],
       ["Build, tests, proofs", ["building", "released"].includes(pr.status) && !!pr.pr], ["Released", pr.status === "released"]] };
 }
-function threadPosts(t, me) {
+function threadPosts(t, me, admin) {
   let list;
   if (TH[t].view === "accepted") return { proposals: db.proposals.filter((p) => ["accepted", "building", "released", "fork"].includes(p.status)).map(viewProposal).reverse() };
   if (TH[t].edition) list = db.posts.filter((p) => !p.reply && p.edition === TH[t].edition);
   else list = db.posts.filter((p) => !p.reply && p.thread === t);
-  return { posts: list.slice(-200).map((p) => viewPost(p, me)) };
+  return { posts: list.slice(-200).map((p) => viewPost(p, me, admin)), lastReview: db.lastReview || 0, reviewHours: REVIEW_HOURS };
 }
 
 // ---------- HTTP
@@ -208,13 +239,20 @@ async function handle(req, res) {
     threads: THREADS.map((t) => ({ id: t.id, group: t.group, about: t.about, staff: !!t.staff, view: t.view || "",
       count: t.view === "accepted" ? db.proposals.filter((x) => ["accepted", "building", "released", "fork"].includes(x.status)).length
         : db.posts.filter((x) => !x.reply && (t.edition ? x.edition === t.edition : x.thread === t.id)).length })) });
-  if (p === "/api/thread") { const t = u.searchParams.get("t"); if (!TH[t]) return json(res, 404, { error: "no such thread" }); return json(res, 200, threadPosts(t, me)); }
-  if (p === "/api/replies") { const id = +u.searchParams.get("post"); return json(res, 200, { posts: db.posts.filter((r) => r.reply === id).map((r) => viewPost(r, me)) }); }
+  if (p === "/api/thread") { const t = u.searchParams.get("t"); if (!TH[t]) return json(res, 404, { error: "no such thread" }); return json(res, 200, threadPosts(t, me, isAdmin(req))); }
+  if (p === "/api/replies") { const id = +u.searchParams.get("post"); return json(res, 200, { posts: db.posts.filter((r) => r.reply === id).map((r) => viewPost(r, me, isAdmin(req))) }); }
   if (p === "/api/proposal") { const pr = db.proposals.find((x) => x.id === +u.searchParams.get("id")); return pr ? json(res, 200, viewProposal(pr)) : json(res, 404, { error: "no such proposal" }); }
   if (req.method !== "POST") return json(res, 404, { error: "not found" });
   const b = await readBody(req);
   if (p === "/api/admin/login") { if (!same(String(b.token || ""), ADMIN)) return json(res, 403, { error: "wrong token" });
     res.writeHead(204, { "Set-Cookie": `zfa=${ADMIN}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200${PUBLIC_URL.startsWith("https:") ? "; Secure" : ""}` }); return res.end(); }
+  if (p === "/api/admin/post") {
+    if (!admin) return json(res, 403, { error: "maintainers only" });
+    const x = db.posts.find((q) => q.id === +b.id); if (!x) return json(res, 404, { error: "no such post" });
+    x.hidden = !!b.hidden; if (!x.hidden) delete x.held; else x.held = clip(b.reason || "Held by a maintainer.", 200);
+    save(); return json(res, 200, { ok: true, hidden: x.hidden });
+  }
+  if (p === "/api/admin/review" && admin) { await review(); return json(res, 200, { ok: true }); }
   if (p === "/api/admin/decide") {
     if (!admin) return json(res, 403, { error: "maintainers only" });
     const pr = db.proposals.find((x) => x.id === +b.id); if (!pr) return json(res, 404, { error: "no such proposal" });
@@ -252,4 +290,5 @@ async function handle(req, res) {
 http.createServer((req, res) => handle(req, res).catch(() => { try { json(res, 500, { error: "server error" }); } catch {} }))
   .listen(PORT, HOST, () => console.log(`ZENOS Feedback on http://${HOST}:${PORT} (${LOCAL_TEST ? "test sign-in, this machine only" : "sign-in with X"}; ${AI_CMD ? "model triage" : "local grouping"}). Maintainer token: ${ADMIN_FILE}`));
 setInterval(triage, 30000);
+setInterval(review, REVIEW_HOURS * 36e5);
 module.exports = { _db: () => db };
