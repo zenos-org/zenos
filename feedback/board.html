@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ZENOS Feedback</title><link rel="icon" href="/logo.svg">
+<style>
+:root{--bg:#0E0F13;--side:#17181D;--head:#14151A;--line:#25262D;--act:#2A2D37;--tile:#20222A;--composer:#1C1D23;
+--acc:#7C3AED;--t-strong:#F2F4F6;--t-head:#E7E8EC;--t-body:#D2D5DC;--t-row:#C5C8D0;--t-sub:#9AA0AB;--t-mute:#8E929C}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font-family:Inter,'Noto Sans CJK JP',system-ui,sans-serif;background:var(--bg);color:var(--t-body);display:flex;overflow:hidden;height:100dvh}
+*{scrollbar-width:thin;scrollbar-color:#7C3AED transparent}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#7C3AED;border-radius:3px}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid #A78BFA;outline-offset:2px;border-radius:6px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+.acts button{min-height:32px;padding:4px 2px}.th{min-height:40px}
+aside{width:280px;flex-shrink:0;background:var(--side);display:flex;flex-direction:column;padding:18px 12px 0;gap:2px;overflow:auto}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 16px}.brand img{width:28px;height:28px}.brand b{display:block;font-size:15px;font-weight:600;color:var(--t-strong)}.brand span{font-size:11px;color:var(--t-mute)}
+.gh{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--t-mute);text-transform:uppercase;padding:14px 10px 4px}
+.th{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;font-size:14px;color:var(--t-row);cursor:pointer}
+.th:hover{background:#1D1E24}.th.on{background:var(--act);color:var(--t-strong);font-weight:600}.th i{font-style:normal;color:var(--t-mute);width:14px;text-align:center}.th.on i{color:var(--t-strong)}
+.th .n{margin-left:auto;font-size:11px;font-weight:600;color:#fff;background:var(--acc);border-radius:999px;padding:1px 7px}.th .n.z{display:none}
+.mebox{margin-top:auto;display:flex;align-items:center;gap:10px;padding:16px 8px;border-top:1px solid var(--line)}
+.av{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;font-size:13px;font-weight:700;color:#fff}
+.mebox b{display:block;font-size:13px;color:var(--t-strong)}.mebox span{font-size:11px;color:var(--t-mute)}.mebox .out{margin-left:auto;background:none;border:0;color:var(--t-mute);font-size:12px}
+.signin{width:100%;border:0;border-radius:8px;padding:10px;background:#F2F4F6;color:#0E0F13;font-weight:600;font-size:14px}
+main{flex:1;min-width:0;display:flex;flex-direction:column}
+header{padding:14px 24px;background:var(--head);border-bottom:1px solid var(--line)}header b{font-size:17px;color:var(--t-strong)}header p{margin:2px 0 0;font-size:12px;color:var(--t-mute)}
+#tl{flex:1;overflow:auto;padding:20px 24px;display:flex;flex-direction:column;gap:18px;min-height:0}
+.post{display:flex;gap:12px}.post .av{width:36px;height:36px}.pb{flex:1;min-width:0}
+.ph{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ph b{font-size:14px;color:var(--t-strong)}.ph span{font-size:12px;color:var(--t-mute)}
+.tag{font-size:11px;font-weight:600;color:#7DD3FC;background:rgba(56,189,248,.15);border-radius:999px;padding:1px 8px}.tag.staff{color:#C4B5FD;background:rgba(155,59,239,.18)}
+.txt{font-size:14px;line-height:1.5;color:var(--t-body);margin:6px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.ai{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:rgba(155,59,239,.10);border:1px solid rgba(155,59,239,.35);cursor:pointer;margin:4px 0 6px}
+.ai em{font-style:normal;font-size:11px;font-weight:700;color:#C4B5FD}.ai span{flex:1;font-size:12px;line-height:1.4;color:#D8CCFF}
+.st{font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.st-proposed{color:#C4B5FD;background:rgba(196,181,253,.18)}.st-accepted,.st-released{color:#4ADE80;background:rgba(74,222,128,.15)}.st-building{color:#7DD3FC;background:rgba(125,211,252,.15)}
+.st-declined{color:#FCA5A5;background:rgba(252,165,165,.15)}.st-fork,.st-fork-idea{color:#F0C060;background:rgba(240,192,96,.16)}
+.acts{display:flex;gap:16px}.acts button{background:none;border:0;padding:0;font-size:12px;font-weight:500;color:var(--t-sub)}.acts button.on{color:#C4B5FD}
+.reps{margin:8px 0 0;padding-left:14px;border-left:2px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.reps .post .av{width:26px;height:26px;font-size:11px}
+.rbox{display:flex;gap:8px;margin-top:4px}.rbox input{flex:1}
+.empty{color:var(--t-mute);font-size:14px;margin:auto;text-align:center;max-width:420px;line-height:1.6}
+.cw{padding:0 24px 20px}
+.composer{display:flex;align-items:flex-end;gap:10px;padding:12px 14px;border-radius:14px;background:var(--side);border:1px solid #2A2D37}
+textarea,input,select{background:var(--bg);color:var(--t-strong);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:14px}
+.composer textarea{flex:1;border:0;background:none;resize:none;min-height:22px;max-height:160px;padding:2px 0;outline:none}
+.send{border:0;border-radius:8px;padding:8px 14px;background:var(--acc);color:#fff;font-size:13px;font-weight:600}
+.err{font-size:12px;color:#FCA5A5;padding:6px 2px 0;min-height:18px}
+#side{width:340px;flex-shrink:0;background:var(--head);border-left:1px solid var(--line);padding:22px 20px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+#side h2{margin:0;font-size:17px;font-weight:600;color:var(--t-strong)}#side .sub{font-size:12px;color:var(--t-mute);line-height:1.4}
+.kv b{display:block;font-size:11px;font-weight:600;letter-spacing:.04em;color:var(--t-mute);text-transform:uppercase;margin-bottom:3px}.kv p{margin:0;font-size:13px;line-height:1.45;color:var(--t-body)}
+.steps{background:var(--bg);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;font-size:13px;font-weight:500}.steps .y{color:#4ADE80}.steps .n{color:var(--t-mute)}.steps .c{color:#F0C060}
+.note{font-size:11px;line-height:1.45;color:var(--t-mute)}
+.adm{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:14px}.adm .row{display:flex;gap:8px}.adm input,.adm select,.adm textarea{width:100%}
+.plink{font-size:12px;color:#93C5FD;text-decoration:none;overflow-wrap:anywhere}
+.mtop{display:none}
+@media(pointer:coarse),(max-width:1100px) and (min-width:761px){.txt{font-size:16px}.ph b{font-size:15px}.ai span{font-size:13px}textarea,input,select{font-size:16px}
+.acts{gap:22px}.acts button{min-height:44px;font-size:14px}.th{min-height:44px;font-size:15px}.send{min-height:40px}}
+@media(max-width:1100px){#side{display:none}#side .x{display:block}#side.open{display:flex;position:fixed;inset:0 0 0 auto;width:min(380px,100vw);z-index:5;box-shadow:-12px 0 32px rgba(0,0,0,.5)}}
+@media(max-width:760px){
+body{font-size:16px}.txt{font-size:16px}.ph b{font-size:15px}.ai span{font-size:13px}
+textarea,input,select{font-size:16px}
+#tl{padding:16px 14px;gap:20px}.cw{padding:0 10px calc(10px + env(safe-area-inset-bottom))}header{padding:10px 14px}
+.composer{flex-wrap:wrap}.composer textarea{flex:1 0 100%;min-height:44px;font-size:16px}.composer select{flex:1}.composer .send{min-height:44px;padding:0 22px}
+.acts{gap:22px}.acts button{min-height:44px;font-size:14px}
+.mtop{min-width:44px;min-height:44px}
+#scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:4}#scrim.on{display:block}
+aside{display:none}aside.open{display:flex;position:fixed;inset:0 auto 0 0;z-index:6;width:min(300px,86vw)}.mtop{display:inline-block;background:none;border:0;color:var(--t-strong);font-size:18px;margin-right:8px}header{display:flex;align-items:center}}
+</style></head>
+<body>
+<aside id="threads"><div class="brand"><img src="/logo.svg" alt=""><div><b>ZENOS Feedback</b><span>Developer Preview</span></div></div><div id="list"></div><div class="mebox" id="mebox"></div></aside>
+<main><header><button class="mtop" id="menu" aria-label="Threads">☰</button><div><b id="tname"># ideas</b><p id="tabout"></p></div></header>
+<div id="tl" aria-live="polite"></div><div class="cw" id="cw"></div></main>
+<div id="scrim"></div><section id="side" aria-label="Proposal"></section>
+<script src="/board.js"></script>
+</body></html>

@@ -3,15 +3,31 @@
 ZENOS asks its users what to improve, and uses an AI to read what they write. This page says how that works and
 what the AI may and may not do.
 
+## Where people post
+
+The feedback board looks and works like ZENOS Messages: threads on the left, the timeline in the middle, the AI's
+proposal on the right. People who use ZENOS already know how to use it.
+
+- Threads: `#ideas`, `#problems` and `#my-use` (uses ZENOS does not yet cover); one thread per edition
+  (`#office`, `#family`, `#personal`); and threads from the project: `#release-notes`, `#accepted`, `#roadmap`.
+- Posting needs a sign-in with an X account (planned), with a limit on posts per person and per day. Developers
+  can also use GitHub Discussions; both feed the same flow.
+- The board is a public website. It shares only the look and the interface code with ZENOS Messages: it runs on
+  its own server and has no access to any ZENOS Messages keys, messages or PCs.
+
 ## The flow
 
-1. People post in GitHub Discussions: Ideas, Problems, Questions, or "My use" for uses ZENOS does not yet cover.
-2. An AI reads new posts regularly. For each it writes a short proposal: what is asked, which part it concerns
-   (the shared core, one edition, or a possible new edition), how many people asked for it, and a suggested change
-   with its risk.
-3. A maintainer reads the proposals and decides. Nothing is changed without that decision.
-4. An accepted change is made like any other: in a pull request, with tests, and with the proofs in `formal/`
-   still passing. The release notes link to the Discussion it came from.
+1. A person posts in a thread.
+2. An AI reads new posts. It groups posts that ask for the same thing and writes one proposal for each group:
+   what is asked, which part it concerns (the shared core, one edition, or a possible fork), how many people
+   asked, a suggested change, and its risk. The AI's note appears under the post, with the proposal's status.
+3. A maintainer reads the proposal and decides. Nothing is changed without that decision.
+4. An accepted change is made like any other: in a GitHub pull request, with tests, and with the proofs in
+   `formal/` still passing. GitHub stays the record of the code; the board links to it.
+5. The proposal's steps (grouped, drafted, decided, built, released) are shown beside it, and the release notes
+   link back to the thread, so the people who asked can see what became of it.
+6. When many posts describe a kind of use no edition covers, the proposal may suggest a fork. A fork that is
+   started gets its own thread on the board.
 
 ## Rules for the AI
 

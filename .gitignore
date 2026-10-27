@@ -19,3 +19,4 @@ cloud.json
 alert-recipients.json
 tunnel-url.*
 build/
+feedback/data/
