@@ -1,7 +1,12 @@
 #!/bin/bash
 # ZENOS: desktop icons in a column on the left (Figma frame 33:2), every login.
 # Plasma's one-time update script is not enough: Plasma can replace the desktop containment after it ran.
-Q=$(command -v qdbus6 || command -v qdbus) || exit 0
+# Debian ships qdbus in /usr/lib/qt6/bin, which is not on PATH
+Q=""
+for c in qdbus6 qdbus /usr/lib/qt6/bin/qdbus6 /usr/lib/qt6/bin/qdbus; do
+    if command -v "$c" >/dev/null 2>&1; then Q=$(command -v "$c"); break; fi
+done
+[ -n "$Q" ] || exit 0
 for i in $(seq 1 60); do "$Q" org.kde.plasmashell /PlasmaShell >/dev/null 2>&1 && break; sleep 1; done
 "$Q" org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript '
 desktops().forEach(function (d) {
