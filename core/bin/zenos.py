@@ -777,9 +777,32 @@ def _cmd_check_before_vault(path):
     # a plain file dropped into a security folder is sealed at that folder's level
     if p.suffix in (".part", ".tmp", ".crdownload") or p.name == ".directory":
         return
-    lvl = max(lo, min(hi, session_level()))
+    mine = session_level()
+    if mine < lo:
+        # not cleared for this folder: the file may not be sealed here (the key agent refuses a label above the
+        # author's clearance), and a plain copy must not stay in it. It goes to the folder of the person's level.
+        back = folder_for(mine) / p.name
+        p.rename(back)
+        audit("seal-refused", file=p.name, level=lo, clearance=mine, moved_to=back.parent.name)
+        kd("--title", "ZENOS · Not cleared for this folder", "--sorry",
+           f"\"{p.name}\" cannot be kept in {p.parent.name}: you are cleared up to L{mine}.\n\n"
+           f"It was moved to {back.parent.name}. To work at a higher level, ask your administrator for clearance.")
+        return
+    lvl = max(lo, min(hi, mine))
     dest = p.with_suffix(p.suffix + ".zen") if p.suffix else p.with_name(p.name + ".zen")
-    dest.write_bytes(seal(p.read_bytes(), lvl, p.name))
+    try:
+        dest.write_bytes(seal(p.read_bytes(), lvl, p.name))
+    except Exception as e:                      # never leave an unprotected copy in a security folder
+        try:
+            dest.unlink()
+        except OSError:
+            pass
+        back = folder_for(1) / p.name
+        p.rename(back)
+        audit("seal-failed", file=p.name, level=lvl, error=str(e)[:80], moved_to=back.parent.name)
+        kd("--title", "ZENOS · Could not seal", "--sorry",
+           f"\"{p.name}\" could not be sealed as L{lvl} ({e}).\n\nIt was moved to {back.parent.name}.")
+        return
     p.unlink()
     audit("seal", file=dest.name, level=lvl, folder=p.parent.name)
     notify("ZENOS", f"{p.name} was sealed as L{lvl}.\nThe unprotected copy was removed.")
