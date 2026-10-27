@@ -181,7 +181,7 @@ class App(Gtk.Window):
         except Exception:
             return
         i, cmd, a = m.get("id", 0), m.get("cmd"), m.get("args", {})
-        if cmd and (cmd.startswith("cloud_") or cmd.startswith("img_") or cmd == "thumb"):
+        if cmd and (cmd.startswith("cloud_") or cmd.startswith("img_") or cmd.startswith("studio_") or cmd == "thumb"):
             # network calls run off the UI thread; the answer is posted back when ready
             def work():
                 try:
@@ -416,6 +416,93 @@ class App(Gtk.Window):
         shutil.move(src, target)
         r = finfo(target); r["level"] = ld
         return r
+
+    # ---- Library and Studio (music, pictures, a picture on the audio, AI motion the person registered) ----
+    def _st(self):
+        import zenos_studio
+        return zenos_studio
+
+    def _studio_on(self):
+        if SEALED_LEVEL:
+            raise PermissionError("The Studio is not available for a picture opened from a sealed file.")
+
+    def cmd_studio_library(self, a):
+        self._studio_on(); return self._st().library()
+
+    def cmd_studio_meta_load(self, a): return self._st().meta_load()
+    def cmd_studio_meta_save(self, a): return self._st().meta_save(a.get("data") or {})
+
+    def cmd_studio_peaks(self, a):
+        self._studio_on(); return self._st().peaks(a["path"], int(a.get("n", 600)))
+
+    def _main_save(self, fn):
+        r = {}
+        def run():
+            try:
+                r["v"] = fn()
+            except Exception as e:
+                r["v"] = {"error": str(e)}
+            ev.set()
+            return False
+        ev = threading.Event()
+        GLib.idle_add(run)
+        ev.wait()
+        return r["v"]
+
+    def cmd_studio_import(self, a):
+        self._studio_on()
+        st = self._st()
+        kind = a.get("kind", "audio")
+        exts = st.AUDIO if kind == "audio" else st.IMAGES
+        dest = os.path.join(HOME, "Music" if kind == "audio" else "Pictures")
+        paths = self._main_save(lambda: zenos_picker.open_files(self, "Add to the library", HOME,
+                                [("Music" if kind == "audio" else "Pictures", ["*" + e for e in exts])], True))
+        if isinstance(paths, dict):
+            return paths
+        os.makedirs(dest, exist_ok=True)
+        out = []
+        for p in paths or []:
+            if folder_level(p) > 1 or p.lower().endswith(".zen"):
+                continue
+            if os.path.dirname(os.path.abspath(p)).startswith(os.path.join(HOME, "Desktop")) or os.path.dirname(p) == dest:
+                out.append(finfo(p)); continue          # already in an L1 place: listed where it is
+            t = st._free_name(os.path.join(dest, os.path.basename(p)))
+            shutil.copy2(p, t)
+            out.append(finfo(t))
+        return out
+
+    def cmd_studio_export_audio(self, a):
+        self._studio_on()
+        st = self._st()
+        src = a["src"]
+        base = os.path.splitext(os.path.basename(src))[0]
+        d = os.path.dirname(src) if folder_level(src) == 1 else os.path.join(HOME, "Music")
+        def check(p):
+            if os.path.abspath(p) == os.path.abspath(src):
+                return "Choose a new name: the original is never overwritten."
+            return None
+        path = self._main_save(lambda: zenos_picker.save_file(self, "Save trimmed audio", base + " (cut).m4a", d,
+                               [("AAC audio", ["*.m4a"]), ("MP3 audio", ["*.mp3"]), ("WAV audio", ["*.wav"]), ("FLAC audio", ["*.flac"])], check=check))
+        if not path or isinstance(path, dict):
+            return path
+        return st.export_audio(src, a["start"], a["end"], a.get("fin", 0), a.get("fout", 0), path)
+
+    def cmd_studio_export_video(self, a):
+        self._studio_on()
+        st = self._st()
+        base = os.path.splitext(os.path.basename(a["audio"]))[0]
+        os.makedirs(st.OUT, exist_ok=True)
+        path = self._main_save(lambda: zenos_picker.save_file(self, "Export video", base + ".mp4", st.OUT,
+                               [("MP4 video", ["*.mp4"])], check=lambda p: None))
+        if not path or isinstance(path, dict):
+            return path
+        if not path.lower().endswith(".mp4"):
+            path += ".mp4"
+        return st.export_video(a["audio"], a.get("image"), a.get("clip"), a["start"], a["end"], a.get("fin", 0), a.get("fout", 0), path)
+
+    def cmd_studio_ai(self, a):
+        self._studio_on()
+        return self._st().ai_video(a["image"], a.get("prompt", ""), a.get("seconds", 5), a.get("endpoint", ""), a.get("key", ""), a.get("model", ""))
 
     def cmd_exists(self, a):
         return finfo(a["path"]) if os.path.isfile(a["path"]) else None

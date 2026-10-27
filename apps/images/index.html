@@ -88,7 +88,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
 #selbox{position:absolute;border:1.5px dashed #9B3BEF;display:none;pointer-events:none}
 #busy{position:absolute;right:16px;top:14px;font-size:11px;color:#C7C7CC;padding:4px 9px;border-radius:7px;background:rgba(28,28,33,.9);display:none;z-index:6}
 #stage.editing #film,#stage.editing #sortbar,#stage.editing .arrow{display:none!important}
-</style></head><body>
+</style><link rel="stylesheet" href="studio.css"></head><body>
 <div id="top">
  <div class="lights"><div class="light r" data-c="close"></div><div class="light y" data-c="min"></div><div class="light g" data-c="max"></div></div>
  <div id="ttl"><span id="name">ZENOS Images</span><b id="lvl" class="lv lv1" style="display:none"></b><span id="pos"></span></div>
@@ -109,7 +109,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;heigh
  <div id="stage">
   <img id="img" alt="" draggable="false" style="display:none">
   <div id="empty"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" style="filter:drop-shadow(0 8px 24px rgba(155,59,239,.5))"><defs><linearGradient id="zg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6E5BFF"/><stop offset=".5" stop-color="#C2399E"/><stop offset="1" stop-color="#FF6A8B"/></linearGradient></defs><rect x="2.5" y="4" width="19" height="16" rx="3.5" stroke="url(#zg)" stroke-width="1.6"/><circle cx="9" cy="10" r="1.8" fill="url(#zg)"/><path d="M3.5 18l5.5-5 4 3.5 3-2.5 4.5 4" stroke="url(#zg)" stroke-width="1.6" stroke-linejoin="round"/></svg>
-   <h2>ZENOS Images</h2><p>Open a picture or drop it here · JPEG, PNG, WebP, GIF, SVG</p><button class="btn" id="eopen">Open images…</button></div>
+   <h2>ZENOS Images</h2><p>Open a picture or drop it here · JPEG, PNG, WebP, GIF, SVG</p><div style="display:flex;gap:10px"><button class="btn" id="eopen">Open images…</button><button class="btn2" id="elib" onclick="window.__zstudio&&__zstudio.openLib(true)">Music and pictures library</button></div></div>
   <button class="arrow glass" id="prev" title="Previous (←)" style="display:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M14.5 6l-6 6 6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <button class="arrow glass" id="next" title="Next (→)" style="display:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9.5 6l6 6-6 6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <div id="film" class="glass" style="display:none"></div>
@@ -358,5 +358,7 @@ addEventListener('resize',()=>{if(editing)fitEdit();});
 // rotating while editing starts the layout over (boxes are measured on the rotated picture)
 $('brot').addEventListener('click',()=>{if(editing){spec.crop=null;spec.regions=[];spec.focus=null;focusRect=null;fg=[];bg=[];spec.rot=rot;refresh(true);}},false);
 addEventListener('keydown',e=>{if(e.target.closest&&e.target.closest('input'))return;if(idx<0)return;const k=e.key.toLowerCase();if(k==='e'){editing?leaveEdit():enterEdit();}else if(!editing&&k==='p')setFlag('pick');else if(!editing&&k==='x')setFlag('rej');else if(editing&&k==='escape')leaveEdit();});
-if(Z.init.file)setFiles([Z.init.file],true);
-</script></body></html>
+if(Z.init.file&&isImg(Z.init.file.name))setFiles([Z.init.file],true);
+// the Library and Studio (studio.js) open a picture here for editing
+window.__zopenImage=f=>{['zlib','zstu'].forEach(i=>{const e=$(i);if(e)e.classList.remove('on');});const b=$('blib');if(b)b.classList.remove('on');setFiles([f],true).then(()=>setTimeout(()=>enterEdit(),250));};
+</script><script src="studio.js"></script></body></html>
