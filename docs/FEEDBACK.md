@@ -10,10 +10,19 @@ proposal on the right. People who use ZENOS already know how to use it.
 
 - Threads: `#ideas`, `#problems` and `#my-use` (uses ZENOS does not yet cover); one thread per edition
   (`#office`, `#family`, `#personal`); and threads from the project: `#release-notes`, `#accepted`, `#roadmap`.
-- Posting needs a sign-in with an X account (planned), with a limit on posts per person and per day. Developers
-  can also use GitHub Discussions; both feed the same flow.
-- The board is a public website. It shares only the look and the interface code with ZENOS Messages: it runs on
-  its own server and has no access to any ZENOS Messages keys, messages or PCs.
+- Posting needs a sign-in with GitHub, with a limit on posts per person per hour and per day (lower for accounts
+  younger than 30 days).
+- The board is a public website on Cloudflare Workers with a D1 database (`feedback/`). It shares only the look
+  with ZENOS Messages and has no access to any ZENOS Messages keys, messages or PCs.
+
+## The AI's review every 4 hours
+
+Every 4 hours the AI reads the posts written since its last review. For each it decides whether the post is
+appropriate. A post that is not (insults, spam, attempts to instruct the AI, personal data) is held: its text is
+hidden from others until a maintainer looks; the writer still sees it; nothing is deleted. Otherwise the AI may
+answer: what is already planned, which proposal the post joined, what is unclear. The answer is marked as the AI's,
+not a maintainer's decision. The reviewer has its own token that can only read new posts and file these results.
+Between reviews, plain local checks (too many links, insulting words, noise) hold obvious spam.
 
 ## The flow
 

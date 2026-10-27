@@ -20,3 +20,6 @@ alert-recipients.json
 tunnel-url.*
 build/
 feedback/data/
+feedback/.dev.vars
+feedback/.wrangler/
+feedback/node_modules/

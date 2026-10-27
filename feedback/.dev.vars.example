@@ -1,0 +1,4 @@
+TEST_SIGNIN=1
+PUBLIC_URL=http://localhost:8787
+ADMIN_TOKEN=local-admin-token
+REVIEW_TOKEN=local-review-token

@@ -17,13 +17,13 @@ Checked 2026-10-27. Sources are the primary pages linked; "unconfirmed" means no
 |---|---|---|
 | Domain | Cloudflare Registrar (at-cost) | one .org fee a year (price on Cloudflare's page at checkout) |
 | Website (`site/`) | Cloudflare Pages | free |
-| Feedback board (`feedback/`) | small VPS: Sakura VPS Tokyo 512 MB, or Fly.io shared-cpu-1x | ¥698/month, or about $2.19/month |
+| Feedback board (`feedback/`) | Cloudflare Workers + D1 (free plan: 100,000 requests/day, 5 GB) | free |
 | Mail on the domain (for the GitHub account) | Cloudflare Email Routing (receive and forward only) | free |
-| Sign in with X | an X developer app | tier and cost unconfirmed |
-| AI review of posts | a model through `FEEDBACK_AI_CMD` (e.g. the Claude API) | per use; off until approved |
+| Sign in | GitHub OAuth app | free |
+| AI review every 4 hours | a scheduled task in the existing Claude plan, through the reviewer endpoints | no extra cost |
 
 Order: register the domain → Email Routing (address → personal inbox) → create the GitHub organization with that
-address → push the repository → Pages for `site/` → VPS for `feedback/` with HTTPS → DNS.
+address → push the repository → Pages for `site/` → Worker + D1 for `feedback/` (feedback/README.md) → DNS.
 
 ## Filings
 

@@ -32,17 +32,17 @@ async function loadState() {
       h("i", {}, icon), t.id, h("span", { cls: "n" + (t.count ? "" : " z") }, t.count)));
   }
   const M = $("mebox"); M.replaceChildren();
-  if (S.me) M.append(avatar(S.me.handle), h("div", {}, h("b", {}, S.me.handle), h("span", {}, S.me.via === "X" ? "Signed in with X" : "Test sign-in (this machine)")),
+  if (S.me) M.append(avatar(S.me.handle), h("div", {}, h("b", {}, S.me.handle), h("span", {}, S.me.via === "GitHub" ? "Signed in with GitHub" : "Test sign-in (local)")),
     h("button", { cls: "out", on: { click: async () => { await post("/auth/out"); render(); } } }, "Sign out"));
   else M.append(signinBox());
 }
 function signinBox() {
-  if (S.signin === "x") return h("button", { cls: "signin", on: { click: () => { location.href = "/auth/x/start"; } } }, "Sign in with X");
+  if (S.signin === "github") return h("button", { cls: "signin", on: { click: () => { location.href = "/auth/github/start"; } } }, "Sign in with GitHub");
   const inp = h("input", { placeholder: "Test handle", maxlength: "15", style: "flex:1;min-width:0" });
   const go = async () => { if (!inp.value.trim()) return inp.focus(); await post("/auth/test", { handle: inp.value.trim() }); render(); };
   inp.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
   return h("div", { style: "display:flex;flex-direction:column;gap:6px;width:100%" },
-    h("span", { style: "font-size:11px;color:var(--t-mute)" }, "X sign-in is not set up yet. Test sign-in works on this machine only."),
+    h("span", { style: "font-size:11px;color:var(--t-mute)" }, "Local development: test sign-in. The public board uses GitHub sign-in."),
     h("div", { style: "display:flex;gap:6px" }, inp, h("button", { cls: "send", on: { click: go } }, "Sign in")));
 }
 
@@ -75,7 +75,7 @@ function repliesEl(p) {
   });
   return box;
 }
-function need() { const e = $("perr"); if (e) e.textContent = S.signin === "x" ? "Sign in with X to post (bottom left)." : "Use the test sign-in (bottom left) to post."; }
+function need() { const e = $("perr"); if (e) e.textContent = S.signin === "github" ? "Sign in with GitHub to post (bottom left)." : "Use the test sign-in (bottom left) to post."; }
 
 async function render() {
   await loadState();

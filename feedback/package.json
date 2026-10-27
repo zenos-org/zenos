@@ -1,0 +1,13 @@
+{
+  "name": "zenos-feedback",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "test": "node test.cjs",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.153.0"
+  }
+}

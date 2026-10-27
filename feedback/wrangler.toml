@@ -1,0 +1,23 @@
+# ZENOS Feedback on Cloudflare Workers (free plan). Setup: README.md in this folder.
+name = "zenos-feedback"
+main = "src/worker.js"
+compatibility_date = "2026-10-01"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "zenos-feedback"
+database_id = "REPLACE_AFTER_wrangler_d1_create"
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[vars]
+PUBLIC_URL = "https://feedback.zenos-os.org"
+REVIEW_HOURS = "4"
+PER_HOUR = "5"
+PER_DAY = "20"
+# secrets (wrangler secret put): GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, ADMIN_TOKEN, REVIEW_TOKEN
