@@ -196,6 +196,18 @@ if [ -f /etc/default/grub ]; then
 fi
 EOF
 chmod +x config/hooks/live/0950-zenos-plymouth.hook.chroot
+# no XEmbed tray bridge: it parks legacy tray icons (fcitx5's) in a window at the top-left corner, which shows as a
+# black square whenever the desktop runs without compositing (virtual machines, some GPUs). ZENOS apps use the
+# notifier tray (SNI); fcitx5 shows there too.
+cat > config/hooks/live/0960-zenos-no-xembed.hook.chroot <<'EOF'
+#!/bin/sh
+set -e
+systemctl --global mask plasma-xembedsniproxy.service
+if [ -f /etc/xdg/autostart/xembedsniproxy.desktop ]; then
+  grep -q '^Hidden=true' /etc/xdg/autostart/xembedsniproxy.desktop || echo 'Hidden=true' >> /etc/xdg/autostart/xembedsniproxy.desktop
+fi
+EOF
+chmod +x config/hooks/live/0960-zenos-no-xembed.hook.chroot
 mkdir -p config/includes.chroot/etc/calamares/modules
 printf -- '---\nplymouth_theme: zenos\n' > config/includes.chroot/etc/calamares/modules/plymouthcfg.conf
 
