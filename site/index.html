@@ -28,7 +28,7 @@ nav .wrap{display:flex;align-items:center;gap:28px;height:68px}
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 20px;border-radius:8px;font-size:15px;font-weight:600;color:var(--t);text-decoration:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);white-space:nowrap}
 .btn:hover{background:rgba(255,255,255,.14)}.btn.p{background:var(--acc);border-color:var(--acc)}.btn.p:hover{background:#8B4CF7}
 .menu{display:none;margin-left:auto;background:none;border:0;color:var(--t);font-size:22px;min-width:44px;min-height:44px;cursor:pointer}
-section{padding:96px 0}section.alt{background:rgba(255,255,255,.02)}section.tint{background:rgba(155,59,239,.06)}
+section{padding:96px 0}.hero{padding-top:110px}section.alt{background:rgba(255,255,255,.02)}section.tint{background:rgba(155,59,239,.06)}
 .eyebrow{font-size:13px;font-weight:600;letter-spacing:.08em;color:var(--eyebrow);text-transform:uppercase;margin:0 0 16px}
 h1{font-size:64px;line-height:1.08;letter-spacing:-.02em;color:var(--t);margin:24px 0}
 h2{font-size:40px;line-height:1.15;letter-spacing:-.01em;color:var(--t);margin:0 0 20px;max-width:900px}
@@ -53,7 +53,7 @@ h2{font-size:40px;line-height:1.15;letter-spacing:-.01em;color:var(--t);margin:0
 footer{border-top:1px solid var(--line);padding:40px 0;font-size:13px;color:#8A8A96}footer a{color:#C9CCD3}
 @media(max-width:1000px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr 1fr}h1{font-size:48px}.flow{flex-direction:column}.flow .arr{width:auto;height:28px;transform:rotate(90deg)}}
 @media(max-width:860px){.links,.navgh{display:none}.menu{display:block}nav.open .links{display:flex;position:absolute;top:68px;left:0;right:0;flex-direction:column;gap:0;background:#0B0B0F;border-bottom:1px solid var(--line);padding:8px 16px 16px}nav.open .links a{padding:12px 4px;font-size:16px}}
-@media(max-width:640px){section{padding:64px 0}.wrap{padding:0 16px}h1{font-size:36px}h2{font-size:28px}.lead{font-size:16px}.g2,.g3,.g4{grid-template-columns:1fr}.ctas .btn{flex:1 1 100%}}
+@media(max-width:640px){section{padding:64px 0}.hero{padding-top:28px}.wrap{padding:0 16px}h1{font-size:36px}h2{font-size:28px}.lead{font-size:16px}.g2,.g3,.g4{grid-template-columns:1fr}.ctas .btn{flex:1 1 100%}}
 </style>
 </head>
 <body>
@@ -64,7 +64,7 @@ footer{border-top:1px solid var(--line);padding:40px 0;font-size:13px;color:#8A8
 <button class="menu" id="menu" aria-label="Menu" aria-expanded="false">☰</button>
 </div></nav>
 <main id="top">
-<section style="padding-top:110px"><div class="wrap">
+<section class="hero"><div class="wrap">
 <span class="pill">Developer Preview · not yet for real classified data</span>
 <h1>An operating system that protects data by how it works — and that anyone can use.</h1>
 <p class="lead">Every file carries a level. Opening it above your level needs approval from people you trust, signed on their own devices. Anything that looks like a leak stops the machine. The core decisions are proven mathematically, and the whole system is open source.</p>
