@@ -63,6 +63,13 @@ theorem mayFlow_iff {pm src : Nat} {s : Sink} : mayFlow pm src s = true ↔ src 
 theorem sinkLevel_le_cap (pm : Nat) (s : Sink) : sinkLevel pm s ≤ hardCap s := by
   cases s <;> simp [sinkLevel, hardCap] <;> omega
 
+/-- A higher level never reaches a place a lower level cannot: what is refused at one level stays refused above it.
+    zenos-aiguard relies on this when it goes by the highest level opened on the PC. -/
+theorem mayFlow_antitone {pm a b : Nat} {s : Sink} (hab : a ≤ b) (h : mayFlow pm b s = true) :
+    mayFlow pm a s = true := by
+  rw [mayFlow_iff] at h ⊢
+  omega
+
 /-- Content never goes above a place's ceiling (except public content). -/
 theorem flow_within_cap {pm src : Nat} {s : Sink} (h : mayFlow pm src s = true) : src ≤ 1 ∨ src ≤ hardCap s := by
   simp only [mayFlow, Bool.or_eq_true, decide_eq_true_eq] at h

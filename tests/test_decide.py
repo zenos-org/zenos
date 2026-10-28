@@ -140,7 +140,7 @@ class KeydStop(unittest.TestCase):
         import base64, json, tempfile
         with tempfile.TemporaryDirectory() as d:
             env = {"ZENOS_KEYD_KEYS": d + "/keys", "ZENOS_CLEARANCE": d + "/clearance", "ZENOS_APPROVERS": d + "/appr",
-                   "ZENOS_HALT": d + "/halt.json", "ZENOS_KEYD_LOG": d + "/keyd.jsonl",
+                   "ZENOS_HALT": d + "/halt.json", "ZENOS_EXPOSED": d + "/exposed.json", "ZENOS_KEYD_LOG": d + "/keyd.jsonl",
                    "ZENOS_KEYD_LEDGER": d + "/ledger.jsonl"}
             os.environ.update(env)
             sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../system/sbin"))

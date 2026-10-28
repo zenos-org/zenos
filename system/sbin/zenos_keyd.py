@@ -37,6 +37,8 @@ SOCK = os.environ.get("ZENOS_KEYD_SOCK", "/run/zenos/keyd.sock")
 LOG = Path(os.environ.get("ZENOS_KEYD_LOG", "/var/log/zenos/keyd.jsonl"))
 LEDGER = os.environ.get("ZENOS_KEYD_LEDGER", "/var/log/zenos/access-ledger.jsonl")
 HALT = Path(os.environ.get("ZENOS_HALT", "/var/lib/zenos/halt.json"))      # written by zenos-guardd
+EXPOSED = Path(os.environ.get("ZENOS_EXPOSED", "/run/zenos/exposed.json"))  # read by zenos-aiguard
+AIGUARD_SOCK = os.environ.get("ZENOS_AIGUARD_SOCK", "/run/zenos/aiguard.sock")
 MAGIC = b"ZENOS1\n"
 LABEL = {1: "Public", 2: "Confidentiality 2", 3: "Confidentiality 3",
          4: "Important Economic Security Information", 5: "Specially Designated Secret"}
@@ -184,6 +186,48 @@ def grant_facts(g):
         return None
 
 
+EXPOSE_LOCK = threading.Lock()
+
+
+def expose(level):
+    """Record that content of `level` is now in plaintext on this PC (the highest level since boot), and, when that
+    takes an AI out of reach (L3 and above), wait for zenos-aiguard to confirm its packet-filter rules first.
+    False: the guard is installed but did not confirm, so the file must stay closed."""
+    with EXPOSE_LOCK:
+        try:
+            cur = int(json.loads(EXPOSED.read_text())["level"])
+        except FileNotFoundError:
+            cur = 0
+        except Exception:
+            cur = 5
+        if level > cur:
+            EXPOSED.parent.mkdir(parents=True, exist_ok=True)
+            tmp = EXPOSED.with_name(EXPOSED.name + ".tmp")
+            tmp.write_text(json.dumps({"level": level, "t": time.time()}))
+            os.chmod(tmp, 0o644)
+            os.replace(tmp, EXPOSED)
+        if level < 3:
+            return True
+        if not os.path.exists(AIGUARD_SOCK):
+            return True                      # the guard is not installed (development layout)
+        try:
+            s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            s.settimeout(10)
+            s.connect(AIGUARD_SOCK)
+            s.sendall(b'{"op": "sync"}\n')
+            buf = b""
+            while not buf.endswith(b"\n"):
+                c = s.recv(4096)
+                if not c:
+                    break
+                buf += c
+            s.close()
+            a = json.loads(buf or b"{}")
+            return a.get("ok") is True and int(a.get("level", 0)) >= level
+        except Exception:
+            return False
+
+
 def handle(msg, uid):
     user = pwd.getpwuid(uid).pw_name
     op = msg.get("op")
@@ -221,6 +265,11 @@ def handle(msg, uid):
                 return {"ok": False, "error": "halted",
                         "message": "This PC is stopped after an anomaly. Nothing can be opened until the release is approved."}
             return {"ok": False, "error": "level", "message": f"This file is L{level}; your clearance is L{cl}."}
+        if not expose(level):
+            log(event="unseal-refused", user=user, level=level, clearance=cl, name=h.get("name"), sha256=fh[:16],
+                reason="aiguard")
+            return {"ok": False, "error": "aiguard",
+                    "message": "The AI guard did not confirm its network rules, so this file stays closed. Try again in a moment."}
         data = unseal(h, hb, ct)
         log(event="unseal", user=user, level=level, by=how, name=h.get("name"), sha256=fh[:16])
         return {"ok": True, "header": h, "data": base64.b64encode(data).decode()}

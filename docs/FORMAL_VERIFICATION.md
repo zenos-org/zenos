@@ -30,6 +30,7 @@ zenos-webview) and keyd's clipboard ask it; the launcher's AI table is checked a
 |---|---|
 | `no_write_down` | Content of a level reaches only folders and windows of that level or higher (public content excepted). |
 | `flow_within_cap` | No place ever holds more than its ceiling: clipboard L2, printer L4, external AI L2, government AI L3, whatever the configuration says. |
+| `mayFlow_antitone` | A higher level never reaches a place a lower level cannot. The AI guard relies on it: it goes by the highest level opened on the PC, so it may block more than a request needed, never less. |
 | `l3_stays_inside` | L3 and above never reach the system clipboard or an AI outside the government. |
 | `l4_ministry_ai_only` | L4 and above reach no AI but the ministry's own. |
 | `l5_stays` | Specially Designated Secrets (L5) are never printed and leave the L5 places only for the ministry's AI. |

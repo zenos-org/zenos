@@ -1,0 +1,13 @@
+[Unit]
+Description=ZENOS AI guard (keeps AI services above the exposed level out of reach, in the packet filter)
+After=network.target zenos-firewall.service
+Before=zenos-keyd.service display-manager.service
+
+[Service]
+ExecStart=/usr/bin/python3 -I /usr/sbin/zenos_aiguard.py
+Restart=always
+RestartSec=1
+UMask=0022
+
+[Install]
+WantedBy=multi-user.target

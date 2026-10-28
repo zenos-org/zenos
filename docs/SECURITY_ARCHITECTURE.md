@@ -15,6 +15,9 @@
 - ZENOS_IN   : inbound. Owner: zenos-firewall. lo RETURN; ESTABLISHED,RELATED RETURN; new non-lo DROP.
 - ZENOS_OUT  : egress reflex. Owner: netsentinel. Per-incident DROP of a destination.
 - ZENOS_OPEN : open-time cut. Owner: zenos_openguard. lo RETURN; ESTABLISHED,RELATED RETURN; else DROP.
+- ZENOS_AI   : level-gated AI. Owner: zenos_aiguard. REJECT (tcp-reset) to every address of an AI service the flow
+               decision refuses for the highest level unsealed on the PC; rebuilt atomically (iptables-restore), re-hooked
+               within 2 s if removed.
 Rule: each chain is inserted/removed only by its owner. No module touches another's chain.
 
 ## Open sequence (fixed order)

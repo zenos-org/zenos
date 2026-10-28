@@ -11,6 +11,37 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 DIST = os.path.join(os.path.abspath(sys.argv[1]), 'dist')
 HOST = '127.0.0.1'
 PORT = int(sys.argv[2])
+GUARD_SOCK = os.environ.get('ZENOS_AIGUARD_SOCK', '/run/zenos/aiguard.sock')
+KEYD_SOCK = os.environ.get('ZENOS_KEYD_SOCK', '/run/zenos/keyd.sock')
+
+
+def guard_check(url):
+    """Ask zenos-aiguard whether this AI may be reached now (it also learns the address, so the packet filter covers
+    it from then on). The packet filter is what enforces it; this is so the user gets a clear answer."""
+    import socket
+    if not os.path.exists(GUARD_SOCK):
+        if os.path.exists(KEYD_SOCK):       # installed system: the guard must answer
+            return False, 'The AI guard (zenos-aiguard) is not running, so no AI can be used.'
+        return True, ''                     # development layout without the root services
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.settimeout(15)
+        s.connect(GUARD_SOCK)
+        s.sendall((json.dumps({'op': 'check', 'url': url}) + '\n').encode())
+        buf = b''
+        while not buf.endswith(b'\n'):
+            c = s.recv(65536)
+            if not c:
+                break
+            buf += c
+        s.close()
+        a = json.loads(buf or b'{}')
+    except Exception:
+        return False, 'The AI guard did not answer, so no AI can be used right now.'
+    return a.get('allow') is True, a.get('message') or ''
+
+
+ANTHROPIC = 'https://api.anthropic.com'
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -57,6 +88,11 @@ class Handler(SimpleHTTPRequestHandler):
         messages = body.get('messages') or []
         if not key:
             return self._json(400, {'error': 'No AI is set up yet (register a key first).'})
+        if provider != 'anthropic' and not base:
+            return self._json(400, {'error': 'Enter an OpenAI-compatible endpoint (/v1).'})
+        ok, why = guard_check(base or ANTHROPIC if provider == 'anthropic' else base)
+        if not ok:
+            return self._json(403, {'error': why})
 
         try:
             if provider == 'anthropic':
@@ -92,7 +128,7 @@ class Handler(SimpleHTTPRequestHandler):
         return data['choices'][0]['message']['content']
 
     def _anthropic(self, base, key, model, messages, body):
-        base = base or 'https://api.anthropic.com'
+        base = base or ANTHROPIC
         system = '\n'.join(m.get('content', '') for m in messages if m.get('role') == 'system')
         conv = [
             {'role': m.get('role'), 'content': m.get('content', '')}

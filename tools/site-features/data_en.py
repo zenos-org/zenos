@@ -94,7 +94,7 @@ P["content-flow"] = dict(
     table=dict(eyebrow="Ceilings", title="The highest level each place may hold", rows=[["The system clipboard", "L2"], ["An AI outside the government", "L2"], ["The government's own AI", "L3"], ["The printer (policy default: L3)", "L4"], ["The ministry's own AI", "L5"], ["Folders and windows", "Their own level"]], note="L3 and above never reach the system clipboard or an AI outside the government. L4 and above reach no AI but the ministry's own."),
     provenTitle="Six theorems about where content goes",
     proven=["Content of a level reaches only folders and windows of that level or higher", "No place ever holds more than its ceiling, whatever the configuration says", "L3 and above never reach the system clipboard or an AI outside the government", "L5 is never printed", "Moving a copy hop by hop never lowers its level"],
-    trusted=["Which AI may see a level is enforced in the launcher and the apps, not yet at the network or process level", "Programs outside the ZENOS apps", "A camera pointed at the screen"],
+    trusted=["For AI, the packet filter goes by the highest level opened on the PC, and covers only the AI services ZENOS has been told about", "Programs outside the ZENOS apps", "A camera pointed at the screen"],
     tryit=[["Open an L4 sheet", "From the Red folder, with clearance or an approval."], ["Try to copy it out", "Ctrl+C leaves the clipboard unchanged. Paste into another L4 window works."], ["Try to print it", "Above the policy line, printing is refused and recorded."]],
     links=[["Download the preview", REL], ["Read the proofs", PROOFS], ["Read the source", GH + "formal/ZenosFormal/Flow.lean"], ["Threat model", THREAT]])
 P["ledger"] = dict(
@@ -165,14 +165,14 @@ P["ai"] = dict(
     h1="Use AI on sensitive work, without it leaving your organization.",
     lead="Connect your organization's own AI through its API: a government AI on its own cloud, a company's AI, or a model on your own machines. Documents, Sheets and Slides then work with it on every PC, and the higher levels go only to that AI, never to an outside service.",
     stats=[["Stays inside", "L3 and above go only to your own organization's AI"], ["No lock-in", "ZENOS bundles no model, so you pick the AI and can change it"], ["L2", "the highest level an AI outside the government may see"]],
-    howTitle="Connect, check, keep inside",
+    howTitle="Connect, check, block",
     how=[["Connect", "In Documents, Sheets and Slides, register an OpenAI-compatible endpoint (a cloud service, a gateway or a model on your own machine) or Anthropic, with your own API key. A government or ministry connects its own AI the same way.", ["The key is stored encrypted on the device, behind an AI password", "Until you register one, ZENOS connects to no AI at all"]],
          ["Check", "Before a file goes to an AI, the same proven rule that guards the clipboard and printer decides whether that AI may hold its level.", ["External AI: up to L2", "The government's AI: up to L3", "L4 and above: only the ministry's own AI"]],
-         ["Cut", "While an L4 or higher file is open, new outbound connections are cut, so no outside AI can be reached at all.", []]],
+         ["Block in the network", "Once an L3 file has been opened, the packet filter rejects every outside AI for every program on the PC, not only the ZENOS apps. From L4, only the ministry's own AI stays reachable, and new outbound connections are cut while the file is open.", ["The key agent waits for the rule before it opens the file", "If the decision cannot be had, the answer is block"]]],
     extra=dict(eyebrow="For governments and companies", text="With a government AI on the government's own cloud, or a company's own AI, every PC can draft documents, build spreadsheets and make slides with AI, while files at the higher levels never go to an outside service. Lower-level, everyday files can still use any AI you allow."),
     provenTitle="What is proved, and what is not yet",
-    proven=["No AI ever holds more than its ceiling, whatever the configuration says", "L3 and above never reach an AI outside the government", "L4 and above reach no AI but the ministry's own"],
-    trusted=["Today the rule is enforced in the launcher and the apps, not yet at the network or process level", "The AI service you connect, and what it does with what it receives"],
+    proven=["No AI ever holds more than its ceiling, whatever the configuration says", "L3 and above never reach an AI outside the government", "L4 and above reach no AI but the ministry's own", "A higher level never makes an AI reachable that a lower one blocks"],
+    trusted=["The packet filter goes by the highest level opened on the PC since it started, not by each request; an AI reached at an address ZENOS was never told about is ordinary outbound traffic", "The AI service you connect, and what it does with what it receives"],
     links=[["Download the preview", REL], ["Read the proofs", PROOFS], ["Read the source", GH + "apps/common/zoffice_server.py"], ["Threat model", THREAT]])
 P["storage"] = dict(
     name="Distributed storage", tags=["Testing"],
