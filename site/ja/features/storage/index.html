@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>分散保管 — ZENOS</title>
+<meta name="description" content="封印されたファイルは、ファイルごとの鍵でもう一度暗号化され、五つの断片に分けられて、認証された保管ノードに散らばります。そのうち三つあれば元に戻せます。どのノードも平文を見ることはありません。">
+<meta property="og:title" content="分散保管 — ZENOS">
+<meta property="og:description" content="封印されたファイルは、ファイルごとの鍵でもう一度暗号化され、五つの断片に分けられて、認証された保管ノードに散らばります。そのうち三つあれば元に戻せます。どのノードも平文を見ることはありません。">
+<meta property="og:image" content="https://zenos-os.org/img/desktop.png">
+<meta property="og:url" content="https://zenos-os.org/ja/features/storage/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" hreflang="en" href="https://zenos-os.org/features/storage/">
+<link rel="alternate" hreflang="ja" href="https://zenos-os.org/ja/features/storage/">
+<link rel="icon" href="/img/logo.svg">
+<link rel="stylesheet" href="/features.css">
+</head>
+<body class="lang-ja">
+<nav id="nav"><div class="wrap"><a class="logo" href="/ja/"><img src="/img/logo.svg" alt="">ZENOS</a><div class="links"><a href="/ja/#vision">考え方</a><a href="/ja/features/" aria-current="page">機能</a><a href="/ja/#editions">エディション</a><a href="https://feedback.zenos-os.org">ボード</a><a href="/ja/#status">現状</a><a href="/ja/#download">ダウンロード</a><a class="lang" href="/features/storage/" hreflang="en">English</a></div><a class="btn navgh" href="https://github.com/zenos-org/zenos">GitHub →</a><button class="menu" id="menu" aria-label="Menu" aria-expanded="false">☰</button></div></nav><main><section class="hero"><div class="wrap"><p class="crumb"><a href="/ja/features/">機能</a> / 分散保管</p><div class="tags"><span class="tag t-warn">試験中</span></div><h1>ファイル全体を持つ機械は一台もない。一か所を失っても、何も失わない。</h1><p class="lead">封印されたファイルは、ファイルごとの鍵でもう一度暗号化され、五つの断片に分けられて、認証された保管ノードに散らばります。そのうち三つあれば元に戻せます。どのノードも平文を見ることはありません。</p><div class="grid g3 stats"><div class="card"><b>5 つのうち 3 つ</b><p>の断片があれば、ファイルを元に戻せる</p></div><div class="card"><b>0</b><p>どの保管ノードにも平文はない</p></div><div class="card"><b>一か所</b><p>を丸ごと失っても、ファイルは失われない</p></div></div></div></section><section><div class="wrap"><p class="eyebrow">どう動くのか</p><h2>分ける、認証する、直す</h2><div class="grid g3"><div class="card step"><span class="num">1</span><h3>分ける</h3><p>消失訂正の符号で、ファイルを五つの暗号化された断片にします。一つの区画には、失っても大丈夫な数までしか置きません。</p></div><div class="card step"><span class="num">2</span><h3>認証する</h3><p>ノードと PC は、グリッドの管理者が出した証明書を持ちます。ノードは認証のない相手には何も答えず、ファイルは求めた人の許可レベルまでしか渡しません。</p><ul class="dots"><li>届いた断片は、すべてハッシュで確かめます</li></ul></div><div class="card step"><span class="num">3</span><h3>直す</h3><p>失われた断片は、鍵なしで、暗号化されたまま作り直します。取り消した鍵の一覧は、ノードからノードへ広がります。</p></div></div></div></section><section><div class="wrap"><p class="eyebrow">証明していること、していないこと</p><h2>テストしていること、信頼しているもの</h2><div class="grid g2"><div class="card"><span class="tag t-ok">テスト済み</span><h3>実際の機械でテスト</h3><ul class="dots"><li>一台の機械の上の認証済みグリッドで、毎回のビルドごとに</li><li>パッケージにしたサービスを、二台の機械で</li><li>ノードは、自分の許可より上のレベルを受け取らない</li></ul></div><div class="card"><span class="tag t-warn">証明ではなく信頼しているもの</span><h3>テストし、一覧にして公開</h3><ul class="dots"><li>グリッドの管理者の鍵はファイルで、まだハードウェアのトークンではない</li><li>取り消された相手は、一覧が届くまでのあいだ使える</li><li>ノードは、認証済みの相手からの問い合わせの回数をまだ制限していない</li></ul></div></div></div></section><section class="tight"><div class="wrap"><div class="ctas"><a class="btn p" href="https://github.com/zenos-org/zenos/tree/main/storage">ソースを読む</a><a class="btn" href="https://github.com/zenos-org/zenos/blob/main/docs/THREAT_MODEL.md">脅威モデル（英語）</a></div><div class="pager"><a href="/ja/features/">← 機能の一覧</a><a class="nx" href="/ja/features/studio/">次へ: Studio →</a></div></div></section></main><footer><div class="wrap">ZENOS · zenos-os.org · Apache-2.0（メッセンジャーは AGPL-3.0） · <a href="https://github.com/zenos-org/zenos">github.com/zenos-org/zenos</a> · セキュリティの問題は非公開で報告してください：<a href="https://github.com/zenos-org/zenos/blob/main/SECURITY.md">SECURITY.md</a><br>ZENOS は Debian を土台にし、KDE Plasma を使っています。Debian および KDE とは提携しておらず、承認も受けていません。</div></footer><script>
+const n=document.getElementById('nav'),m=document.getElementById('menu');
+m.addEventListener('click',()=>{const o=n.classList.toggle('open');m.setAttribute('aria-expanded',o)});
+</script>
+</body>
+</html>
