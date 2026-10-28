@@ -201,11 +201,14 @@ def expose(level):
         except Exception:
             cur = 5
         if level > cur:
-            EXPOSED.parent.mkdir(parents=True, exist_ok=True)
-            tmp = EXPOSED.with_name(EXPOSED.name + ".tmp")
-            tmp.write_text(json.dumps({"level": level, "t": time.time()}))
-            os.chmod(tmp, 0o644)
-            os.replace(tmp, EXPOSED)
+            try:
+                EXPOSED.parent.mkdir(parents=True, exist_ok=True)
+                tmp = EXPOSED.with_name(EXPOSED.name + ".tmp")
+                tmp.write_text(json.dumps({"level": level, "t": time.time()}))
+                os.chmod(tmp, 0o644)
+                os.replace(tmp, EXPOSED)
+            except OSError:
+                return level < 3             # unrecorded: from L3 the file stays closed
         if level < 3:
             return True
         if not os.path.exists(AIGUARD_SOCK):

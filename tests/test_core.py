@@ -191,7 +191,8 @@ class KeyAgent(unittest.TestCase):
         d = TMP / "keyd"
         d.mkdir()
         os.environ.update(ZENOS_KEYD_KEYS=str(d / "keys"), ZENOS_CLEARANCE=str(d / "clearance"), ZENOS_APPROVERS=str(d / "approvers"),
-                          ZENOS_KEYD_LOG=str(d / "keyd.jsonl"), ZENOS_KEYD_LEDGER=str(d / "ledger.jsonl"))
+                          ZENOS_KEYD_LOG=str(d / "keyd.jsonl"), ZENOS_KEYD_LEDGER=str(d / "ledger.jsonl"),
+                          ZENOS_EXPOSED=str(d / "exposed.json"), ZENOS_AIGUARD_SOCK=str(d / "aiguard.sock"))
         import importlib, zenos_keyd
         cls.K = importlib.reload(zenos_keyd)
         cls.K.ensure_keys()
