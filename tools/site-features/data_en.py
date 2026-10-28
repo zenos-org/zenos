@@ -1,4 +1,4 @@
-REL = "https://github.com/zenos-org/zenos/releases/tag/v0.1.0-preview"
+REL = "https://github.com/zenos-org/zenos/releases/tag/v0.1.1-preview"
 GH = "https://github.com/zenos-org/zenos/blob/main/"
 GT = "https://github.com/zenos-org/zenos/tree/main/"
 PROOFS = GH + "docs/FORMAL_VERIFICATION.md"
@@ -11,7 +11,7 @@ OVERVIEW = {
     "title": "Features",
     "h1": "Protection built into the OS, one feature at a time.",
     "lead": "People everywhere are fixing code to stop attacks, and that work matters. ZENOS adds a layer at the level of the operating system, so that a weakness in one program does not become a leak. Each feature says how it works, what is proved, and what is not yet.",
-    "legend": ["Working today", "Proved in Lean 4", "Testing", "Next release"],
+    "legend": ["Working today", "Proved in Lean 4", "Testing"],
     "more": "Read more →",
 }
 
@@ -189,7 +189,7 @@ P["storage"] = dict(
     trusted=["The grid administrator's key is a file, not yet a hardware token", "A revoked peer keeps access until the list reaches the nodes it talks to", "Nodes do not yet limit how often a certified peer asks"],
     links=[["Read the source", GT + "storage"], ["Threat model", THREAT]])
 P["studio"] = dict(
-    name="Studio", tags=["Next release"],
+    name="Studio", tags=["Testing"],
     card="A music and picture library, trimming and picture-on-audio video, for the Personal and Family editions.",
     h1="A small studio for music and pictures, that only touches everyday files.",
     lead="For the Personal and Family editions: a library of your music and pictures, a trimmer with fades, a picture placed on a song, and one MP4 out. If you connect your own AI, it can turn the picture into a short moving clip.",

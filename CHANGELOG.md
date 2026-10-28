@@ -1,6 +1,27 @@
 # Changelog
 
-## 0.1.0 Developer Preview (unreleased)
+## 0.1.1 Developer Preview (2026-10-28)
+
+Still a preview for testing and evaluation. Do not use it for real sensitive data; see [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
+
+**System**
+- Level-gated AI is now also enforced in the packet filter (`zenos-aiguard`, root). The key agent records the
+  highest level unsealed on the PC and, from L3, waits for the guard to confirm its rules before it hands out the
+  plaintext. For every AI service the administrator lists in `/etc/zenos/ai.json` (external, government or
+  ministry AI) or the office apps are pointed at (always counted as external), the guard asks `zenos-decide` and
+  rejects the service's addresses in the `ZENOS_AI` chain wherever the flow decision says no, for every program on
+  the PC. No answer from the decision is a block. The level falls only on a restart or with
+  `sudo zenos_aiguard.py reset`.
+- The office apps' AI relay asks the guard before each request and shows its reason when an AI is out of reach.
+- Lean: `mayFlow_antitone` (a higher level never reaches a place a lower level cannot).
+
+**Apps**
+- Images: a Library (music, pictures, playlists, picture albums, Studio projects, made videos) and a Studio: trim
+  a song with fades, put a picture on it and export one MP4 (H.264 + AAC). Motion with AI sends one L1 picture and
+  the person's words to a video AI they registered under their own account; ZENOS ships no model. Only plain
+  files in L1 places are listed. `studio_ai = off` in `/etc/zenos/policy.conf` turns the AI part off.
+
+## 0.1.0 Developer Preview (2026-10-27)
 
 First public preview. Not for real classified data; see [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
 
