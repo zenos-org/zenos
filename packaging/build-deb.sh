@@ -54,7 +54,13 @@ cp -a "$SRC"/system/lib/. "$P/usr/lib/zenos/"
 cp -a "$SRC"/system/sbin/. "$P/usr/sbin/"
 chmod 755 "$P"/usr/sbin/*
 chmod 644 "$P/usr/sbin/zenos-netsense.bt"
-cp "$SRC"/system/systemd/*.service "$P/lib/systemd/system/"
+cp "$SRC"/system/systemd/*.service "$SRC"/system/systemd/*.timer "$P/lib/systemd/system/"
+# fewer ways into the kernel: sysctl settings and modules that are never loaded (docs/THREAT_MODEL.md)
+mkdir -p "$P/usr/lib/sysctl.d" "$P/usr/lib/modprobe.d"
+install -m 644 "$SRC/system/sysctl.d/60-zenos-hardening.conf" "$P/usr/lib/sysctl.d/60-zenos-hardening.conf"
+install -m 644 "$SRC/system/modprobe.d/zenos-blacklist.conf" "$P/usr/lib/modprobe.d/zenos-blacklist.conf"
+mkdir -p "$P/etc/default/grub.d"
+install -m 644 "$SRC/system/grub.d/zenos-hardening.cfg" "$P/etc/default/grub.d/zenos-hardening.cfg"
 
 echo "== decision program (formal/: Lean 4; the build checks every proof)"
 LAKE="${LAKE:-$(command -v lake || echo /opt/lean/lean-4.34.1-linux/bin/lake)}"
@@ -119,7 +125,7 @@ mkdir -p "$P/DEBIAN"
 SIZE=$(du -sk "$P" | cut -f1)
 sed -e "s/@VERSION@/$VER/" -e "s/@SIZE@/$SIZE/" "$SRC/packaging/debian/control.in" > "$P/DEBIAN/control"
 for s in postinst prerm postrm; do install -m 755 "$SRC/packaging/debian/$s" "$P/DEBIAN/$s"; done
-echo "/etc/zenos/zenos.conf" > "$P/DEBIAN/conffiles"
+printf '/etc/zenos/zenos.conf\n/etc/default/grub.d/zenos-hardening.cfg\n' > "$P/DEBIAN/conffiles"
 
 dpkg-deb --root-owner-group -Zxz --build "$P" "$OUT/zenos_${VER}_amd64.deb" >/dev/null
 ls -la "$OUT/zenos_${VER}_amd64.deb"

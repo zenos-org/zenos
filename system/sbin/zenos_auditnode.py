@@ -41,8 +41,19 @@ def canon(o):
     return json.dumps(o, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
 
 
+DAY = 86400
+
+
 def batch_digest(b):
     return hashlib.sha256(canon({"machine": b["machine"], "chain": b["chain"], "from": b["from"], "records": b["records"]})).digest()
+
+
+def status_digest(b):
+    return hashlib.sha256(canon({"machine": b["machine"], "status": b["status"]})).digest()
+
+
+def _vkey(s):
+    return [int(x) if x.isdigit() else x for x in re.split(r"(\d+)", str(s))]
 
 
 class Node:
@@ -123,6 +134,12 @@ class Node:
             if seen.exists() and seen.read_text().strip() == "silent":
                 self.alert("machine-back", machine=machine)
             seen.write_text(str(time.time()))
+            if isinstance(b.get("status"), dict):
+                try:
+                    Ed25519PublicKey.from_public_bytes(pk.read_bytes()).verify(base64.b64decode(b.get("status_sig", "")), status_digest(b))
+                    self.note_status(machine, b["status"])
+                except Exception:
+                    self.alert("bad-status-signature", machine=machine)
             held = self.held(machine, chain)
             n = len(held)
             if frm > n:
@@ -152,6 +169,36 @@ class Node:
             return 200, {"ok": True, "added": len(new), **self.receipt(machine, chain, count, prev)}
 
 
+    def note_status(self, machine, st):
+        """alert once when a protecting service stops or a kernel fix is waiting for a restart, and once more when
+        it is put right (or, for the kernel, when it has waited a day)"""
+        p = self.dir / "machines" / f"{machine}.status.json"
+        try:
+            old = json.loads(p.read_text())
+        except (OSError, ValueError):
+            old = {}
+        down = sorted(k for k, v in (st.get("services") or {}).items() if v != "active")
+        for svc in down:
+            if svc not in old.get("down", []):
+                self.alert("service-down", machine=machine, service=svc, state=st["services"][svc])
+        for svc in old.get("down", []):
+            if svc not in down:
+                self.alert("service-back", machine=machine, service=svc)
+        waiting = bool(st.get("reboot_required")) or (bool(st.get("kernel_newest")) and
+                                                      _vkey(st.get("kernel_newest")) > _vkey(st.get("kernel", "")))
+        since = old.get("fix_waiting_since")
+        if waiting and not since:
+            since = time.time()
+            self.alert("kernel-fix-not-applied", machine=machine, running=st.get("kernel"), installed=st.get("kernel_newest"))
+        elif waiting and since and not old.get("fix_day_alerted") and time.time() - since > DAY:
+            self.alert("kernel-fix-not-applied-24h", machine=machine, running=st.get("kernel"), installed=st.get("kernel_newest"))
+            old["fix_day_alerted"] = True
+        elif not waiting and since:
+            self.alert("kernel-fix-applied", machine=machine, running=st.get("kernel"))
+            since = None
+        p.write_text(json.dumps({"status": st, "down": down, "fix_waiting_since": since if waiting else None,
+                                 "fix_day_alerted": bool(old.get("fix_day_alerted")) and waiting}))
+
     def check_silence(self, limit):
         """a PC that stops reporting (switched off the network, shipping stopped) is itself a signal"""
         for p in (self.dir / "machines").glob("*.seen"):
@@ -159,7 +206,7 @@ class Node:
                 v = p.read_text().strip()
                 if v != "silent" and time.time() - float(v) > limit:
                     p.write_text("silent")
-                    self.alert("machine-silent", machine=p.stem, minutes=int(limit // 60))
+                    self.alert("machine-silent", machine=p.stem, seconds=int(limit))
             except (OSError, ValueError):
                 continue
 
@@ -309,10 +356,10 @@ def http_fetch(url, machine, chain, at, timeout=15):
         return json.loads(r.read())
 
 
-def serve(node, host, port, cert=None, key=None, silence=600, peers=(), check_every=120):
+def serve(node, host, port, cert=None, key=None, silence=90, peers=(), check_every=120):
     def watch():
         while True:
-            time.sleep(60)
+            time.sleep(max(5, min(60, silence / 3)))
             node.check_silence(silence)
     threading.Thread(target=watch, daemon=True).start()
 
@@ -406,7 +453,8 @@ def main():
     host = str(opt("--host", "0.0.0.0" if opt("--cert") else "127.0.0.1"))
     if host not in ("127.0.0.1", "::1", "localhost") and not opt("--cert"):
         sys.exit("Listening beyond this machine needs TLS: give --cert and --key.")
-    serve(node, host, int(opt("--port", "8443")), opt("--cert"), opt("--key"), int(opt("--silence-minutes", "10")) * 60,
+    silence = int(opt("--silence-seconds", 0) or 0) or int(opt("--silence-minutes", 0) or 0) * 60 or 90
+    serve(node, host, int(opt("--port", "8443")), opt("--cert"), opt("--key"), silence,
           peers=cfg.get("peers", []), check_every=int(cfg.get("check_seconds", 120)))
 
 

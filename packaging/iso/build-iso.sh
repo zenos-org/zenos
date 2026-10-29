@@ -18,7 +18,7 @@ lb config \
   --binary-images iso-hybrid --bootloaders "grub-efi,syslinux" \
   --iso-application "ZENOS" --iso-volume "ZENOS" --iso-publisher "The ZENOS Authors" \
   --image-name zenos \
-  --bootappend-live "boot=live components quiet splash username=zenos user-fullname=ZENOS hostname=zenos locales=en_US.UTF-8" \
+  --bootappend-live "boot=live components quiet splash username=zenos user-fullname=ZENOS hostname=zenos locales=en_US.UTF-8 lockdown=integrity" \
   --apt-recommends false \
   --memtest none
 

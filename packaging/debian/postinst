@@ -6,6 +6,9 @@ if [ "$1" = "configure" ]; then
     if [ -d /run/systemd/system ]; then
         systemctl daemon-reload || true
         systemd-tmpfiles --create zenos.conf || true     # /run/zenos 0755 before the services start
+        sysctl --system >/dev/null 2>&1 || true            # the kernel settings in /usr/lib/sysctl.d/60-zenos-hardening.conf
+        # kernel lockdown (/etc/default/grub.d/zenos-hardening.cfg) takes effect at the next start
+        if [ -f /etc/default/grub ] && command -v update-grub >/dev/null 2>&1; then update-grub >/dev/null 2>&1 || true; fi
     fi
     # clearances (which levels each user may open without an approval) are set by the administrator:
     #   sudo zenos_keyd.py --clearance <user> <1-5>      until then every user is cleared for L1 only
@@ -27,6 +30,8 @@ if [ "$1" = "configure" ]; then
         done
         systemctl try-restart zenos-auditship.service || true
     fi
+    systemctl enable zenos-restartwindow.timer >/dev/null 2>&1 || true
+    [ -d /run/systemd/system ] && systemctl start zenos-restartwindow.timer 2>/dev/null || true
     # per-user endpoint audit, for every user session
     systemctl --global enable zenos-secaudit.service zenos-livekit.service >/dev/null 2>&1 || true
     update-desktop-database -q /usr/share/applications 2>/dev/null || true

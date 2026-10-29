@@ -1,0 +1,6 @@
+[Unit]
+Description=ZENOS restart window (restart for a waiting kernel fix when nobody loses work)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I /usr/sbin/zenos_restartwindow.py

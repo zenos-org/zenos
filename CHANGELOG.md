@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.2 Developer Preview (2026-10-30)
+
+Still a preview for testing and evaluation. Do not use it for real sensitive data; see [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
+This release narrows the ways into the kernel. It does not yet stop someone who already has root from reading the
+sealing keys; that needs the off-PC key service planned for 0.2 (THREAT_MODEL, "If someone takes root on the PC").
+
+**System**
+- The kernel starts in lockdown "integrity" mode (live image and installed PCs, `/etc/default/grub.d/zenos-hardening.cfg`):
+  even root cannot load an unsigned module, write to kernel memory or replace the running kernel. Tested with the
+  network sentinel: its eBPF sensor still detects and cuts an outgoing send. A PC that needs an unsigned driver
+  (DKMS) removes the file and runs `update-grub`.
+- Kernel settings (`/usr/lib/sysctl.d/60-zenos-hardening.conf`): Multipath TCP off (the protocol of CVE-2026-98432),
+  io_uring off, unprivileged BPF off, BPF JIT hardening, kernel pointers and the kernel log hidden from users,
+  kexec off, ptrace limited to a program's own children, stricter link and file protections, no ICMP redirects or
+  source routing.
+- Rarely used network protocols (DCCP, SCTP, RDS, TIPC and others), old file systems and FireWire are no longer loaded.
+- `zenos-restartwindow`: when a kernel fix is installed but not running, the PC restarts by itself while nobody is
+  signed in (`kernel_restart = no-session`, the default), or only at night when every session has been idle for an
+  hour (`idle`), or never (`off`). Each restart and each held restart goes in the ledger.
+- Audit: each PC now sends a signed status with its batches (running and newest kernel, the watchers' state).
+  The audit node raises `service-down`, `kernel-fix-not-applied` (and after 24 hours) and reports a PC that
+  stops sending after 90 seconds instead of 10 minutes; batches are sent every 10 seconds.
+
 ## 0.1.1 Developer Preview (2026-10-28)
 
 Still a preview for testing and evaluation. Do not use it for real sensitive data; see [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).

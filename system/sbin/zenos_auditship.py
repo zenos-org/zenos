@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""ZENOS audit shipping (root): sends this PC's tamper-evident ledgers to the audit nodes, as they grow.
+"""ZENOS audit shipping (root): sends this PC's tamper-evident ledgers to the audit nodes, as they grow, every 10 seconds, with a
+signed status of the PC (kernel running and installed, protecting services running).
 
 Once a record has reached a node, rewriting it on this PC is detected there (the node refuses the changed history
 and raises an alert). Batches are signed with this PC's audit key (/etc/zenos/audit-device.key, root only); the
@@ -13,7 +14,7 @@ Configuration: /etc/zenos/audit.json
   zenos_auditship.py --show-key     the line to enroll this PC on a node
   zenos_auditship.py --once         ship once and exit
 """
-import base64, glob, hashlib, json, os, ssl, sys, time, urllib.request, urllib.error
+import base64, glob, hashlib, json, os, re, ssl, subprocess, sys, time, urllib.request, urllib.error
 from pathlib import Path
 from urllib.parse import urlparse
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
@@ -26,6 +27,36 @@ RECEIPTS = STATE.with_name("audit-receipts.jsonl")
 LOG = Path(os.environ.get("ZENOS_AUDIT_LOG", "/var/log/zenos/guard.jsonl"))
 DEFAULT_LEDGERS = {"guard": "/var/log/zenos/access-ledger.jsonl", "user-*": "/home/*/.local/share/zenos/ledger.jsonl"}
 BATCH = 500
+EVERY = float(os.environ.get("ZENOS_AUDIT_EVERY", "10"))   # seconds between shipments; the guard chain always sends
+WATCHED = ("zenos-keyd", "zenos-guardd", "zenos-aiguard", "zenos-netsentinel", "zenos-firewall")
+SIGNED = ("machine", "chain", "from", "records")
+
+
+def _vkey(s):
+    return [int(x) if x.isdigit() else x for x in re.split(r"(\d+)", s)]
+
+
+def status():
+    """what the audit nodes should see about this PC besides its ledger: the kernel running and the newest one
+    installed (a fix works only after a restart), and whether the protecting services are running"""
+    ks = [os.path.basename(p)[len("vmlinuz-"):] for p in glob.glob("/boot/vmlinuz-*")]
+    try:
+        r = subprocess.run(["systemctl", "is-active"] + [u + ".service" for u in WATCHED],
+                           capture_output=True, text=True, timeout=10).stdout.split()
+    except Exception:
+        r = []
+    r += ["unknown"] * (len(WATCHED) - len(r))
+    return {"t": int(time.time()), "kernel": os.uname().release, "kernel_newest": max(ks, key=_vkey) if ks else None,
+            "reboot_required": os.path.exists("/run/reboot-required"), "services": dict(zip(WATCHED, r[:len(WATCHED)]))}
+
+
+def sign(key, b):
+    """the batch signature covers what every audit node checks; the status has its own signature, so a node that
+    does not know about it yet still accepts the batch"""
+    b["sig"] = base64.b64encode(key.sign(hashlib.sha256(canon({k: b[k] for k in SIGNED})).digest())).decode()
+    if "status" in b:
+        b["status_sig"] = base64.b64encode(key.sign(hashlib.sha256(canon({"machine": b["machine"], "status": b["status"]})).digest())).decode()
+    return b
 
 
 def canon(o):
@@ -109,6 +140,7 @@ def post(url, body):
 
 
 def ship_once(c, key, state):
+    now = status()
     for node in c["nodes"]:
         try:
             npub = Ed25519PublicKey.from_public_bytes(base64.b64decode(node["pub"]))
@@ -126,7 +158,9 @@ def ship_once(c, key, state):
                 if frm >= len(recs) and (attempt or chain != "guard"):
                     break                                         # (the guard chain always sends: a heartbeat)
                 b = {"machine": c["machine"], "chain": chain, "from": frm, "records": recs[frm:frm + BATCH]}
-                b["sig"] = base64.b64encode(key.sign(hashlib.sha256(canon({k: b[k] for k in ("machine", "chain", "from", "records")})).digest())).decode()
+                if chain == "guard":
+                    b["status"] = now
+                sign(key, b)
                 try:
                     code, ans = post(node["url"], b)
                 except Exception as e:
@@ -172,7 +206,7 @@ def main():
         ship_once(conf(), key, state)
         if "--once" in sys.argv:
             return
-        time.sleep(30)
+        time.sleep(EVERY)
 
 
 if __name__ == "__main__":
