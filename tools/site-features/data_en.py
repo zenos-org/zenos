@@ -1,4 +1,4 @@
-REL = "https://github.com/zenos-org/zenos/releases/tag/v0.1.1-preview"
+REL = "https://github.com/zenos-org/zenos/releases/tag/v0.1.2-preview"
 GH = "https://github.com/zenos-org/zenos/blob/main/"
 GT = "https://github.com/zenos-org/zenos/tree/main/"
 PROOFS = GH + "docs/FORMAL_VERIFICATION.md"
