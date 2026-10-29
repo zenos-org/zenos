@@ -4,6 +4,7 @@ import ZenosFormal.Ledger
 import ZenosFormal.Egress
 import ZenosFormal.Protocol
 import ZenosFormal.Cred
+import ZenosFormal.KeyService
 
 /-! The main theorems rest only on Lean's standard axioms: no `sorry`, no axiom of our own. The build fails if
     that changes (`#guard_msgs` on the kernel's own report). -/
@@ -85,3 +86,24 @@ import ZenosFormal.Cred
 
 /-- info: 'Zenos.ask_bounded' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in #print axioms Zenos.ask_bounded
+
+/-- info: 'Zenos.key_sound' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.key_sound
+
+/-- info: 'Zenos.key_open_sound' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.key_open_sound
+
+/-- info: 'Zenos.key_presence' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.key_presence
+
+/-- info: 'Zenos.key_silent_refused' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.key_silent_refused
+
+/-- info: 'Zenos.key_unhealthy_refused' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.key_unhealthy_refused
+
+/-- info: 'Zenos.key_halted_refused' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.key_halted_refused
+
+/-- info: 'Zenos.key_rate_bounded' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.key_rate_bounded

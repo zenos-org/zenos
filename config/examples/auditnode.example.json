@@ -3,7 +3,7 @@
   "port": 8443,
   "cert": "/run/credentials/zenos-auditnode.service/auditnode.crt",
   "key": "/run/credentials/zenos-auditnode.service/auditnode.key",
-  "silence_minutes": 10,
+  "silence_seconds": 90,
   "check_seconds": 120,
   "peers": [
     {"name": "Agency audit", "url": "https://audit.agency.example:8443", "pub": "<that node's key from --show-key>"},

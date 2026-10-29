@@ -1,0 +1,38 @@
+[Unit]
+Description=ZENOS key service (the keys of sealed files, released one file at a time to healthy PCs)
+Documentation=file:///usr/share/doc/zenos-grid/README.md
+ConditionPathExists=/etc/zenos/keysvc-server.env
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+StateDirectory=zenos-keys
+StateDirectoryMode=0700
+EnvironmentFile=/etc/zenos/keysvc-server.env
+LoadCredential=keysvc.crt:/etc/zenos/keysvc.crt
+LoadCredential=keysvc.key:/etc/zenos/keysvc.key
+ExecStart=/usr/bin/python3 -I /usr/share/zenos-grid/audit/zenos_keysvc.py --store /var/lib/zenos-keys --audit-url ${AUDIT_URL} --audit-pub ${AUDIT_PUB} --host 0.0.0.0 --port ${PORT} --cert ${CREDENTIALS_DIRECTORY}/keysvc.crt --key ${CREDENTIALS_DIRECTORY}/keysvc.key --presence-from ${PRESENCE_FROM} --rate-max ${RATE_MAX}
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

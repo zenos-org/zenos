@@ -25,6 +25,7 @@ KEY = Path(os.environ.get("ZENOS_AUDIT_KEY", "/etc/zenos/audit-device.key"))
 STATE = Path(os.environ.get("ZENOS_AUDIT_STATE", "/var/lib/zenos/audit-ship.json"))
 RECEIPTS = STATE.with_name("audit-receipts.jsonl")
 LOG = Path(os.environ.get("ZENOS_AUDIT_LOG", "/var/log/zenos/guard.jsonl"))
+HALT = Path(os.environ.get("ZENOS_HALT", "/var/lib/zenos/halt.json"))      # written by zenos-guardd
 DEFAULT_LEDGERS = {"guard": "/var/log/zenos/access-ledger.jsonl", "user-*": "/home/*/.local/share/zenos/ledger.jsonl"}
 BATCH = 500
 EVERY = float(os.environ.get("ZENOS_AUDIT_EVERY", "10"))   # seconds between shipments; the guard chain always sends
@@ -46,8 +47,15 @@ def status():
     except Exception:
         r = []
     r += ["unknown"] * (len(WATCHED) - len(r))
+    try:
+        halted = json.loads(HALT.read_text()).get("status") == "halted"
+    except FileNotFoundError:
+        halted = False
+    except Exception:
+        halted = True                                   # unreadable stop file: reported as stopped, as keyd treats it
     return {"t": int(time.time()), "kernel": os.uname().release, "kernel_newest": max(ks, key=_vkey) if ks else None,
-            "reboot_required": os.path.exists("/run/reboot-required"), "services": dict(zip(WATCHED, r[:len(WATCHED)]))}
+            "reboot_required": os.path.exists("/run/reboot-required"), "services": dict(zip(WATCHED, r[:len(WATCHED)])),
+            "halted": halted}
 
 
 def sign(key, b):

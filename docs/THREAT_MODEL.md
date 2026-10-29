@@ -52,20 +52,21 @@ Kernel holes that give root, sometimes from the network and without signing in, 
 in Multipath TCP was reported by Anthropic on 27 October 2026 and fixed in Debian's kernel 6.12.113-1, which the 0.1.1
 image already carries. ZENOS is designed on the assumption that the kernel can have such a hole on any given day.
 
-| | Today (0.1.2) |
-|---|---|
-| Taken with root | The level keys (root-owned files), so every file sealed on that PC. The guard, the AI guard and the audit shipping can be stopped. Records written in the seconds before they are shipped can be changed, and the signed status can be faked with the PC's audit key. |
-| Not taken, or still seen from outside | Files sealed on other PCs (the keys are per PC). Ledger records already shipped: the audit nodes refuse a rewritten history. A PC that stops shipping is reported silent after 90 seconds. A stopped guard, key agent, AI guard, network sentinel or firewall, and a kernel fix installed but not yet running, are reported by the audit nodes from the PC's signed status, every 10 seconds, for as long as the shipping runs. |
+| | Today (0.1.2) | With the key service (in the repository, not in a release yet) |
+|---|---|---|
+| Taken with root | The level keys (root-owned files), so every file sealed on that PC. The guard, the AI guard and the audit shipping can be stopped. Records written in the seconds before they are shipped can be changed, and the signed status can be faked with the PC's audit key. | Files sealed before the key service was configured (their keys stay on the PC). The PC's identity key: with it, root can ask the key service for files that a user assigned to this PC on the service is cleared for, as the service holds the clearance, a limited number per minute per user and per PC, each one recorded on the service at once. Root can also fake the PC's signed status (services running, no stop). From the presence level up, only files the user confirms on their own passkey. |
+| Not taken, or still seen from outside | Files sealed on other PCs (the keys are per PC). Ledger records already shipped: the audit nodes refuse a rewritten history. A PC that stops shipping is reported silent after 90 seconds. A stopped guard, key agent, AI guard, network sentinel or firewall, and a kernel fix installed but not yet running, are reported by the audit nodes from the PC's signed status, every 10 seconds, for as long as the shipping runs. | Keys of files sealed with the key service: none is stored on the PC. Users not assigned to this PC on the service. A PC whose audit shipping stopped gets no key after 90 seconds (a PC that reports a stopped service or a stop gets none either, but root can fake that report). Each release is in the service's own chained log; a release the PC's shipped ledger does not record is reported (`--reconcile`). Claiming another level or another file id gives a key that does not fit. |
 | Fewer ways in | New inbound TCP is dropped before it reaches a listening program (`ZENOS_IN`). Multipath TCP, io_uring and unprivileged BPF are off; kernel addresses and the kernel log are hidden from users; modules for unused network protocols, old file systems and FireWire are never loaded (`/usr/lib/sysctl.d/60-zenos-hardening.conf`, `/usr/lib/modprobe.d/zenos-blacklist.conf`). The kernel starts in lockdown "integrity" mode: even root cannot load an unsigned module, write to kernel memory or replace the running kernel (`/etc/default/grub.d/zenos-hardening.cfg`; tested with the network sentinel's eBPF sensor still cutting a 1 MB send). A waiting kernel fix restarts the PC when nobody is signed in (`zenos-restartwindow`, policy `kernel_restart`). |
 
 Next, in this order (0.2):
 
-1. Keys off the PC. A key service releases, for each opening it approves, the key of that one file for a short time.
-   The PC keeps only the key it identifies itself with. Root on the PC then gets at most the file open at that moment.
-2. That identity key and the audit signing key in the TPM, bound to the boot state; officers' keys on FIDO2 tokens.
-   A running PC's root can still ask the TPM to use its key, which is why this comes together with 1.
-3. The key service refuses a PC whose heartbeat stopped or whose protecting services are down, and keeps its own
-   record of every key it released, to be compared with the PC's.
+1. Keys off the PC: done in the repository (`zenos_keysvc.py`, [docs/KEY_SERVICE.md](KEY_SERVICE.md), proved in
+   `KeyService.lean`), together with what was item 3: the service refuses a silent or unhealthy PC and keeps its own
+   record of every release, compared with the PC's.
+2. The confirmation page served by the key service itself, so the phone shows the file as the service knows it
+   (a page served by the PC could show one file and ask for another). Until then the presence level is off by default.
+3. The identity key and the audit signing key in the TPM, bound to the boot state; officers' keys on FIDO2 tokens.
+   A running PC's root can still ask the TPM to use its key, which is why the key service comes first.
 4. Mandatory access control (SELinux MLS).
 
 ZENOS does not use kernel livepatching; a fix takes effect at the next restart, and the restart window and the audit

@@ -1,14 +1,15 @@
 # ZENOS grid servers
 
-The `zenos-grid` package holds the three servers a ZENOS grid needs outside the PCs. Each party
+The `zenos-grid` package holds the servers a ZENOS grid needs outside the PCs. Each party
 (a ministry, an agency, an independent audit board) runs its own set on machines the PC users do not
-control. Nothing here holds a key that opens a file.
+control. Only the key service holds keys that open files; it releases them one file at a time.
 
 | Service | What it does | Config file |
 |---|---|---|
 | `zenos-grid-bootstrap` | the closed network's own entry point, so nothing touches the public internet | `/etc/zenos/grid-bootstrap.json` |
 | `zenos-storage-node` | keeps encrypted, erasure-coded shards; serves them only to certified PCs cleared for the level | `/etc/zenos/storage-node.json` |
 | `zenos-auditnode` | keeps a copy of every enrolled PC's ledger and compares it with the other parties' audit nodes | `/etc/zenos/auditnode.json` |
+| `zenos-keysvc` | holds the keys of sealed files and releases one file's key at a time to a healthy PC ([docs/KEY_SERVICE.md](../../docs/KEY_SERVICE.md)) | `/etc/zenos/keysvc-server.env` |
 
 Each service starts only once its config file exists. Examples are in `/usr/share/doc/zenos-grid/examples`.
 

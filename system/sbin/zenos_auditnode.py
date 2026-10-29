@@ -199,6 +199,40 @@ class Node:
         p.write_text(json.dumps({"status": st, "down": down, "fix_waiting_since": since if waiting else None,
                                  "fix_day_alerted": bool(old.get("fix_day_alerted")) and waiting}))
 
+    def health(self, machine):
+        """what the key service needs to know about a PC, signed by this node"""
+        m = self.dir / "machines"
+        try:
+            v = (m / f"{machine}.seen").read_text().strip()
+            last = 0 if v == "silent" else float(v)
+        except (OSError, ValueError):
+            last = 0
+        try:
+            st = json.loads((m / f"{machine}.status.json").read_text())
+            services = st.get("status", {}).get("services") or {}
+            ok = bool(services) and not st.get("down") and all(s == "active" for s in services.values())
+            halted = st.get("status", {}).get("halted") is True
+        except (OSError, ValueError, AttributeError):
+            ok, halted = False, False
+        h = {"machine": machine, "last_seen": last, "services_ok": ok, "halted": halted, "t": time.time()}
+        return {"health": h, "sig": base64.b64encode(self.key.sign(canon(h))).decode()}
+
+    def unseals(self, machine, frm=0):
+        """the openings this PC recorded (the unseal events of its guard ledger), signed by this node"""
+        out, n = [], 0
+        p = self.chain_path(machine, "guard")
+        if p.exists():
+            with open(p, encoding="utf-8") as f:
+                for i, l in enumerate(f):
+                    n = i + 1
+                    if i < frm or not l.strip():
+                        continue
+                    r = json.loads(l)
+                    if r.get("event") == "unseal" and r.get("fid"):
+                        out.append({"i": i, "fid": str(r["fid"]), "actor": str(r.get("actor"))})
+        u = {"machine": machine, "from": frm, "count": n, "unseals": out}
+        return {"unseals": u, "sig": base64.b64encode(self.key.sign(canon(u))).decode()}
+
     def check_silence(self, limit):
         """a PC that stops reporting (switched off the network, shipping stopped) is itself a signal"""
         for p in (self.dir / "machines").glob("*.seen"):
@@ -397,6 +431,11 @@ def serve(node, host, port, cert=None, key=None, silence=90, peers=(), check_eve
             self.reply(*node.accept(b))
 
         def do_GET(self):
+            h = re.match(r"^/v1/(health|unseals)/([A-Za-z0-9_.-]{1,64})(?:\?from=(\d{1,9}))?$", self.path)
+            if h:
+                kind, machine, frm = h.groups()
+                return self.reply(200, {"ok": True, **(node.health(machine) if kind == "health"
+                                                        else node.unseals(machine, int(frm or 0)))})
             m = re.match(r"^/v1/status/([A-Za-z0-9_.-]{1,64})/([A-Za-z0-9_.-]{1,64})(?:\?at=(\d{1,9}))?$", self.path)
             if not m:
                 return self.reply(200, {"ok": True, "node": node.pub_b64()}) if self.path == "/v1/node" else self.reply(404, {"ok": False})
@@ -421,7 +460,7 @@ def main():
     a = sys.argv[1:]
     cfg = {}
     if "--config" in a:
-        # /etc/zenos/auditnode.json: {"host", "port", "cert", "key", "silence_minutes",
+        # /etc/zenos/auditnode.json: {"host", "port", "cert", "key", "silence_seconds",
         #                             "peers": [{"name", "url", "pub"}], "check_seconds"}
         cfg = json.loads(Path(a[a.index("--config") + 1]).read_text())
     opt = lambda k, d=None: a[a.index(k) + 1] if k in a else cfg.get(k.lstrip("-").replace("-", "_"), d)

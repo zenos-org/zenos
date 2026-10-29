@@ -3,6 +3,7 @@ import ZenosFormal.Flow
 import ZenosFormal.Ledger
 import ZenosFormal.Egress
 import ZenosFormal.Cred
+import ZenosFormal.KeyService
 
 /-!
 `zenos-decide`: reads one JSON request on stdin, writes one JSON answer on stdout, runs the proven decision
@@ -30,6 +31,10 @@ functions of `ZenosFormal.Decide` and nothing else. Any input it cannot read is 
    "answer":{"device","sig_ok","challenge_ok","origin_ok","user_verified","counter_ok","code"}}
       -> {"allow": bool, "reason"}
   {"op":"ask", "window", "max", "now", "log":[..]}            -> {"allow": bool}
+  {"op":"key", "enrolled", "sig_ok", "fresh", "now", "last_seen", "silence", "services_ok", "pc_halted", "recent",
+   "rate_max", "machine_recent", "machine_rate_max", "assigned", "presence_from", "presence": null | {"registered","sig_ok","challenge_ok","origin_ok",
+   "user_verified","counter_ok"}, "open": {the fields of "open" above, without "op"}}
+      -> {"allow": bool, "by": "clearance"|"grant"|null, "reason": str|null}   (the key service)
   zenos-decide egress W THR   (the network sentinel's stream: one send per line
       "key<TAB>destination<TAB>allowed 0|1<TAB>time ms<TAB>bytes", one answer per line "cut" | "ok")
 -/
@@ -205,19 +210,39 @@ def request (j : J) : Except String Request := do
            required := ← getN j "required", status := ← status (← getS j "status"),
            approvals := ← approvalsOf j "approvals" }
 
+def openReq (j : J) : Except String OpenReq := do
+  let g ← match j.get? "grant" with
+    | none | some .null => pure none
+    | some v => some <$> grant v
+  return { user := ← getS j "user", clearance := ← getN j "clearance", level := ← getN j "level",
+           fileHash := ← getS j "file_hash", now := ← getN j "now", halted := ← getB j "halted",
+           roster := ← getSs j "roster", grant := g }
+
+def decisionJ : Decision → J
+  | .byClearance => .obj [("allow", .bool true), ("by", .str "clearance"), ("reason", .null)]
+  | .byGrant => .obj [("allow", .bool true), ("by", .str "grant"), ("reason", .null)]
+  | .refuse r => .obj [("allow", .bool false), ("by", .null), ("reason", .str r)]
+
+def presence (j : J) : Except String Presence := do
+  return { registered := ← getB j "registered", sigOk := ← getB j "sig_ok", challengeOk := ← getB j "challenge_ok",
+           originOk := ← getB j "origin_ok", userVerified := ← getB j "user_verified",
+           counterOk := ← getB j "counter_ok" }
+
 def answer (j : J) : Except String J := do
   match ← getS j "op" with
-  | "open" =>
-    let g ← match j.get? "grant" with
+  | "open" => return decisionJ (decideOpen (← openReq j))
+  | "key" =>
+    let p ← match j.get? "presence" with
       | none | some .null => pure none
-      | some v => some <$> grant v
-    let o : OpenReq := { user := ← getS j "user", clearance := ← getN j "clearance", level := ← getN j "level",
-                         fileHash := ← getS j "file_hash", now := ← getN j "now", halted := ← getB j "halted",
-                         roster := ← getSs j "roster", grant := g }
-    return match decideOpen o with
-      | .byClearance => .obj [("allow", .bool true), ("by", .str "clearance"), ("reason", .null)]
-      | .byGrant => .obj [("allow", .bool true), ("by", .str "grant"), ("reason", .null)]
-      | .refuse r => .obj [("allow", .bool false), ("by", .null), ("reason", .str r)]
+      | some v => some <$> presence v
+    let k : KeyReq := { enrolled := ← getB j "enrolled", sigOk := ← getB j "sig_ok", fresh := ← getB j "fresh",
+                        now := ← getN j "now", lastSeen := ← getN j "last_seen", silence := ← getN j "silence",
+                        servicesOk := ← getB j "services_ok", pcHalted := ← getB j "pc_halted",
+                        recent := ← getN j "recent", rateMax := ← getN j "rate_max",
+                        machineRecent := ← getN j "machine_recent", machineRateMax := ← getN j "machine_rate_max",
+                        assigned := ← getB j "assigned",
+                        presenceFrom := ← getN j "presence_from", presence := p, openReq := ← openReq (← field j "open") }
+    return decisionJ (decideKey k)
   | "approve" =>
     let act ← match ← getS j "act" with
       | "approve" => pure Act.approve

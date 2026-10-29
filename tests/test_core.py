@@ -1,6 +1,6 @@
 """Core tests: sealed files, request digests (Python = browser), officer enrollment and the guard's approval checks.
 Run: python3 -m unittest discover -s tests   (no root, no network; everything happens in a temporary home)"""
-import base64, hashlib, json, os, re, shutil, subprocess, sys, tempfile, unittest
+import base64, hashlib, json, os, re, shutil, subprocess, sys, tempfile, time, unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -226,7 +226,7 @@ class KeyAgent(unittest.TestCase):
 
     def grant_for(self, blob, level, signers):
         core = {"id": "r1", "requester": self.user, "file": "/x/f.zen", "file_hash": hashlib.sha256(blob).hexdigest(),
-                "level": level, "reason": "test", "created": "2026-10-19T10:00:00+0900"}
+                "level": level, "reason": "test", "created": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
         d = hashlib.sha256(json.dumps(core, sort_keys=True, ensure_ascii=False).encode()).digest()
         return {"request": "r1", "requester": self.user, "file_hash": core["file_hash"], "level": level, "expires": 4e9,
                 "digest": base64.b64encode(d).decode(), "core": core,

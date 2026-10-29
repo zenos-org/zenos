@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+**System**
+- Key service (`zenos_keysvc.py`, [docs/KEY_SERVICE.md](docs/KEY_SERVICE.md)): with `/etc/zenos/keysvc.json` on a PC,
+  the keys of newly sealed files are no longer kept on the PC. The service, on another machine, releases one file's
+  key per request after deciding again with its own clearance table, officers and the users assigned to each PC,
+  refuses a PC the audit node has not heard from within 90 seconds or that reports a protecting service down,
+  limits the keys per minute per user and per PC,
+  can require a confirmation on the user's own passkey, and records every release in its own chained log.
+  `--reconcile` reports a release the PC's ledger does not show. Lean: `KeyService.lean` (`key_sound`,
+  `key_open_sound`, `key_presence`, `key_silent_refused`, `key_unhealthy_refused`, `key_halted_refused`,
+  `key_rate_bounded`).
+- Audit status: each PC also reports whether it is stopped after an anomaly.
+- keyd: a grant counts at most a day after the request the officers signed was made (its outer expiry is not
+  signed).
+
 ## 0.1.2 Developer Preview (2026-10-30)
 
 Still a preview for testing and evaluation. Do not use it for real sensitive data; see [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).

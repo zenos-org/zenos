@@ -185,3 +185,27 @@ def _request(r):
     return {"id": str(r["id"]), "requester": str(r["requester"]), "level": int(r["level"]),
             "required": int(r["required"]), "status": str(r["status"]),
             "approvals": [{"approver": str(a["approver"]), "sig_ok": bool(a.get("sig_ok"))} for a in r["approvals"]]}
+
+
+def key_release(enrolled, sig_ok, fresh, now_s, last_seen, silence, services_ok, pc_halted, recent, rate_max,
+                machine_recent, machine_rate_max, assigned, presence_from, presence, user, clearance, level,
+                file_hash, roster, grant=None):
+    """(allowed, by, reason) for the key service. presence: None or the passkey facts (registered, sig_ok,
+    challenge_ok, origin_ok, user_verified, counter_ok); grant as for open_file"""
+    if grant is not None:
+        grant = dict(grant, expires=int(math.floor(float(grant["expires"]))))
+    if presence is not None:
+        presence = {k: presence.get(k) is True for k in ("registered", "sig_ok", "challenge_ok", "origin_ok",
+                                                          "user_verified", "counter_ok")}
+    try:
+        a = ask({"op": "key", "enrolled": bool(enrolled), "sig_ok": bool(sig_ok), "fresh": bool(fresh),
+                 "now": int(now_s), "last_seen": max(0, int(last_seen)), "silence": max(0, int(silence)),
+                 "services_ok": bool(services_ok), "pc_halted": bool(pc_halted), "recent": max(0, int(recent)),
+                 "rate_max": max(0, int(rate_max)), "machine_recent": max(0, int(machine_recent)),
+                 "machine_rate_max": max(0, int(machine_rate_max)), "assigned": bool(assigned),
+                 "presence_from": max(0, int(presence_from)), "presence": presence,
+                 "open": {"user": user, "clearance": int(clearance), "level": int(level), "file_hash": file_hash,
+                          "now": int(now_s), "halted": False, "roster": list(roster), "grant": grant}})
+        return bool(a["allow"]), a.get("by"), a.get("reason")
+    except (Refused, KeyError, TypeError, ValueError) as e:
+        return False, None, str(e)

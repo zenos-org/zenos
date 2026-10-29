@@ -29,6 +29,7 @@ try:
 except Exception:
     zfrag = None
 import zdecide
+import zkeysvc
 
 KEYS = Path(os.environ.get("ZENOS_KEYD_KEYS", "/var/lib/zenos/keys"))
 CLEARANCE = Path(os.environ.get("ZENOS_CLEARANCE", "/etc/zenos/clearance"))
@@ -119,7 +120,16 @@ def device_pub():
 def seal(data, level, name, author):
     base = {"zenos": 1, "level": level, "label": LABEL[level], "name": name,
             "created": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "author": author}
-    if zfrag is not None:
+    ks = zkeysvc.conf()
+    if ks:
+        # the key service holds the key: the PC keeps none (raises zkeysvc.Unavailable / Refused: nothing is sealed)
+        fid, dek = zkeysvc.new_file_key(author, level, name, ks)
+        header = {**base, "alg": "AES-256-GCM", "fmt": zkeysvc.FMT, "fid": fid,
+                  "ks": zkeysvc.fingerprint(zkeysvc.unb64(ks["pub"])), "nonce": base64.b64encode(os.urandom(12)).decode()}
+        hb = json.dumps(header, ensure_ascii=False, sort_keys=True).encode()
+        ct = AESGCM(dek).encrypt(base64.b64decode(header["nonce"]), data, hb)
+        del dek
+    elif zfrag is not None:
         header = {**base, "alg": "AES-256-GCM-fragmented", "fmt": "zfrag2"}
         hb = json.dumps(header, ensure_ascii=False, sort_keys=True).encode()
         ct = zfrag.seal(data, level, name, str(KEYS / "frag"))
@@ -129,7 +139,13 @@ def seal(data, level, name, author):
         ct = AESGCM((KEYS / f"L{level}.key").read_bytes()).encrypt(base64.b64decode(header["nonce"]), data, hb)
     sk = Ed25519PrivateKey.from_private_bytes((KEYS / "device_ed25519").read_bytes())
     sig = sk.sign(hb + hashlib.sha256(ct).digest())
-    return MAGIC + hb + b"\n" + base64.b64encode(sig) + b"\n" + ct
+    blob = MAGIC + hb + b"\n" + base64.b64encode(sig) + b"\n" + ct
+    if ks:
+        try:
+            zkeysvc.sealed(fid, hashlib.sha256(blob).hexdigest(), ks)   # grants name the file by this digest
+        except Exception:
+            log(event="keysvc-sealed-unrecorded", user=author, fid=fid)
+    return blob
 
 
 def parse_verify(blob):
@@ -141,7 +157,9 @@ def parse_verify(blob):
     return json.loads(hb), hb, ct
 
 
-def unseal(h, hb, ct):
+def unseal(h, hb, ct, dek=None):
+    if h.get("fmt") == zkeysvc.FMT:
+        return AESGCM(dek).decrypt(base64.b64decode(h["nonce"]), ct, hb)
     if h.get("fmt") == "zfrag2":
         return zfrag.open_full(ct, str(KEYS / "frag"))
     return AESGCM((KEYS / f"L{h['level']}.key").read_bytes()).decrypt(base64.b64decode(h["nonce"]), ct, hb)
@@ -180,7 +198,7 @@ def grant_facts(g):
             approvals.append({"approver": name, "sig_ok": ok})
         return {"requester": str(core.get("requester", "")), "holder": str(g.get("requester", "")),
                 "file_hash": str(core.get("file_hash", "")), "level": int(core.get("level", 0)),
-                "kind": core.get("kind"), "expires": float(g["expires"]),
+                "kind": core.get("kind"), "expires": zkeysvc.grant_expiry(g),
                 "digest_ok": base64.b64decode(g.get("digest", "")) == digest, "approvals": approvals}
     except Exception:
         return None
@@ -246,8 +264,17 @@ def handle(msg, uid):
                     "message": "You are not cleared for L%d, so you cannot seal a file at that level." % level}
         data = base64.b64decode(msg.get("data", ""))
         name = re.sub(r'[/\\\n\r\t]', "", str(msg.get("name", "")))[:200] or "Untitled"
-        blob = seal(data, level, name, user)
-        log(event="seal", user=user, level=level, name=name, sha256=hashlib.sha256(blob).hexdigest()[:16])
+        try:
+            blob = seal(data, level, name, user)
+        except zkeysvc.Refused as e:
+            log(event="seal-refused", user=user, level=level, reason="keysvc:" + e.error)
+            return {"ok": False, "error": "keysvc", "message": KEYSVC_MSG.get(e.error, KEYSVC_MSG["other"])}
+        except zkeysvc.Unavailable as e:
+            log(event="seal-refused", user=user, level=level, reason="keysvc-unavailable", detail=str(e)[:120])
+            return {"ok": False, "error": "keysvc", "message": KEYSVC_MSG["unavailable"]}
+        log(event="seal", user=user, level=level, name=name, sha256=hashlib.sha256(blob).hexdigest()[:16],
+            **({"fid": json.loads(blob[len(MAGIC):].split(b"\n", 1)[0]).get("fid")}
+               if b'"fmt": "zks1"' in blob[:4096] else {}))
         return {"ok": True, "blob": base64.b64encode(blob).decode()}
     if op in ("verify", "open"):
         blob = base64.b64decode(msg.get("blob", ""))
@@ -273,8 +300,36 @@ def handle(msg, uid):
                 reason="aiguard")
             return {"ok": False, "error": "aiguard",
                     "message": "The AI guard did not confirm its network rules, so this file stays closed. Try again in a moment."}
-        data = unseal(h, hb, ct)
-        log(event="unseal", user=user, level=level, by=how, name=h.get("name"), sha256=fh[:16])
+        dek, fid = None, None
+        if h.get("fmt") == zkeysvc.FMT:
+            fid = str(h.get("fid", ""))
+            try:     # the key service decides again with its own facts, and records the release on its side at once
+                dek, ans = zkeysvc.open_key(user, fid, level, grant=msg.get("grant"), presence=msg.get("presence"))
+                how = ans.get("by") or how
+            except zkeysvc.Refused as e:
+                log(event="unseal-refused", user=user, level=level, clearance=cl, name=h.get("name"), sha256=fh[:16],
+                    fid=fid, reason="keysvc:" + e.error)
+                out = {"ok": False, "error": "keysvc-" + e.error, "message": KEYSVC_MSG.get(e.error, KEYSVC_MSG["other"])}
+                if e.error == "presence":
+                    try:
+                        c = zkeysvc.challenge(user, fid, level)
+                        out.update(challenge=c["challenge"], rp_id=c.get("rp_id"), allow=c.get("allow"), fid=fid)
+                    except Exception:
+                        pass
+                return out
+            except zkeysvc.Unavailable as e:
+                log(event="unseal-refused", user=user, level=level, clearance=cl, name=h.get("name"), sha256=fh[:16],
+                    fid=fid, reason="keysvc-unavailable", detail=str(e)[:120])
+                return {"ok": False, "error": "keysvc-unavailable", "message": KEYSVC_MSG["unavailable"]}
+        try:
+            data = unseal(h, hb, ct, dek)
+        except Exception:
+            log(event="unseal-refused", user=user, level=level, name=h.get("name"), sha256=fh[:16], fid=fid,
+                reason="key-mismatch")
+            return {"ok": False, "error": "key", "message": "The key for this file did not fit: its level or id was changed."}
+        dek = None
+        log(event="unseal", user=user, level=level, by=how, name=h.get("name"), sha256=fh[:16],
+            **({"fid": fid} if fid else {}))
         return {"ok": True, "header": h, "data": base64.b64encode(data).decode()}
     if op == "clip-put":       # copy inside sealed L3+ windows: held here in RAM, never on the X11 clipboard
         level = int(msg.get("level", 0))
@@ -297,6 +352,19 @@ def handle(msg, uid):
         return {"ok": True, "text": c["text"], "level": c["level"], "t": c["t"]}
     return {"ok": False, "error": "unknown op"}
 
+
+KEYSVC_MSG = {
+    "unavailable": "The key service cannot be reached, so this file stays closed. The keys of sealed files are not kept on this PC.",
+    "silent": "The key service has not heard from this PC's audit shipping recently, so it gives out no keys.",
+    "unhealthy": "One of this PC's protecting services is not running, so the key service gives out no keys.",
+    "halted": "This PC is stopped after an anomaly. Nothing can be opened until the release is approved.",
+    "rate": "Too many files were opened from this PC in a short time. Wait a minute and try again.",
+    "presence": "Confirm this file on your security key or phone to open it.",
+    "clearance": "Your clearance, as the key service holds it, does not cover this level.",
+    "unknown-file": "The key service does not know this file, or it was sealed on another PC.",
+    "not-assigned": "The key service does not list you as a user of this PC.",
+    "other": "The key service refused this request.",
+}
 
 CLIPS, CLIP_LOCK = {}, threading.Lock()
 CLIP_MAX = 2_000_000

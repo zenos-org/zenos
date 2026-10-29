@@ -81,6 +81,21 @@ origin and relying party of the registered phone page, user-verified flag, count
 passed to the decision as facts. The entry's key comes from the phone's passkey (WebAuthn PRF) and reaches the vault
 service encrypted to that request's one-time key; the PC stores only ciphertext.
 
+### The key service (`KeyService.lean`)
+
+| Theorem | Statement |
+|---|---|
+| `key_sound` | The key service releases a file's key only to an enrolled PC, for a request signed with its identity key, recent and not seen before, for a user the service assigned to this PC, while the audit node has heard from the PC within the silence limit, its last signed status shows every protecting service running and no stop, fewer than the limits of keys went to this PC and user, and to this PC, within the rate window, and (from the presence level) the user confirmed it on their own passkey. |
+| `key_open_sound` | A released key is one `decideOpen` allows with the clearance, officers and grant as the service holds them: what `open_sound` says carries over. |
+| `key_presence` | From the presence level up, every released key came with a confirmation on a passkey registered to that user, over a challenge issued for this PC, user and file, with the person verified. |
+| `key_silent_refused`, `key_unhealthy_refused`, `key_halted_refused` | A PC that went silent, whose protecting services are not all running, or that reported a stop gets no key, whoever asks. |
+| `key_rate_bounded` | However many key requests a program on the PC sends for one user, and however fast, at most the limit of keys is released within any window (requests decided one at a time; the service serialises counting and deciding per PC). |
+
+The service checks the PC's request signature, the time and nonce, the passkey assertion (`zwebauthn.py`), the
+officers' signatures on a grant and reads the PC's health from the audit node's store; these are passed as facts. The
+file key is derived on the service (HKDF-SHA256 from the level's master key and the file id) and reaches keyd wrapped
+for that request only (X25519, HKDF, AES-256-GCM); the answer is signed with the service's key.
+
 ## What is trusted, not proved
 
 - Cryptography: Ed25519 signature checks with the officers' enrolled keys, SHA-256 digests, AES-GCM; for sign-in,
