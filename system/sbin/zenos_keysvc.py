@@ -18,26 +18,32 @@ recorded opening means the PC's record was suppressed.
 
   zenos_keysvc.py --store DIR --audit-url URL --audit-pub KEY [--port 8444 --cert C --key K] [--presence-from 3]
   zenos_keysvc.py --store DIR --audit-store DIR ...       (the audit node's store, when both run as one account)
+      [--notify-url http://127.0.0.1:PORT/api/send --notify-to OFFICER,OFFICER]   alerts through ZENOS Messages
   zenos_keysvc.py --store DIR --show-key                  the public key for the PCs' /etc/zenos/keysvc.json
   zenos_keysvc.py --store DIR --enroll MACHINE PUBKEY     (the key `zenos_auditship.py --show-key` prints)
   zenos_keysvc.py --store DIR --assign MACHINE USER       USER works on MACHINE (nobody else is served from it)
   zenos_keysvc.py --store DIR --clearance USER N
   zenos_keysvc.py --store DIR --approver NAME PUBKEY      an officer whose grant signatures count here
+  zenos_keysvc.py --store DIR --origin URL --enrol-code USER   a one-time address (15 min) for USER's phone to make
+                                                          its passkey on this service's own page
   zenos_keysvc.py --store DIR --passkey USER FILE.json    a passkey registered for USER (zwebauthn.register output)
   zenos_keysvc.py --store DIR --audit-store DIR --reconcile
 """
 import base64, hashlib, json, os, re, secrets, ssl, sys, threading, time
+from urllib.parse import urlparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib", "zenos"))
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"))
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))     # zenos-grid package: the libraries sit beside this file
-import zdecide, zkeysvc, zledger, zwebauthn                          # noqa: E402
+import zdecide, zident, zkeysvc, zledger, zwebauthn                          # noqa: E402
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey   # noqa: E402
 from cryptography.hazmat.primitives import serialization          # noqa: E402
 
 NAME = re.compile(r"^[A-Za-z0-9_.-]{1,64}$")
+PAGES = Path(os.environ.get("ZENOS_KEYSVC_PAGES",
+                            os.path.join(os.path.dirname(os.path.realpath(__file__)), "keysvc-pages")))
 FID = re.compile(r"^[0-9a-f]{32}$")
 CHALLENGE_TTL = 120
 MAX_CHALLENGES = 50          # open challenges per PC
@@ -104,7 +110,7 @@ class NodeAudit:
 
 class Service:
     def __init__(self, store, audit_store=None, silence=90, rate_max=30, rate_window=60, presence_from=6,
-                 machine_rate_max=60):
+                 machine_rate_max=60, origin=None):
         self.dir = Path(store)
         for d in ("keys", "machines", "approvers", "passkeys", "files"):
             (self.dir / d).mkdir(parents=True, exist_ok=True)
@@ -114,6 +120,11 @@ class Service:
         self.silence, self.rate_max, self.rate_window, self.presence_from = silence, rate_max, rate_window, presence_from
         self.machine_rate_max = machine_rate_max
         self.mlocks = {}
+        # the address people's phones reach this service at: its pages are where passkeys are made and used,
+        # so the phone shows the file as this service knows it, never as the PC describes it
+        self.origin = (origin or "").rstrip("/") or None
+        self.rp_id = urlparse(self.origin).hostname if self.origin else None
+        (self.dir / "enrol").mkdir(exist_ok=True)
         self.key = Ed25519PrivateKey.from_private_bytes(self._secret(self.dir / "service.key"))
         self.lock = threading.Lock()
         self.nonces, self.rates, self.challenges = {}, {}, {}
@@ -138,7 +149,7 @@ class Service:
         if not NAME.match(machine):
             raise ValueError("bad machine name")
         raw = zkeysvc.unb64(pub_b64)
-        Ed25519PublicKey.from_public_bytes(raw)
+        zident.check_pub(raw)                 # Ed25519 (key file) or P-256 (inside the TPM)
         (self.dir / "machines" / f"{machine}.pub").write_bytes(raw)
         self.alert("machine-enrolled", machine=machine, fingerprint=zkeysvc.fingerprint(raw))
 
@@ -209,9 +220,22 @@ class Service:
             return []
 
     # ---------- logs
+    notify = None                                   # znotify.Notifier: alerts to the officers through ZENOS Messages
+
     def alert(self, event, **kw):
         with open(self.dir / "alerts.jsonl", "a", encoding="utf-8") as f:
             f.write(json.dumps({"t": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "event": event, **kw}, ensure_ascii=False) + "\n")
+        if self.notify is not None:
+            self.notify(event, **kw)
+
+    def set_notify(self, conf):
+        import znotify
+
+        def failed(event, to, error):
+            with open(self.dir / "alerts.jsonl", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"t": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "event": "alert-delivery-failed",
+                                    "alert": event, "to": to, "error": error}) + "\n")
+        self.notify = znotify.Notifier(conf, failed) if conf else None
 
     def log(self, event, machine, **kw):
         zledger.append(self.ledger, event, kw.pop("user", "-"), machine, ts=time.time(), **kw)
@@ -226,8 +250,7 @@ class Service:
         if not pk.exists():
             return req, False, False, False
         try:
-            Ed25519PublicKey.from_public_bytes(pk.read_bytes()).verify(zkeysvc.unb64(body.get("sig", "")), zkeysvc.canon(req))
-            sig_ok = True
+            sig_ok = zident.verify(pk.read_bytes(), zkeysvc.unb64(body.get("sig", "")), zkeysvc.canon(req))
         except Exception:
             sig_ok = False
         now = time.time()
@@ -294,6 +317,14 @@ class Service:
         p = req.get("presence")
         if not isinstance(p, dict):
             return None
+        if set(p) == {"challenge"}:                 # confirmed on this service's own page (/c/<challenge>)
+            with self.lock:
+                c = self.challenges.pop(str(p["challenge"]), None)   # one use, whatever the outcome
+            bound = (c is not None and time.time() <= c["exp"] and c["machine"] == req["machine"]
+                     and c["user"] == req.get("user") and c["fid"] == req.get("fid"))
+            f = dict(c.get("confirmed") or {}) if bound else {}
+            return {k: f.get(k) is True for k in ("registered", "sig_ok", "challenge_ok", "origin_ok", "user_verified",
+                                                   "counter_ok")}
         f = {"registered": False, "sig_ok": False, "challenge_ok": False, "origin_ok": False, "user_verified": False,
              "counter_ok": False}
         try:
@@ -318,6 +349,100 @@ class Service:
         except Exception:
             pass
         return f
+
+    # ---------- the person's own phone, on this service's pages
+    def confirm_view(self, ch):
+        """what the confirmation page shows: the file as this service recorded it"""
+        with self.lock:
+            c = self.challenges.get(str(ch))
+        if not c or time.time() > c["exp"]:
+            return None
+        info = self.fileinfo(c["fid"]) or {}
+        return {"challenge": ch, "user": c["user"], "machine": c["machine"], "file": info.get("name", ""),
+                "level": int(info.get("level", 0)), "sealed_by": info.get("user"), "sealed_on": info.get("machine"),
+                "expires": int(c["exp"]), "rp_id": self.rp_id,
+                "allow": [k["cred_id"] for k in self.passkeys(c["user"]) if k.get("rp_id") == self.rp_id],
+                "confirmed": bool(c.get("confirmed"))}
+
+    def confirm(self, body):
+        """a passkey signature made on /c/<challenge>; checked here, then kept with the challenge for the PC's
+        open request (one try per challenge)"""
+        try:
+            ch = str(body["challenge"])
+            cdj = zwebauthn.unb64u(body["client_data_json"])
+        except Exception:
+            return 400, {"ok": False, "error": "malformed"}
+        with self.lock:
+            c = self.challenges.get(ch)
+            if not c or time.time() > c["exp"] or c.get("tried"):
+                return 410, {"ok": False, "error": "expired"}
+            c["tried"] = True
+        reg = next((k for k in self.passkeys(c["user"]) if k["cred_id"] == body.get("cred_id")), None)
+        f = {"registered": reg is not None, "sig_ok": False, "challenge_ok": False, "origin_ok": False,
+             "user_verified": False, "counter_ok": False}
+        if reg is not None:
+            try:
+                facts = zwebauthn.check_assertion(reg, zwebauthn.unb64u(body["authenticator_data"]), cdj,
+                                                  zwebauthn.unb64u(body["signature"]), zwebauthn.unb64u(ch))
+                f.update({k: facts[k] for k in ("sig_ok", "challenge_ok", "origin_ok", "user_verified", "counter_ok")})
+                f["origin_ok"] = f["origin_ok"] and reg.get("origin") == self.origin
+            except Exception:
+                pass
+        ok = all(f.values())
+        if ok:
+            keys = self.passkeys(c["user"])
+            for k in keys:
+                if k["cred_id"] == reg["cred_id"]:
+                    k["count"] = facts["count"]
+            (self.dir / "passkeys" / f"{c['user']}.json").write_text(json.dumps(keys))
+            with self.lock:
+                c["confirmed"] = f
+        self.log("presence-confirmed" if ok else "presence-failed", c["machine"], user=c["user"], fid=c["fid"],
+                 **({} if ok else {"facts": f}))
+        return (200 if ok else 403), {"ok": ok}
+
+    def enrol_code(self, user, minutes=15):
+        """a one-time address for USER to make a passkey for this service on their phone"""
+        if not self.origin:
+            raise ValueError("start the service with --origin (the address phones reach it at)")
+        if not NAME.match(user):
+            raise ValueError("bad user name")
+        code = secrets.token_urlsafe(18)
+        (self.dir / "enrol" / f"{hashlib.sha256(code.encode()).hexdigest()}.json").write_text(json.dumps(
+            {"user": user, "challenge": zwebauthn.b64u(os.urandom(32)), "exp": time.time() + minutes * 60}))
+        self.log("enrol-code", "admin", user=user)
+        return f"{self.origin}/e/{code}"
+
+    def _enrol_record(self, code):
+        p = self.dir / "enrol" / f"{hashlib.sha256(str(code).encode()).hexdigest()}.json"
+        try:
+            e = json.loads(p.read_text())
+        except (OSError, ValueError):
+            return None, p
+        return (e if time.time() <= e["exp"] else None), p
+
+    def enrol_view(self, code):
+        e, _ = self._enrol_record(code)
+        return None if not e else {"user": e["user"], "challenge": e["challenge"], "rp_id": self.rp_id,
+                                   "rp_name": "ZENOS key service", "expires": int(e["exp"])}
+
+    def enrol(self, body):
+        e, p = self._enrol_record(body.get("code"))
+        if not e:
+            return 410, {"ok": False, "error": "expired"}
+        try:
+            p.unlink()                                         # one use
+        except OSError:
+            return 410, {"ok": False, "error": "expired"}
+        try:
+            reg = zwebauthn.register(zwebauthn.unb64u(body["attestation_object"]),
+                                     zwebauthn.unb64u(body["client_data_json"]), zwebauthn.unb64u(e["challenge"]),
+                                     self.origin, self.rp_id)
+        except Exception as x:
+            self.log("passkey-refused", "admin", user=e["user"], reason=str(x)[:80])
+            return 403, {"ok": False, "error": "passkey"}
+        self.add_passkey(e["user"], reg)
+        return 200, {"ok": True}
 
     def fileinfo(self, fid):
         try:
@@ -389,7 +514,8 @@ class Service:
                 self.challenges[ch] = {"machine": machine, "user": user, "fid": fid, "exp": now + CHALLENGE_TTL}
             keys = self.passkeys(user)
             return 200, self.answer(req, {"ok": True, "challenge": ch, "rp_id": keys[0]["rp_id"] if keys else None,
-                                          "allow": [k["cred_id"] for k in keys], "file": info.get("name", "")})
+                                          "allow": [k["cred_id"] for k in keys], "file": info.get("name", ""),
+                                          "url": f"{self.origin}/c/{ch}" if self.origin else None})
         if op not in ("seal", "open"):
             return 404, self.answer(req, {"ok": False, "error": "unknown op"})
         try:
@@ -490,8 +616,24 @@ def serve(svc, host, port, cert=None, key=None, reconcile_every=300):
             self.end_headers()
             self.wfile.write(body)
 
+        def page(self, name, data):
+            try:
+                html = (PAGES / f"{name}.html").read_text(encoding="utf-8")
+            except OSError:
+                return self.reply(503, {"ok": False, "error": "page not installed"})
+            body = html.replace("/*ZENOS_DATA*/null", json.dumps(data).replace("</", "<\\/")).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline'; "
+                             "style-src 'unsafe-inline'; img-src data:; connect-src 'self'; frame-ancestors 'none'")
+            self.send_header("Referrer-Policy", "no-referrer")
+            self.end_headers()
+            self.wfile.write(body)
+
         def do_POST(self):
-            m = re.match(r"^/v1/(seal|sealed|challenge|open)$", self.path)
+            m = re.match(r"^/v1/(seal|sealed|challenge|open|confirm|enrol)$", self.path)
             if not m:
                 return self.reply(404, {"ok": False})
             n = int(self.headers.get("Content-Length") or 0)
@@ -501,11 +643,23 @@ def serve(svc, host, port, cert=None, key=None, reconcile_every=300):
                 b = json.loads(self.rfile.read(n))
             except Exception:
                 return self.reply(400, {"ok": False, "error": "not JSON"})
+            if m.group(1) == "confirm":
+                return self.reply(*svc.confirm(b))
+            if m.group(1) == "enrol":
+                return self.reply(*svc.enrol(b))
             self.reply(*svc.handle(m.group(1), b))
 
         def do_GET(self):
             if self.path == "/v1/service":
                 return self.reply(200, {"ok": True, "pub": svc.pub_b64()})
+            m = re.match(r"^/(c|e)/([A-Za-z0-9_-]{16,64})$", self.path)
+            if m:
+                v = svc.confirm_view(m.group(2)) if m.group(1) == "c" else svc.enrol_view(m.group(2))
+                if v is None:
+                    return self.reply(410, {"ok": False, "error": "expired"})
+                if m.group(1) == "e":
+                    v["code"] = m.group(2)
+                return self.page("confirm" if m.group(1) == "c" else "enrol", v)
             self.reply(404, {"ok": False})
 
         def log_message(self, *a):
@@ -529,15 +683,20 @@ def main():
     audit = NodeAudit(opt("--audit-url"), opt("--audit-pub")) if opt("--audit-url") else opt("--audit-store")
     svc = Service(opt("--store"), audit, silence=int(opt("--silence-seconds", 90)),
                   rate_max=int(opt("--rate-max", 30)), rate_window=int(opt("--rate-window", 60)),
-                  presence_from=int(opt("--presence-from", 6)), machine_rate_max=int(opt("--machine-rate-max", 60)))
+                  presence_from=int(opt("--presence-from", 6)), machine_rate_max=int(opt("--machine-rate-max", 60)),
+                  origin=opt("--origin"))
     if "--show-key" in a:
         return print(svc.pub_b64())
+    if opt("--notify-url"):
+        svc.set_notify({"url": opt("--notify-url"), "to": [t for t in str(opt("--notify-to", "")).split(",") if t]})
     for flag, fn in (("--enroll", svc.enroll), ("--assign", svc.assign), ("--clearance", svc.set_clearance),
                      ("--approver", svc.add_approver)):
         if flag in a:
             i = a.index(flag)
             fn(a[i + 1], a[i + 2])
             return print("done")
+    if "--enrol-code" in a:
+        return print(svc.enrol_code(a[a.index("--enrol-code") + 1]))
     if "--passkey" in a:
         i = a.index("--passkey")
         svc.add_passkey(a[i + 1], json.loads(Path(a[i + 2]).read_text()))

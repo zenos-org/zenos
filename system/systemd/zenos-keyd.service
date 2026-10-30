@@ -7,6 +7,30 @@ ExecStart=/usr/bin/python3 -I /usr/sbin/zenos_keyd.py
 Restart=always
 RestartSec=2
 UMask=0077
+# Confined: keyd reads what users send it as root, so a flaw in it must not give the rest of the system.
+# No capabilities, no writes outside its own state, no home folders; only the TPM among the devices.
+NoNewPrivileges=yes
+ProtectSystem=strict
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+CapabilityBoundingSet=
+ReadWritePaths=/var/lib/zenos /var/log/zenos /run/zenos
+ProtectHome=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+DevicePolicy=closed
+DeviceAllow=/dev/tpmrm0 rw
 
 [Install]
 WantedBy=multi-user.target

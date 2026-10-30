@@ -24,7 +24,7 @@ chmod 755 "$G/storage/bin/zenos-store.js"
 echo "== audit node"
 mkdir -p "$G/audit"
 install -m 755 "$SRC/system/sbin/zenos_auditnode.py" "$G/audit/"
-install -m 644 "$SRC/system/lib/zledger.py" "$SRC/system/lib/zdecide.py" "$G/audit/"
+install -m 644 "$SRC/system/lib/zledger.py" "$SRC/system/lib/zdecide.py" "$SRC/system/lib/zident.py" "$SRC/system/lib/znotify.py" "$G/audit/"
 echo "== key service (beside the audit node; it shares the proven decision program)"
 install -m 755 "$SRC/system/sbin/zenos_keysvc.py" "$G/audit/"
 install -m 644 "$SRC/system/lib/zkeysvc.py" "$SRC/system/lib/zwebauthn.py" "$G/audit/"
@@ -46,7 +46,7 @@ mkdir -p "$D/examples"
 cp "$SRC/packaging/grid/README.md" "$SRC/LICENSE" "$SRC/NOTICE" "$D/"
 cp "$SRC"/config/examples/storage-node.example.json "$SRC"/config/examples/grid-bootstrap.example.json \
    "$SRC"/config/examples/auditnode.example.json "$SRC"/config/examples/grid.example.json \
-   "$SRC"/config/examples/keysvc-server.example.env "$D/examples/"
+   "$SRC"/config/examples/keysvc-server.env.example "$D/examples/"
 
 echo "== control"
 find "$P" -name __pycache__ -prune -exec rm -rf {} +

@@ -12,6 +12,16 @@
   `--reconcile` reports a release the PC's ledger does not show. Lean: `KeyService.lean` (`key_sound`,
   `key_open_sound`, `key_presence`, `key_silent_refused`, `key_unhealthy_refused`, `key_halted_refused`,
   `key_rate_bounded`).
+- Old files: `zenos_keyd.py --reseal` seals them again through the key service in place; `--drop-local-keys`
+  destroys the keys left on the PC, which then makes no new ones.
+- The PC's identity key is made inside the TPM on first start when the PC has one (P-256, never leaves the TPM,
+  bound to PCR 7); otherwise a key file as before (`zident.py`, `zenos-identity.service`). Audit nodes and the key
+  service accept both kinds.
+- Alerts to officers through ZENOS Messages from the audit node and the key service (`znotify.py`).
+- Confirmation on the phone, service side: `--origin`, `--enrol-code`, the confirmation page's back end and keyd's
+  `confirm_url`. The pages themselves are not included yet.
+- The key agent, the AI guard and the audit shipping run confined (systemd): no capabilities for keyd, only the
+  network ones for the AI guard, only reading for the audit shipping; no writes outside their own state.
 - Audit status: each PC also reports whether it is stopped after an anomaly.
 - keyd: a grant counts at most a day after the request the officers signed was made (its outer expiry is not
   signed).

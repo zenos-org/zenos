@@ -39,12 +39,35 @@ kernel hole for instance, can read every file sealed there. The key service move
 
 ## What it does not do yet
 
-- Files sealed before the service was configured keep their keys on the PC. Re-sealing them is a separate step.
-- The presence level is off by default (`--presence-from 6`). The confirmation page has to be served by the key
-  service itself, so the phone shows the file as the service knows it; that page is the next step.
-- The PC's identity key is a root-owned file. With it, root can ask for files that the users assigned to this PC
-  are cleared for, within the rate limits and with every release recorded on the service. TPM-bound keys come after the confirmation page.
-- Alerts are written to `alerts.jsonl` on the service; sending them to officers through ZENOS Messages is not built yet.
+- The presence level is off by default (`--presence-from 6`) until the confirmation pages ship. The service side
+  is done: `--origin` (the address phones reach the service at), `--enrol-code USER` (a one-time address where the
+  person's phone makes a passkey for the service), `/c/<challenge>` (the page that shows the file as the service
+  recorded it and takes the passkey signature), and keyd's `confirm_url` for the QR code on the PC.
+- On a PC without a TPM the identity key is a root-owned file. With it, root can ask for files that the users
+  assigned to this PC are cleared for, within the rate limits and with every release recorded on the service. With
+  a TPM the key cannot leave the PC, but root on that PC can still ask the TPM to use it.
+
+## Moving old files
+
+    sudo zenos_keyd.py --reseal-dry /home /srv/shared     the sealed files whose key is still on this PC
+    sudo zenos_keyd.py --reseal /home /srv/shared         seal them again through the key service, in place
+    sudo zenos_keyd.py --drop-local-keys --yes            destroy the keys left on this PC
+
+Each file keeps its name, owner, mode, author and level. Grants for the old files name their old digest and no
+longer apply. After `--drop-local-keys` the PC makes no new level key, even after a restart.
+
+## The PC's identity
+
+`zenos-identity.service` makes the identity once, on first start: inside the TPM when the PC has one (a P-256 key
+that never leaves the TPM, usable only with the same PCR 7, the Secure Boot state), otherwise an Ed25519 key file.
+`zenos_identity.py --show` prints the key to enroll on the audit nodes and the key service;
+`zenos_identity.py --setup-tpm` moves an existing PC to the TPM (enroll the new key again).
+
+## Alerts
+
+`--notify-url` and `--notify-to` (the audit node: `"notify"` in its config) send alerts as ZENOS Messages from the
+server's own Messages account to the named officers: a PC gone silent, a key refused to a silent, unhealthy or
+stopped PC, a release the PC's ledger does not show, a rewritten ledger. Every alert is also in `alerts.jsonl`.
 
 ## Setting it up
 

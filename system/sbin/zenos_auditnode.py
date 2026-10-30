@@ -29,6 +29,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))       # zenos-grid package: zledger.py sits beside this file
 import zledger                                                     # noqa: E402
 import zdecide                                                     # noqa: E402
+import zident                                                      # noqa: E402
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey   # noqa: E402
 from cryptography.hazmat.primitives import serialization          # noqa: E402
 
@@ -76,13 +77,26 @@ class Node:
         if not NAME.match(machine):
             raise ValueError("bad machine name")
         raw = base64.b64decode(pub_b64, validate=True)
-        Ed25519PublicKey.from_public_bytes(raw)
+        zident.check_pub(raw)                 # Ed25519 (key file) or P-256 (inside the TPM)
         (self.dir / "machines" / f"{machine}.pub").write_bytes(raw)
         self.alert("machine-enrolled", machine=machine, fingerprint=hashlib.sha256(raw).hexdigest()[:16])
+
+    notify = None                                   # znotify.Notifier: alerts to the officers through ZENOS Messages
 
     def alert(self, event, **kw):
         with open(self.dir / "alerts.jsonl", "a", encoding="utf-8") as f:
             f.write(json.dumps({"t": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "event": event, **kw}, ensure_ascii=False) + "\n")
+        if self.notify is not None:
+            self.notify(event, **kw)
+
+    def set_notify(self, conf):
+        import znotify
+
+        def failed(event, to, error):
+            with open(self.dir / "alerts.jsonl", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"t": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "event": "alert-delivery-failed",
+                                    "alert": event, "to": to, "error": error}) + "\n")
+        self.notify = znotify.Notifier(conf, failed) if conf else None
 
     def chain_path(self, machine, chain):
         return self.dir / "chains" / f"{machine}__{chain}.jsonl"
@@ -125,7 +139,8 @@ class Node:
         if not pk.exists():
             return 403, {"ok": False, "error": "machine not enrolled"}
         try:
-            Ed25519PublicKey.from_public_bytes(pk.read_bytes()).verify(base64.b64decode(b.get("sig", "")), batch_digest(b))
+            if not zident.verify(pk.read_bytes(), base64.b64decode(b.get("sig", "")), batch_digest(b)):
+                raise ValueError("bad signature")
         except Exception:
             self.alert("bad-signature", machine=machine, chain=chain)
             return 403, {"ok": False, "error": "signature does not verify"}
@@ -136,7 +151,8 @@ class Node:
             seen.write_text(str(time.time()))
             if isinstance(b.get("status"), dict):
                 try:
-                    Ed25519PublicKey.from_public_bytes(pk.read_bytes()).verify(base64.b64decode(b.get("status_sig", "")), status_digest(b))
+                    if not zident.verify(pk.read_bytes(), base64.b64decode(b.get("status_sig", "")), status_digest(b)):
+                        raise ValueError("bad status signature")
                     self.note_status(machine, b["status"])
                 except Exception:
                     self.alert("bad-status-signature", machine=machine)
@@ -493,6 +509,7 @@ def main():
     if host not in ("127.0.0.1", "::1", "localhost") and not opt("--cert"):
         sys.exit("Listening beyond this machine needs TLS: give --cert and --key.")
     silence = int(opt("--silence-seconds", 0) or 0) or int(opt("--silence-minutes", 0) or 0) * 60 or 90
+    node.set_notify(cfg.get("notify"))
     serve(node, host, int(opt("--port", "8443")), opt("--cert"), opt("--key"), silence,
           peers=cfg.get("peers", []), check_every=int(cfg.get("check_seconds", 120)))
 

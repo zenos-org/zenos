@@ -1,0 +1,13 @@
+[Unit]
+Description=ZENOS: make this PC's identity key once (inside the TPM when the PC has one, otherwise a root-only file)
+ConditionPathExists=!/etc/zenos/identity.json
+ConditionPathExists=!/etc/zenos/audit-device.key
+Before=zenos-auditship.service zenos-keyd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I /usr/sbin/zenos_identity.py --ensure --pcrs 7
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -10,6 +10,9 @@ and digests it relies on. Every unseal is written to the root ledger, which zeno
 
   zenos_keyd.py                      run the agent (systemd: zenos-keyd.service)
   zenos_keyd.py --clearance USER N   set a user's clearance (1-5)
+  zenos_keyd.py --reseal-dry DIR...  list the sealed files whose key is still on this PC
+  zenos_keyd.py --reseal DIR...      seal them again through the key service, in place
+  zenos_keyd.py --drop-local-keys --yes   destroy the keys kept on this PC (after --reseal)
 Protocol: one JSON line per connection on /run/zenos/keyd.sock; the caller is identified by SO_PEERCRED.
 """
 import base64, hashlib, json, os, pwd, re, socket, struct, sys, threading, time
@@ -62,10 +65,18 @@ def log(**kw):
             pass
 
 
+def keysvc_in_use():
+    try:
+        return zkeysvc.conf() is not None
+    except zkeysvc.Unavailable:
+        return True                      # configured but unusable: still never make keys on the PC
+
+
 def ensure_keys():
     KEYS.mkdir(parents=True, exist_ok=True)
     os.chmod(KEYS, 0o700)
-    for n in range(1, 6):
+    # with a key service, no level key is made on the PC (old ones stay until --drop-local-keys)
+    for n in ([] if keysvc_in_use() else range(1, 6)):
         p = KEYS / f"L{n}.key"
         if not p.exists():
             fd = os.open(p, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
@@ -313,7 +324,10 @@ def handle(msg, uid):
                 if e.error == "presence":
                     try:
                         c = zkeysvc.challenge(user, fid, level)
-                        out.update(challenge=c["challenge"], rp_id=c.get("rp_id"), allow=c.get("allow"), fid=fid)
+                        # confirm_url: the key service's own page, to open on the person's phone (a QR code on screen);
+                        # then open again with presence {"challenge": ...}
+                        out.update(challenge=c["challenge"], rp_id=c.get("rp_id"), allow=c.get("allow"), fid=fid,
+                                   confirm_url=c.get("url"))
                     except Exception:
                         pass
                 return out
@@ -359,7 +373,7 @@ KEYSVC_MSG = {
     "unhealthy": "One of this PC's protecting services is not running, so the key service gives out no keys.",
     "halted": "This PC is stopped after an anomaly. Nothing can be opened until the release is approved.",
     "rate": "Too many files were opened from this PC in a short time. Wait a minute and try again.",
-    "presence": "Confirm this file on your security key or phone to open it.",
+    "presence": "Confirm this file on your phone to open it: the key service shows which file it is.",
     "clearance": "Your clearance, as the key service holds it, does not cover this level.",
     "unknown-file": "The key service does not know this file, or it was sealed on another PC.",
     "not-assigned": "The key service does not list you as a user of this PC.",
@@ -394,9 +408,91 @@ def client(c):
     c.close()
 
 
+def sealed_files(paths):
+    for top in paths:
+        for root, dirs, files in os.walk(top) if os.path.isdir(top) else [(os.path.dirname(top) or ".", [], [os.path.basename(top)])]:
+            for f in files:
+                p = os.path.join(root, f)
+                try:
+                    if not os.path.islink(p) and os.path.isfile(p):
+                        with open(p, "rb") as fh:
+                            if fh.read(len(MAGIC)) == MAGIC:
+                                yield p
+                except OSError:
+                    continue
+
+
+def reseal(paths, dry=False):
+    """Seal again, through the key service, every sealed file under `paths` whose key is still on this PC.
+    The new file replaces the old one in place (same name, owner and mode); the author and level are kept."""
+    if not zkeysvc.conf():
+        sys.exit("No key service is configured (/etc/zenos/keysvc.json).")
+    done = left = 0
+    for p in sealed_files(paths):
+        try:
+            blob = Path(p).read_bytes()
+            h, hb, ct = parse_verify(blob)
+        except Exception as e:
+            print(f"skip   {p}: {e}")
+            continue
+        if h.get("fmt") == zkeysvc.FMT:
+            continue
+        if dry:
+            print(f"would  {p}  L{h['level']}  {h.get('author')}")
+            left += 1
+            continue
+        try:
+            data = unseal(h, hb, ct)
+            new = seal(data, int(h["level"]), h.get("name") or os.path.basename(p), str(h.get("author") or "root"))
+        except (zkeysvc.Refused, zkeysvc.Unavailable) as e:
+            print(f"left   {p}: the key service refused ({e})")
+            left += 1
+            continue
+        st = os.stat(p)
+        tmp = p + ".zenos-reseal"
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, st.st_mode & 0o7777)
+        with os.fdopen(fd, "wb") as f:
+            f.write(new)
+            f.flush()
+            os.fsync(f.fileno())
+        os.chown(tmp, st.st_uid, st.st_gid)
+        os.replace(tmp, p)
+        log(event="reseal", user=str(h.get("author")), level=int(h["level"]), name=h.get("name"),
+            old=hashlib.sha256(blob).hexdigest()[:16], new=hashlib.sha256(new).hexdigest()[:16],
+            fid=json.loads(new[len(MAGIC):].split(b"\n", 1)[0]).get("fid"))
+        print(f"sealed {p}  L{h['level']}")
+        done += 1
+    print(f"{done} file(s) sealed through the key service, {left} left with a key on this PC.")
+    return left
+
+
+def drop_local_keys():
+    """Destroy the level and fragment keys kept on this PC. Files still sealed with them can no longer be opened."""
+    if not zkeysvc.conf():
+        sys.exit("No key service is configured: the keys on this PC are the only ones.")
+    gone = 0
+    for p in list(KEYS.glob("L*.key")) + [q for q in (KEYS / "frag").rglob("*") if q.is_file()]:
+        n = p.stat().st_size
+        with open(p, "r+b") as f:
+            f.write(os.urandom(n))
+            f.flush()
+            os.fsync(f.fileno())
+        p.unlink()
+        gone += 1
+    log(event="local-keys-dropped", user="root", count=gone)
+    print(f"{gone} key file(s) destroyed. New files are sealed only through the key service.")
+
+
 def main():
     if len(sys.argv) == 4 and sys.argv[1] == "--clearance":
         return set_clearance(sys.argv[2], sys.argv[3])
+    if len(sys.argv) >= 3 and sys.argv[1] in ("--reseal", "--reseal-dry"):
+        sys.exit(1 if reseal(sys.argv[2:], dry=sys.argv[1] == "--reseal-dry") else 0)
+    if sys.argv[1:] == ["--drop-local-keys", "--yes"]:
+        return drop_local_keys()
+    if sys.argv[1:2] == ["--drop-local-keys"]:
+        sys.exit("This destroys the keys on this PC; files not yet sealed again cannot be opened afterwards.\n"
+                 "Run --reseal-dry first, then: zenos_keyd.py --drop-local-keys --yes")
     ensure_keys()
     os.makedirs(os.path.dirname(SOCK), exist_ok=True)
     os.chmod(os.path.dirname(SOCK), 0o755)   # with the unit's UMask=0077 it would be 0700: no user could reach the socket

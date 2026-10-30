@@ -14,6 +14,8 @@ import base64, hashlib, json, os, ssl, time, urllib.error, urllib.request
 from pathlib import Path
 from urllib.parse import urlparse
 
+import zident
+
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
@@ -123,14 +125,14 @@ def conf():
 
 
 def identity_key():
-    """the PC's identity key, shared with audit shipping (made by it, or here if this PC does not ship yet)"""
-    if not ID_KEY.exists():
-        ID_KEY.parent.mkdir(parents=True, exist_ok=True)
-        fd = os.open(ID_KEY, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        with os.fdopen(fd, "wb") as f:
-            f.write(Ed25519PrivateKey.generate().private_bytes(serialization.Encoding.Raw, serialization.PrivateFormat.Raw,
-                                                               serialization.NoEncryption()))
-    return Ed25519PrivateKey.from_private_bytes(ID_KEY.read_bytes())
+    """the PC's identity, shared with audit shipping: the TPM key when /etc/zenos/identity.json says so, otherwise
+    the Ed25519 key file (zident.py)"""
+    try:
+        if zident.CONF.exists():
+            return zident.load()
+        return zident.FileIdentity(ID_KEY)
+    except zident.Unavailable as e:
+        raise Unavailable(str(e))
 
 
 def _post(url, path, body, timeout=20):

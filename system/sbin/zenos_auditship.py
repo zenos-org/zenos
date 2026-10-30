@@ -17,6 +17,9 @@ Configuration: /etc/zenos/audit.json
 import base64, glob, hashlib, json, os, re, ssl, subprocess, sys, time, urllib.request, urllib.error
 from pathlib import Path
 from urllib.parse import urlparse
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib", "zenos"))
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"))
+import zident                                                    # noqa: E402
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from cryptography.hazmat.primitives import serialization
 
@@ -93,12 +96,10 @@ def once(key, every, **kw):
 
 
 def device_key():
-    if not KEY.exists():
-        KEY.parent.mkdir(parents=True, exist_ok=True)
-        fd = os.open(KEY, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        with os.fdopen(fd, "wb") as f:
-            f.write(Ed25519PrivateKey.generate().private_bytes(serialization.Encoding.Raw, serialization.PrivateFormat.Raw, serialization.NoEncryption()))
-    return Ed25519PrivateKey.from_private_bytes(KEY.read_bytes())
+    """the PC's identity (zident): the TPM key when /etc/zenos/identity.json says so, otherwise the key file"""
+    if zident.CONF.exists():
+        return zident.load()
+    return zident.FileIdentity(KEY)
 
 
 def conf():
@@ -204,7 +205,7 @@ def main():
     key = device_key()
     c = conf()
     if "--show-key" in sys.argv:
-        pub = base64.b64encode(key.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)).decode()
+        pub = base64.b64encode(key.pub()).decode()
         return print(f"zenos_auditnode.py --store <dir> --enroll {c['machine']} {pub}")
     try:
         state = json.loads(STATE.read_text())

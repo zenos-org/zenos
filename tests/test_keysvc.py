@@ -59,7 +59,7 @@ class KeyService(unittest.TestCase):
         for n, k in cls.officers.items():
             (d / "approvers" / f"{n}.pub").write_bytes(raw_pub(k))
             cls.svc.add_approver(n, base64.b64encode(raw_pub(k)).decode())
-        cls.svc.enroll(MACHINE, base64.b64encode(raw_pub(zkeysvc.identity_key())).decode())
+        cls.svc.enroll(MACHINE, base64.b64encode(zkeysvc.identity_key().pub()).decode())
         cls.svc.set_clearance(cls.user, 3)
         cls.svc.assign(MACHINE, cls.user)
         for _ in range(50):
@@ -272,6 +272,38 @@ class KeyService(unittest.TestCase):
         finally:
             zkeysvc.CONF.write_text(json.dumps(self.conf))
 
+    def test_old_files_sealed_again_then_local_keys_destroyed(self):
+        saved = zkeysvc.CONF
+        zkeysvc.CONF = self.tmp / "none.json"                     # as before the key service was configured
+        try:
+            self.K.ensure_keys()
+            old = self.K.seal("昔の予算".encode(), 2, "old.txt", self.user)
+        finally:
+            zkeysvc.CONF = saved
+        self.assertNotEqual(self.header(old).get("fmt"), "zks1")
+        d = self.tmp / "docs"
+        (d / "sub").mkdir(parents=True)
+        (d / "sub" / "old.zen").write_bytes(old)
+        os.chmod(d / "sub" / "old.zen", 0o640)
+        (d / "plain.txt").write_text("not sealed")
+        self.assertEqual(self.K.reseal([str(d)], dry=True), 1)
+        self.assertEqual(self.K.reseal([str(d)]), 0)
+        new = (d / "sub" / "old.zen").read_bytes()
+        self.assertEqual(self.header(new)["fmt"], "zks1")
+        self.assertEqual(oct(os.stat(d / "sub" / "old.zen").st_mode & 0o777), "0o640")
+        self.assertEqual((d / "plain.txt").read_text(), "not sealed")
+        self.assertEqual(self.K.reseal([str(d)], dry=True), 0)
+        keys = Path(os.environ["ZENOS_KEYD_KEYS"])
+        self.assertTrue(list(keys.glob("L*.key")))
+        self.K.drop_local_keys()
+        self.assertEqual(list(keys.glob("L*.key")), [])
+        self.K.ensure_keys()                                       # a restart makes no new key on the PC
+        self.assertEqual(list(keys.glob("L*.key")), [])
+        r = self.open(new)
+        self.assertTrue(r["ok"], r)
+        self.assertEqual(base64.b64decode(r["data"]).decode(), "昔の予算")
+        self.assertFalse(self.open(old)["ok"])                     # the old copy is gone for good
+
     def test_answer_from_another_service_is_not_used(self):
         blob = self.seal(2)
         bad = dict(self.conf, pub=base64.b64encode(raw_pub(Ed25519PrivateKey.generate())).decode())
@@ -314,6 +346,94 @@ class KeyService(unittest.TestCase):
         other = self.seal(3, b"other")
         r = self.open(other)
         self.assertEqual(self.open(blob, presence=confirm(r["challenge"]))["error"], "keysvc-presence")  # for another file
+
+    def test_confirmation_on_the_services_own_page(self):
+        """enrol a passkey on the service's page, then confirm one file there; the PC only refers to the challenge"""
+        import urllib.request
+        origin = f"http://127.0.0.1:{self.port}"
+        self.svc.origin, self.svc.rp_id = origin, "127.0.0.1"
+        pk = self.svc.dir / "passkeys" / f"{self.user}.json"
+
+        def undo():
+            self.svc.origin = self.svc.rp_id = None
+            pk.unlink(missing_ok=True)
+        self.addCleanup(undo)
+        self.svc.presence_from = 3
+        pages = self.tmp / "pages"
+        pages.mkdir(exist_ok=True)
+        for n in ("confirm", "enrol"):
+            (pages / f"{n}.html").write_text("<script>const D=/*ZENOS_DATA*/null;</script>")
+        zenos_keysvc.PAGES = pages
+
+        def post(path, body):
+            r = urllib.request.Request(origin + path, data=json.dumps(body).encode(), method="POST",
+                                       headers={"Content-Type": "application/json"})
+            try:
+                with urllib.request.urlopen(r) as a:
+                    return a.status, json.loads(a.read())
+            except urllib.error.HTTPError as e:
+                return e.code, json.loads(e.read())
+
+        def get(path):
+            try:
+                with urllib.request.urlopen(origin + path) as a:
+                    return a.status, a.read().decode()
+            except urllib.error.HTTPError as e:
+                return e.code, e.read().decode()
+        import urllib.error
+        # enrolment: a one-time address, a passkey made for this service
+        url = self.svc.enrol_code(self.user)
+        code = url.rsplit("/", 1)[1]
+        st, page = get("/e/" + code)
+        self.assertEqual(st, 200)
+        data = json.loads(page.split("const D=", 1)[1].split(";</script>")[0].replace("<\\/", "</"))
+        sk = Ed25519PrivateKey.generate()
+        x = sk.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+        cose = bytes([0xa4, 0x01, 0x01, 0x03, 0x27, 0x20, 0x06, 0x21, 0x58, 0x20]) + x     # OKP, EdDSA, Ed25519
+        ad = (hashlib.sha256(b"127.0.0.1").digest() + bytes([0x45]) + (0).to_bytes(4, "big") + bytes(16)
+              + (5).to_bytes(2, "big") + b"credX" + cose)
+        att = bytes([0xa3, 0x63]) + b"fmt" + bytes([0x64]) + b"none" + bytes([0x67]) + b"attStmt" + bytes([0xa0]) \
+            + bytes([0x68]) + b"authData" + bytes([0x59]) + len(ad).to_bytes(2, "big") + ad
+        cdj = json.dumps({"type": "webauthn.create", "challenge": data["challenge"], "origin": origin}).encode()
+        st, a = post("/v1/enrol", {"code": code, "attestation_object": zwebauthn.b64u(att),
+                                   "client_data_json": zwebauthn.b64u(cdj)})
+        self.assertEqual((st, a["ok"]), (200, True), a)
+        self.assertEqual(post("/v1/enrol", {"code": code})[0], 410)               # one use
+        cred = zwebauthn.b64u(b"credX")
+        blob = self.seal(3, b"L3 by phone")
+        r = self.open(blob)
+        self.assertEqual(r["error"], "keysvc-presence")
+        self.assertTrue(r["confirm_url"].startswith(origin + "/c/"))
+        ch = r["challenge"]
+        st, page = get("/c/" + ch)
+        self.assertEqual(st, 200)
+        view = json.loads(page.split("const D=", 1)[1].split(";</script>")[0].replace("<\\/", "</"))
+        self.assertEqual((view["file"], view["level"], view["allow"]), ("f.txt", 3, [cred]))
+        self.assertFalse(self.open(blob, presence={"challenge": ch})["ok"])      # not confirmed yet: used up
+        r = self.open(blob)
+        ch = r["challenge"]
+        n = [0]
+
+        def assertion(ch, origin=origin):
+            n[0] += 1
+            ad = hashlib.sha256(b"127.0.0.1").digest() + bytes([0x05]) + n[0].to_bytes(4, "big")
+            cdj = json.dumps({"type": "webauthn.get", "challenge": ch, "origin": origin}).encode()
+            return {"challenge": ch, "cred_id": cred, "authenticator_data": zwebauthn.b64u(ad),
+                    "client_data_json": zwebauthn.b64u(cdj), "signature": zwebauthn.b64u(sk.sign(ad + hashlib.sha256(cdj).digest()))}
+        st, a = post("/v1/confirm", assertion(ch))
+        self.assertEqual(st, 200, a)
+        self.assertEqual(post("/v1/confirm", assertion(ch))[0], 410)               # one try
+        ok = self.open(blob, presence={"challenge": ch})
+        self.assertTrue(ok["ok"], ok)
+        self.assertEqual(base64.b64decode(ok["data"]), b"L3 by phone")
+        self.assertFalse(self.open(blob, presence={"challenge": ch})["ok"])      # one use
+        other = self.seal(3, b"other")
+        r = self.open(other)
+        post("/v1/confirm", assertion(r["challenge"]))
+        self.assertFalse(self.open(blob, presence={"challenge": r["challenge"]})["ok"])   # confirmed for another file
+        r = self.open(blob)
+        self.assertEqual(post("/v1/confirm", assertion(r["challenge"], origin="https://evil.example"))[0], 403)
+        self.assertFalse(self.open(blob, presence={"challenge": r["challenge"]})["ok"])
 
     def test_reconcile_finds_a_suppressed_pc_record(self):
         blob = self.seal(2)
