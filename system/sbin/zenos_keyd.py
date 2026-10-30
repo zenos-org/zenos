@@ -324,10 +324,11 @@ def handle(msg, uid):
                 if e.error == "presence":
                     try:
                         c = zkeysvc.challenge(user, fid, level)
-                        # confirm_url: the key service's own page, to open on the person's phone (a QR code on screen);
-                        # then open again with presence {"challenge": ...}
-                        out.update(challenge=c["challenge"], rp_id=c.get("rp_id"), allow=c.get("allow"), fid=fid,
-                                   confirm_url=c.get("url"))
+                        # the key service sent the person's phone a link to its own page, which shows the file as
+                        # the service knows it; once confirmed there, open again with presence {"challenge": ...}
+                        out.update(challenge=c["challenge"], confirm_sent=bool(c.get("sent")), fid=fid)
+                        if not c.get("sent"):
+                            out["message"] = KEYSVC_MSG["presence-unsent"]
                     except Exception:
                         pass
                 return out
@@ -373,7 +374,8 @@ KEYSVC_MSG = {
     "unhealthy": "One of this PC's protecting services is not running, so the key service gives out no keys.",
     "halted": "This PC is stopped after an anomaly. Nothing can be opened until the release is approved.",
     "rate": "Too many files were opened from this PC in a short time. Wait a minute and try again.",
-    "presence": "Confirm this file on your phone to open it: the key service shows which file it is.",
+    "presence": "The key service sent a confirmation to your phone in ZENOS Messages. Check the file name there, confirm, then open the file again.",
+    "presence-unsent": "This file needs a confirmation on your phone, but the key service has no Messages account for you. Ask your administrator.",
     "clearance": "Your clearance, as the key service holds it, does not cover this level.",
     "unknown-file": "The key service does not know this file, or it was sealed on another PC.",
     "not-assigned": "The key service does not list you as a user of this PC.",
@@ -408,61 +410,113 @@ def client(c):
     c.close()
 
 
+RESEAL_STATE = Path(os.environ.get("ZENOS_RESEAL_STATE", "/var/lib/zenos/reseal.json"))
+
+
+def _open_dir_nofollow(path):
+    """a descriptor for `path`, opened one component at a time without following any symbolic link, so a user who
+    swaps a folder for a link while this runs cannot point the root-owned writes elsewhere"""
+    parts = [x for x in os.path.abspath(path).split("/") if x]
+    fd = os.open("/", os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        for x in parts:
+            nfd = os.open(x, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)
+            os.close(fd)
+            fd = nfd
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
+
+
 def sealed_files(paths):
     for top in paths:
-        for root, dirs, files in os.walk(top) if os.path.isdir(top) else [(os.path.dirname(top) or ".", [], [os.path.basename(top)])]:
+        walk = os.walk(top, followlinks=False) if os.path.isdir(top) else [(os.path.dirname(top) or ".", [], [os.path.basename(top)])]
+        for root, dirs, files in walk:
             for f in files:
                 p = os.path.join(root, f)
                 try:
-                    if not os.path.islink(p) and os.path.isfile(p):
-                        with open(p, "rb") as fh:
-                            if fh.read(len(MAGIC)) == MAGIC:
-                                yield p
+                    if os.path.islink(p) or not os.path.isfile(p):
+                        continue
+                    with open(p, "rb") as fh:
+                        if fh.read(len(MAGIC)) == MAGIC:
+                            yield p
                 except OSError:
                     continue
 
 
+def _reseal_one(p):
+    """returns "sealed", "already" or raises"""
+    dfd = _open_dir_nofollow(os.path.dirname(p) or ".")
+    name = os.path.basename(p)
+    try:
+        fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=dfd)
+        with os.fdopen(fd, "rb") as fh:
+            st = os.fstat(fh.fileno())
+            if not __import__("stat").S_ISREG(st.st_mode):
+                raise ValueError("not a regular file")
+            blob = fh.read()
+        h, hb, ct = parse_verify(blob)
+        if h.get("fmt") == zkeysvc.FMT:
+            return "already", h, blob, blob
+        data = unseal(h, hb, ct)
+        new = seal(data, int(h["level"]), h.get("name") or name, str(h.get("author") or "root"))
+        tmp = ".%s.zenos-reseal-%s" % (name, os.urandom(6).hex())
+        wfd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, st.st_mode & 0o7777, dir_fd=dfd)
+        try:
+            with os.fdopen(wfd, "wb") as f:
+                f.write(new)
+                f.flush()
+                os.fchown(f.fileno(), st.st_uid, st.st_gid)
+                os.fchmod(f.fileno(), st.st_mode & 0o7777)
+                os.fsync(f.fileno())
+            cur = os.stat(name, dir_fd=dfd, follow_symlinks=False)
+            if (cur.st_ino, cur.st_dev) != (st.st_ino, st.st_dev):
+                raise ValueError("the file changed while it was being sealed again")
+            os.replace(tmp, name, src_dir_fd=dfd, dst_dir_fd=dfd)
+            os.fsync(dfd)
+        except BaseException:
+            try:
+                os.unlink(tmp, dir_fd=dfd)
+            except OSError:
+                pass
+            raise
+        return "sealed", h, blob, new
+    finally:
+        os.close(dfd)
+
+
 def reseal(paths, dry=False):
     """Seal again, through the key service, every sealed file under `paths` whose key is still on this PC.
-    The new file replaces the old one in place (same name, owner and mode); the author and level are kept."""
+    The new file replaces the old one in place (same name, owner and mode); the author and level are kept.
+    Returns how many are left with a key on this PC (files that could not be read or sealed count as left)."""
     if not zkeysvc.conf():
         sys.exit("No key service is configured (/etc/zenos/keysvc.json).")
     done = left = 0
     for p in sealed_files(paths):
         try:
-            blob = Path(p).read_bytes()
-            h, hb, ct = parse_verify(blob)
+            if dry:
+                h, _, _ = parse_verify(Path(p).read_bytes())
+                if h.get("fmt") != zkeysvc.FMT:
+                    print(f"would  {p}  L{h['level']}  {h.get('author')}")
+                    left += 1
+                continue
+            r, h, old, new = _reseal_one(p)
         except Exception as e:
-            print(f"skip   {p}: {e}")
-            continue
-        if h.get("fmt") == zkeysvc.FMT:
-            continue
-        if dry:
-            print(f"would  {p}  L{h['level']}  {h.get('author')}")
+            print(f"left   {p}: {type(e).__name__}: {e}")
             left += 1
             continue
-        try:
-            data = unseal(h, hb, ct)
-            new = seal(data, int(h["level"]), h.get("name") or os.path.basename(p), str(h.get("author") or "root"))
-        except (zkeysvc.Refused, zkeysvc.Unavailable) as e:
-            print(f"left   {p}: the key service refused ({e})")
-            left += 1
+        if r == "already":
             continue
-        st = os.stat(p)
-        tmp = p + ".zenos-reseal"
-        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, st.st_mode & 0o7777)
-        with os.fdopen(fd, "wb") as f:
-            f.write(new)
-            f.flush()
-            os.fsync(f.fileno())
-        os.chown(tmp, st.st_uid, st.st_gid)
-        os.replace(tmp, p)
         log(event="reseal", user=str(h.get("author")), level=int(h["level"]), name=h.get("name"),
-            old=hashlib.sha256(blob).hexdigest()[:16], new=hashlib.sha256(new).hexdigest()[:16],
+            old=hashlib.sha256(old).hexdigest()[:16], new=hashlib.sha256(new).hexdigest()[:16],
             fid=json.loads(new[len(MAGIC):].split(b"\n", 1)[0]).get("fid"))
         print(f"sealed {p}  L{h['level']}")
         done += 1
     print(f"{done} file(s) sealed through the key service, {left} left with a key on this PC.")
+    if not dry:
+        RESEAL_STATE.parent.mkdir(parents=True, exist_ok=True)
+        RESEAL_STATE.write_text(json.dumps({"t": time.time(), "paths": [os.path.abspath(x) for x in paths], "left": left}))
     return left
 
 
@@ -470,6 +524,14 @@ def drop_local_keys():
     """Destroy the level and fragment keys kept on this PC. Files still sealed with them can no longer be opened."""
     if not zkeysvc.conf():
         sys.exit("No key service is configured: the keys on this PC are the only ones.")
+    try:
+        st = json.loads(RESEAL_STATE.read_text())
+    except (OSError, ValueError):
+        st = None
+    if not st or st.get("left") != 0:
+        sys.exit("Run --reseal first, until it reports 0 files left. Files on USB sticks, backups and other PCs that "
+                 "were not sealed again cannot be opened after this.")
+    print("Sealed again under: " + ", ".join(st.get("paths", [])))
     gone = 0
     for p in list(KEYS.glob("L*.key")) + [q for q in (KEYS / "frag").rglob("*") if q.is_file()]:
         n = p.stat().st_size

@@ -18,8 +18,9 @@
   bound to PCR 7); otherwise a key file as before (`zident.py`, `zenos-identity.service`). Audit nodes and the key
   service accept both kinds.
 - Alerts to officers through ZENOS Messages from the audit node and the key service (`znotify.py`).
-- Confirmation on the phone, service side: `--origin`, `--enrol-code`, the confirmation page's back end and keyd's
-  `confirm_url`. The pages themselves are not included yet.
+- Confirmation on the phone, service side: `--origin`, `--messages`, `--enrol-code`, the confirmation page's back
+  end; the link goes to the person's Messages, never through the PC, and a signature handed in by the PC does not
+  count. The pages themselves are not included yet.
 - The key agent, the AI guard and the audit shipping run confined (systemd): no capabilities for keyd, only the
   network ones for the AI guard, only reading for the audit shipping; no writes outside their own state.
 - Audit status: each PC also reports whether it is stopped after an anomaly.

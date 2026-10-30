@@ -99,28 +99,20 @@ class TpmIdentity:
         self._pub = None
 
     def sign(self, msg):
+        # one process: the PCR policy session lives only inside tpm2_sign (a resource manager such as /dev/tpmrm0
+        # drops a session when the process that made it exits)
         with tempfile.TemporaryDirectory(prefix="zenos-tpm-") as d:
             Path(d, "m").write_bytes(msg)
-            auth = []
-            try:
-                if self.pcrs:
-                    _tpm("tpm2_startauthsession", "--policy-session", "-S", "s.ctx", cwd=d)
-                    _tpm("tpm2_policypcr", "-S", "s.ctx", "-l", "sha256:" + self.pcrs, "-Q", cwd=d)
-                    auth = ["-p", "session:s.ctx"]
-                _tpm("tpm2_sign", "-c", self.handle, *auth, "-g", "sha256", "-s", "ecdsa", "-f", "plain", "-o", "sig", "m",
-                     cwd=d)
-                return Path(d, "sig").read_bytes()
-            finally:
-                if self.pcrs and Path(d, "s.ctx").exists():
-                    subprocess.run(["tpm2_flushcontext", "s.ctx"], capture_output=True, cwd=d, timeout=30)
-                _flush()
+            auth = ["-p", "pcr:sha256:" + self.pcrs] if self.pcrs else []
+            _tpm("tpm2_sign", "-c", self.handle, *auth, "-g", "sha256", "-s", "ecdsa", "-f", "plain", "-o", "sig", "m",
+                 cwd=d)
+            return Path(d, "sig").read_bytes()
 
     def pub(self):
         if self._pub is None:
             with tempfile.TemporaryDirectory(prefix="zenos-tpm-") as d:
                 _tpm("tpm2_readpublic", "-c", self.handle, "-f", "der", "-o", "pub.der", "-Q", cwd=d)
                 self._pub = Path(d, "pub.der").read_bytes()
-                _flush()
         return self._pub
 
 

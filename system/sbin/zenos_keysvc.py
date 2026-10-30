@@ -24,8 +24,9 @@ recorded opening means the PC's record was suppressed.
   zenos_keysvc.py --store DIR --assign MACHINE USER       USER works on MACHINE (nobody else is served from it)
   zenos_keysvc.py --store DIR --clearance USER N
   zenos_keysvc.py --store DIR --approver NAME PUBKEY      an officer whose grant signatures count here
-  zenos_keysvc.py --store DIR --origin URL --enrol-code USER   a one-time address (15 min) for USER's phone to make
-                                                          its passkey on this service's own page
+  zenos_keysvc.py --store DIR --messages USER NAME.12     USER's ZENOS Messages account: confirmation links go there
+  zenos_keysvc.py --store DIR --origin URL --enrol-code USER [--send]   a one-time address (15 min) for USER's phone
+                                                          to make its passkey on this service's own page
   zenos_keysvc.py --store DIR --passkey USER FILE.json    a passkey registered for USER (zwebauthn.register output)
   zenos_keysvc.py --store DIR --audit-store DIR --reconcile
 """
@@ -202,7 +203,7 @@ class Service:
     def roster(self):
         return sorted(p.stem for p in (self.dir / "approvers").glob("*.pub"))
 
-    def add_passkey(self, user, reg):
+    def add_passkey(self, user, reg, notify=True):
         if not NAME.match(user):
             raise ValueError("bad user name")
         for k in ("cred_id", "public_key", "alg", "rp_id", "origin"):
@@ -212,6 +213,31 @@ class Service:
         keys = [k for k in keys if k["cred_id"] != reg["cred_id"]] + [dict(reg, count=int(reg.get("count") or 0))]
         (self.dir / "passkeys" / f"{user}.json").write_text(json.dumps(keys))
         self.log("passkey-added", "admin", user=user, cred=reg["cred_id"][:16])
+        if notify:
+            self.alert("passkey-added", user=user, cred=reg["cred_id"][:16])
+            self.send_to_person(user, "ZENOS key service: a new passkey was added for you. If this was not you, tell "
+                                      "your administrator now.")
+
+    def set_messages_account(self, user, account):
+        """where this person's confirmations go: their ZENOS Messages account (on their own phone)"""
+        if not NAME.match(user) or not re.match(r"^[a-z_][a-z0-9_]{2,29}\.\d{2,9}$", account):
+            raise ValueError("a user name and a ZENOS Messages username (name.12)")
+        (self.dir / "messages").mkdir(exist_ok=True)
+        (self.dir / "messages" / user).write_text(account)
+        self.log("messages-account-set", "admin", user=user, account=account)
+
+    def messages_account(self, user):
+        try:
+            return (self.dir / "messages" / user).read_text().strip() or None
+        except OSError:
+            return None
+
+    def send_to_person(self, user, text):
+        """a message from this service's own Messages account to the person (False: no account or no sender)"""
+        to = self.messages_account(user)
+        if not to or self.notify is None or not self.notify.url:
+            return False
+        return self.notify.send_now(to, text)
 
     def passkeys(self, user):
         try:
@@ -325,55 +351,43 @@ class Service:
             f = dict(c.get("confirmed") or {}) if bound else {}
             return {k: f.get(k) is True for k in ("registered", "sig_ok", "challenge_ok", "origin_ok", "user_verified",
                                                    "counter_ok")}
-        f = {"registered": False, "sig_ok": False, "challenge_ok": False, "origin_ok": False, "user_verified": False,
-             "counter_ok": False}
-        try:
-            cdj = zwebauthn.unb64u(p["client_data_json"])
-            ch = zwebauthn.client_data(cdj).get("challenge")
-            with self.lock:
-                c = self.challenges.pop(str(ch), None)            # one use, whatever the outcome
-            bound = (c is not None and time.time() <= c["exp"] and c["machine"] == req["machine"]
-                     and c["user"] == req.get("user") and c["fid"] == req.get("fid"))
-            keys = self.passkeys(str(req.get("user")))
-            reg = next((k for k in keys if k["cred_id"] == p.get("cred_id")), None)
-            if reg is None:
-                return f
-            facts = zwebauthn.check_assertion(reg, zwebauthn.unb64u(p["authenticator_data"]), cdj,
-                                              zwebauthn.unb64u(p["signature"]), zwebauthn.unb64u(ch) if bound else b"\0")
-            f.update({k: facts[k] for k in ("sig_ok", "challenge_ok", "origin_ok", "user_verified", "counter_ok")})
-            f["registered"] = True
-            f["challenge_ok"] = f["challenge_ok"] and bound
-            if all(f.values()):
-                reg["count"] = facts["count"]
-                (self.dir / "passkeys" / f"{req['user']}.json").write_text(json.dumps(keys))
-        except Exception:
-            pass
-        return f
+        # A signature handed in by the PC is not accepted: whoever controls the PC also controls its WebAuthn client,
+        # which writes the origin and the challenge the authenticator signs, and the phone shows neither the file
+        # nor the PC. Only a confirmation made on this service's own page, reached from the link sent to the
+        # person's phone, counts.
+        return {k: False for k in ("registered", "sig_ok", "challenge_ok", "origin_ok", "user_verified", "counter_ok")}
 
     # ---------- the person's own phone, on this service's pages
-    def confirm_view(self, ch):
-        """what the confirmation page shows: the file as this service recorded it"""
+    def _by_token(self, token):
+        """the open challenge whose page secret is `token` (the secret only ever goes to the person's phone)"""
         with self.lock:
-            c = self.challenges.get(str(ch))
+            for ch, c in self.challenges.items():
+                if secrets.compare_digest(c.get("token", ""), str(token)):
+                    return ch, c
+        return None, None
+
+    def confirm_view(self, token):
+        """what the confirmation page shows: the file as this service recorded it"""
+        ch, c = self._by_token(token)
         if not c or time.time() > c["exp"]:
             return None
         info = self.fileinfo(c["fid"]) or {}
-        return {"challenge": ch, "user": c["user"], "machine": c["machine"], "file": info.get("name", ""),
+        return {"token": token, "user": c["user"], "machine": c["machine"], "file": info.get("name", ""),
                 "level": int(info.get("level", 0)), "sealed_by": info.get("user"), "sealed_on": info.get("machine"),
                 "expires": int(c["exp"]), "rp_id": self.rp_id,
                 "allow": [k["cred_id"] for k in self.passkeys(c["user"]) if k.get("rp_id") == self.rp_id],
                 "confirmed": bool(c.get("confirmed"))}
 
     def confirm(self, body):
-        """a passkey signature made on /c/<challenge>; checked here, then kept with the challenge for the PC's
-        open request (one try per challenge)"""
+        """a passkey signature made on /c/<token>, over the token itself (a secret the PC never sees); checked here,
+        then kept with the challenge for the PC's open request (one try per challenge)"""
         try:
-            ch = str(body["challenge"])
+            token = str(body["token"])
             cdj = zwebauthn.unb64u(body["client_data_json"])
         except Exception:
             return 400, {"ok": False, "error": "malformed"}
+        ch, c = self._by_token(token)
         with self.lock:
-            c = self.challenges.get(ch)
             if not c or time.time() > c["exp"] or c.get("tried"):
                 return 410, {"ok": False, "error": "expired"}
             c["tried"] = True
@@ -383,7 +397,7 @@ class Service:
         if reg is not None:
             try:
                 facts = zwebauthn.check_assertion(reg, zwebauthn.unb64u(body["authenticator_data"]), cdj,
-                                                  zwebauthn.unb64u(body["signature"]), zwebauthn.unb64u(ch))
+                                                  zwebauthn.unb64u(body["signature"]), zwebauthn.unb64u(token))
                 f.update({k: facts[k] for k in ("sig_ok", "challenge_ok", "origin_ok", "user_verified", "counter_ok")})
                 f["origin_ok"] = f["origin_ok"] and reg.get("origin") == self.origin
             except Exception:
@@ -399,6 +413,8 @@ class Service:
                 c["confirmed"] = f
         self.log("presence-confirmed" if ok else "presence-failed", c["machine"], user=c["user"], fid=c["fid"],
                  **({} if ok else {"facts": f}))
+        if not ok:
+            self.alert("presence-failed", machine=c["machine"], user=c["user"], fid=c["fid"])
         return (200 if ok else 403), {"ok": ok}
 
     def enrol_code(self, user, minutes=15):
@@ -427,6 +443,8 @@ class Service:
                                    "rp_name": "ZENOS key service", "expires": int(e["exp"])}
 
     def enrol(self, body):
+        if not isinstance(body, dict):
+            return 400, {"ok": False, "error": "malformed"}
         e, p = self._enrol_record(body.get("code"))
         if not e:
             return 410, {"ok": False, "error": "expired"}
@@ -511,11 +529,15 @@ class Service:
                         del self.challenges[k]
                 if sum(1 for c in self.challenges.values() if c["machine"] == machine) >= MAX_CHALLENGES:
                     return 429, self.answer(req, {"ok": False, "error": "rate"})
-                self.challenges[ch] = {"machine": machine, "user": user, "fid": fid, "exp": now + CHALLENGE_TTL}
-            keys = self.passkeys(user)
-            return 200, self.answer(req, {"ok": True, "challenge": ch, "rp_id": keys[0]["rp_id"] if keys else None,
-                                          "allow": [k["cred_id"] for k in keys], "file": info.get("name", ""),
-                                          "url": f"{self.origin}/c/{ch}" if self.origin else None})
+                token = zwebauthn.b64u(os.urandom(32))
+                self.challenges[ch] = {"machine": machine, "user": user, "fid": fid, "exp": now + CHALLENGE_TTL,
+                                       "token": token}
+            # the link (and the secret in it) goes straight to the person's own phone, never back to the PC
+            sent = self.send_to_person(user, f"ZENOS key service: confirm a file you are opening on {machine}. "
+                                             f"The page shows which file it is. {self.origin}/c/{token}") \
+                if self.origin else False
+            self.log("confirm-sent" if sent else "confirm-not-sent", machine, user=user, fid=fid)
+            return 200, self.answer(req, {"ok": True, "challenge": ch, "sent": bool(sent)})
         if op not in ("seal", "open"):
             return 404, self.answer(req, {"ok": False, "error": "unknown op"})
         try:
@@ -621,7 +643,7 @@ def serve(svc, host, port, cert=None, key=None, reconcile_every=300):
                 html = (PAGES / f"{name}.html").read_text(encoding="utf-8")
             except OSError:
                 return self.reply(503, {"ok": False, "error": "page not installed"})
-            body = html.replace("/*ZENOS_DATA*/null", json.dumps(data).replace("</", "<\\/")).encode()
+            body = html.replace("/*ZENOS_DATA*/null", json.dumps(data).replace("<", "\\u003c")).encode()
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
@@ -696,7 +718,18 @@ def main():
             fn(a[i + 1], a[i + 2])
             return print("done")
     if "--enrol-code" in a:
-        return print(svc.enrol_code(a[a.index("--enrol-code") + 1]))
+        # give the address to the person in person or through their own Messages account, never through their PC
+        u = a[a.index("--enrol-code") + 1]
+        url = svc.enrol_code(u)
+        print(url)
+        if "--send" in a:
+            print("sent to", svc.messages_account(u)) if svc.send_to_person(u, "ZENOS key service: set up your phone "
+                  "(this link works once, for 15 minutes): " + url) else print("not sent: no Messages account or sender")
+        return
+    if "--messages" in a:
+        i = a.index("--messages")
+        svc.set_messages_account(a[i + 1], a[i + 2])
+        return print("done")
     if "--passkey" in a:
         i = a.index("--passkey")
         svc.add_passkey(a[i + 1], json.loads(Path(a[i + 2]).read_text()))

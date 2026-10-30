@@ -49,7 +49,8 @@ class KeyService(unittest.TestCase):
         os.environ.update(ZENOS_KEYD_KEYS=str(d / "keys"), ZENOS_CLEARANCE=str(d / "clearance"),
                           ZENOS_APPROVERS=str(d / "approvers"), ZENOS_KEYD_LOG=str(d / "keyd.jsonl"),
                           ZENOS_KEYD_LEDGER=str(d / "ledger.jsonl"), ZENOS_EXPOSED=str(d / "exposed.json"),
-                          ZENOS_AIGUARD_SOCK=str(d / "aiguard.sock"), ZENOS_HALT=str(d / "halt.json"))
+                          ZENOS_AIGUARD_SOCK=str(d / "aiguard.sock"), ZENOS_HALT=str(d / "halt.json"),
+                          ZENOS_RESEAL_STATE=str(d / "reseal.json"))
         import zenos_keyd
         cls.K = importlib.reload(zenos_keyd)
         cls.K.ensure_keys()
@@ -287,6 +288,16 @@ class KeyService(unittest.TestCase):
         os.chmod(d / "sub" / "old.zen", 0o640)
         (d / "plain.txt").write_text("not sealed")
         self.assertEqual(self.K.reseal([str(d)], dry=True), 1)
+        # a folder swapped for a link to somewhere else: nothing is written there, the file counts as left
+        elsewhere = self.tmp / "elsewhere"
+        elsewhere.mkdir()
+        (elsewhere / "old.zen").write_bytes(old)
+        (d / "link").symlink_to(elsewhere)
+        self.assertEqual(self.K.reseal([str(d / "link" / "old.zen")]), 1)
+        self.assertEqual((elsewhere / "old.zen").read_bytes(), old)
+        (d / "link").unlink()
+        with self.assertRaises(SystemExit):
+            self.K.drop_local_keys()                               # the last run left a file: keys stay
         self.assertEqual(self.K.reseal([str(d)]), 0)
         new = (d / "sub" / "old.zen").read_bytes()
         self.assertEqual(self.header(new)["fmt"], "zks1")
@@ -314,38 +325,24 @@ class KeyService(unittest.TestCase):
             zkeysvc.CONF.write_text(json.dumps(self.conf))
         self.assertTrue(self.open(blob)["ok"])
 
-    def test_presence_on_the_users_own_passkey(self):
+    def test_a_signature_handed_in_by_the_pc_does_not_count(self):
+        """whoever controls the PC controls its WebAuthn client (origin, challenge): only the service's page counts"""
         sk = Ed25519PrivateKey.generate()
         spki = sk.public_key().public_bytes(serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)
         self.svc.add_passkey(self.user, {"cred_id": "cred1", "public_key": zwebauthn.b64u(spki), "alg": -8,
-                                         "rp_id": RP, "origin": ORIGIN, "count": 0})
+                                         "rp_id": RP, "origin": ORIGIN, "count": 0}, notify=False)
+        self.addCleanup(lambda: (self.svc.dir / "passkeys" / f"{self.user}.json").unlink(missing_ok=True))
         self.svc.presence_from = 3
         low, blob = self.seal(2, b"L2"), self.seal(3, b"L3")
         self.assertTrue(self.open(low)["ok"])                         # below the presence level
         r = self.open(blob)
         self.assertEqual(r["error"], "keysvc-presence")
-        self.assertEqual((r["rp_id"], r["allow"]), (RP, ["cred1"]))
-        count = [0]
-
-        def confirm(ch, flags=0x05, key=sk):
-            count[0] += 1
-            ad = hashlib.sha256(RP.encode()).digest() + bytes([flags]) + count[0].to_bytes(4, "big")
-            cdj = json.dumps({"type": "webauthn.get", "challenge": ch, "origin": ORIGIN}).encode()
-            return {"cred_id": "cred1", "authenticator_data": zwebauthn.b64u(ad),
-                    "client_data_json": zwebauthn.b64u(cdj), "signature": zwebauthn.b64u(key.sign(ad + hashlib.sha256(cdj).digest()))}
-        p = confirm(r["challenge"])
-        ok = self.open(blob, presence=p)
-        self.assertTrue(ok["ok"], ok)
-        self.assertEqual(base64.b64decode(ok["data"]), b"L3")
-        self.assertEqual(self.open(blob, presence=p)["error"], "keysvc-presence")          # one use
-        r = self.open(blob)
-        self.assertEqual(self.open(blob, presence=confirm(r["challenge"], flags=0x01))["error"], "keysvc-presence")  # not verified
-        r = self.open(blob)
-        self.assertEqual(self.open(blob, presence=confirm(r["challenge"], key=Ed25519PrivateKey.generate()))["error"],
-                         "keysvc-presence")                                                  # not the registered key
-        other = self.seal(3, b"other")
-        r = self.open(other)
-        self.assertEqual(self.open(blob, presence=confirm(r["challenge"]))["error"], "keysvc-presence")  # for another file
+        self.assertNotIn("confirm_url", r)
+        ad = hashlib.sha256(RP.encode()).digest() + bytes([0x05]) + (1).to_bytes(4, "big")
+        cdj = json.dumps({"type": "webauthn.get", "challenge": r["challenge"], "origin": ORIGIN}).encode()
+        p = {"cred_id": "cred1", "authenticator_data": zwebauthn.b64u(ad), "client_data_json": zwebauthn.b64u(cdj),
+             "signature": zwebauthn.b64u(sk.sign(ad + hashlib.sha256(cdj).digest()))}
+        self.assertEqual(self.open(blob, presence=p)["error"], "keysvc-presence")
 
     def test_confirmation_on_the_services_own_page(self):
         """enrol a passkey on the service's page, then confirm one file there; the PC only refers to the challenge"""
@@ -359,6 +356,10 @@ class KeyService(unittest.TestCase):
             pk.unlink(missing_ok=True)
         self.addCleanup(undo)
         self.svc.presence_from = 3
+        inbox = []
+        self.svc.messages_account = lambda user: "tanaka.02"
+        self.svc.send_to_person = lambda user, text: inbox.append((user, text)) or True
+        self.addCleanup(lambda: (self.svc.__dict__.pop("send_to_person", None), self.svc.__dict__.pop("messages_account", None)))
         pages = self.tmp / "pages"
         pages.mkdir(exist_ok=True)
         for n in ("confirm", "enrol"):
@@ -386,7 +387,7 @@ class KeyService(unittest.TestCase):
         code = url.rsplit("/", 1)[1]
         st, page = get("/e/" + code)
         self.assertEqual(st, 200)
-        data = json.loads(page.split("const D=", 1)[1].split(";</script>")[0].replace("<\\/", "</"))
+        data = json.loads(page.split("const D=", 1)[1].split(";</script>")[0])
         sk = Ed25519PrivateKey.generate()
         x = sk.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
         cose = bytes([0xa4, 0x01, 0x01, 0x03, 0x27, 0x20, 0x06, 0x21, 0x58, 0x20]) + x     # OKP, EdDSA, Ed25519
@@ -400,40 +401,48 @@ class KeyService(unittest.TestCase):
         self.assertEqual((st, a["ok"]), (200, True), a)
         self.assertEqual(post("/v1/enrol", {"code": code})[0], 410)               # one use
         cred = zwebauthn.b64u(b"credX")
+        self.assertIn("passkey-added", (self.svc.dir / "alerts.jsonl").read_text())
         blob = self.seal(3, b"L3 by phone")
-        r = self.open(blob)
-        self.assertEqual(r["error"], "keysvc-presence")
-        self.assertTrue(r["confirm_url"].startswith(origin + "/c/"))
-        ch = r["challenge"]
-        st, page = get("/c/" + ch)
-        self.assertEqual(st, 200)
-        view = json.loads(page.split("const D=", 1)[1].split(";</script>")[0].replace("<\\/", "</"))
-        self.assertEqual((view["file"], view["level"], view["allow"]), ("f.txt", 3, [cred]))
-        self.assertFalse(self.open(blob, presence={"challenge": ch})["ok"])      # not confirmed yet: used up
-        r = self.open(blob)
-        ch = r["challenge"]
         n = [0]
 
-        def assertion(ch, origin=origin):
+        def request(blob):
+            """the PC asks; the link (with its secret) arrives only in the person's Messages"""
+            inbox.clear()
+            r = self.open(blob)
+            self.assertEqual((r["error"], r["confirm_sent"]), ("keysvc-presence", True))
+            self.assertNotIn("/c/", json.dumps(r))                 # nothing in the PC's answer leads to the page
+            return r["challenge"], inbox[-1][1].rsplit("/c/", 1)[1]
+
+        def assertion(token, origin=origin):
             n[0] += 1
             ad = hashlib.sha256(b"127.0.0.1").digest() + bytes([0x05]) + n[0].to_bytes(4, "big")
-            cdj = json.dumps({"type": "webauthn.get", "challenge": ch, "origin": origin}).encode()
-            return {"challenge": ch, "cred_id": cred, "authenticator_data": zwebauthn.b64u(ad),
+            cdj = json.dumps({"type": "webauthn.get", "challenge": token, "origin": origin}).encode()
+            return {"token": token, "cred_id": cred, "authenticator_data": zwebauthn.b64u(ad),
                     "client_data_json": zwebauthn.b64u(cdj), "signature": zwebauthn.b64u(sk.sign(ad + hashlib.sha256(cdj).digest()))}
-        st, a = post("/v1/confirm", assertion(ch))
+        ch, token = request(blob)
+        self.assertEqual(get("/c/" + ch)[0], 410)                     # the PC's reference does not open the page
+        st, page = get("/c/" + token)
+        self.assertEqual(st, 200)
+        view = json.loads(page.split("const D=", 1)[1].split(";</script>")[0])
+        self.assertEqual((view["file"], view["level"], view["allow"]), ("f.txt", 3, [cred]))
+        self.assertFalse(self.open(blob, presence={"challenge": ch})["ok"])      # not confirmed yet: used up
+        ch, token = request(blob)
+        st, a = post("/v1/confirm", assertion(token))
         self.assertEqual(st, 200, a)
-        self.assertEqual(post("/v1/confirm", assertion(ch))[0], 410)               # one try
+        self.assertEqual(post("/v1/confirm", assertion(token))[0], 410)         # one try
         ok = self.open(blob, presence={"challenge": ch})
         self.assertTrue(ok["ok"], ok)
         self.assertEqual(base64.b64decode(ok["data"]), b"L3 by phone")
         self.assertFalse(self.open(blob, presence={"challenge": ch})["ok"])      # one use
         other = self.seal(3, b"other")
-        r = self.open(other)
-        post("/v1/confirm", assertion(r["challenge"]))
-        self.assertFalse(self.open(blob, presence={"challenge": r["challenge"]})["ok"])   # confirmed for another file
-        r = self.open(blob)
-        self.assertEqual(post("/v1/confirm", assertion(r["challenge"], origin="https://evil.example"))[0], 403)
-        self.assertFalse(self.open(blob, presence={"challenge": r["challenge"]})["ok"])
+        och, otoken = request(other)
+        post("/v1/confirm", assertion(otoken))
+        self.assertFalse(self.open(blob, presence={"challenge": och})["ok"])     # confirmed for another file
+        ch, token = request(blob)
+        self.assertEqual(post("/v1/confirm", assertion(token, origin="https://evil.example"))[0], 403)
+        self.assertFalse(self.open(blob, presence={"challenge": ch})["ok"])
+        ch, token = request(blob)
+        self.assertEqual(post("/v1/confirm", dict(assertion(ch), token=ch))[0], 410)   # signed over the PC's reference
 
     def test_reconcile_finds_a_suppressed_pc_record(self):
         blob = self.seal(2)

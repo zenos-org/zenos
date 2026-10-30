@@ -40,9 +40,12 @@ kernel hole for instance, can read every file sealed there. The key service move
 ## What it does not do yet
 
 - The presence level is off by default (`--presence-from 6`) until the confirmation pages ship. The service side
-  is done: `--origin` (the address phones reach the service at), `--enrol-code USER` (a one-time address where the
-  person's phone makes a passkey for the service), `/c/<challenge>` (the page that shows the file as the service
-  recorded it and takes the passkey signature), and keyd's `confirm_url` for the QR code on the PC.
+  is done: `--origin` (the address phones reach the service at), `--messages USER NAME.12` (the person's ZENOS
+  Messages account), `--enrol-code USER [--send]` (a one-time address where the person's phone makes a passkey for
+  the service), and `/c/<secret>` (the page that shows the file as the service recorded it and takes the passkey
+  signature over that secret). When a file needs a confirmation, the service sends the link straight to the
+  person's Messages; the PC only learns that it was sent. A signature handed in by the PC never counts: whoever
+  controls the PC controls its WebAuthn client, which writes the origin and challenge the phone signs.
 - On a PC without a TPM the identity key is a root-owned file. With it, root can ask for files that the users
   assigned to this PC are cleared for, within the rate limits and with every release recorded on the service. With
   a TPM the key cannot leave the PC, but root on that PC can still ask the TPM to use it.
@@ -51,9 +54,12 @@ kernel hole for instance, can read every file sealed there. The key service move
 
     sudo zenos_keyd.py --reseal-dry /home /srv/shared     the sealed files whose key is still on this PC
     sudo zenos_keyd.py --reseal /home /srv/shared         seal them again through the key service, in place
-    sudo zenos_keyd.py --drop-local-keys --yes            destroy the keys left on this PC
+    sudo zenos_keyd.py --drop-local-keys --yes            destroy the keys left on this PC (only after a --reseal
+                                                          run that left nothing)
 
-Each file keeps its name, owner, mode, author and level. Grants for the old files name their old digest and no
+Each file keeps its name, owner, mode, author and level. Paths are opened without following symbolic links, so a
+user who swaps a folder for a link while it runs cannot redirect the writes. Files on USB sticks, backups or other
+PCs that were not sealed again cannot be opened once the keys are destroyed. Grants for the old files name their old digest and no
 longer apply. After `--drop-local-keys` the PC makes no new level key, even after a restart.
 
 ## The PC's identity
@@ -62,6 +68,9 @@ longer apply. After `--drop-local-keys` the PC makes no new level key, even afte
 that never leaves the TPM, usable only with the same PCR 7, the Secure Boot state), otherwise an Ed25519 key file.
 `zenos_identity.py --show` prints the key to enroll on the audit nodes and the key service;
 `zenos_identity.py --setup-tpm` moves an existing PC to the TPM (enroll the new key again).
+Tested with a software TPM (swtpm), not yet on PC hardware. PCR 7 changes when the Secure Boot settings or the
+firmware's list of revoked signatures (dbx) change: the key then stops working, the PC stops reporting, the officers
+are alerted, and the administrator makes a new key (`--setup-tpm`) and enrolls it again.
 
 ## Alerts
 
