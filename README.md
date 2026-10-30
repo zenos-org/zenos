@@ -53,6 +53,21 @@ release classified data (opening a file, releasing a stop) are proved in Lean an
 
 ZENOS is a Debian 13 ("trixie") system with a KDE Plasma 6 X11 session. It does not depend on Windows.
 
+**Try the preview image (no build needed)**
+
+Each Developer Preview comes with a ready-made live / installer image on the
+[Releases page](https://github.com/zenos-org/zenos/releases). For 0.1.2:
+
+1. Download `zenos-0.1.2-preview-amd64.iso` (about 2 GB) and `zenos-0.1.2-preview-amd64.iso.sha256`, then check
+   the image: `sha256sum -c zenos-0.1.2-preview-amd64.iso.sha256`
+2. Boot it in a virtual machine (4 GB RAM or more), or write it to a USB stick and boot an ordinary PC (BIOS or
+   UEFI). So far it has been tested in QEMU virtual machines, not yet on a wide range of physical PCs.
+3. It starts as a live system, signed in as the user `zenos`. "Install ZENOS" on the desktop installs it with
+   full-disk encryption.
+
+The live session is for looking around and testing; do not put real sensitive data on it (see the status note
+above). Known issues are listed in each release's notes.
+
 **Install on an existing Debian 13 system**
 
 ```
