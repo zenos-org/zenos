@@ -109,6 +109,22 @@ for that request only (X25519, HKDF, AES-256-GCM); the answer is signed with the
 The PC checks the node answers' signatures, the officers' signatures over the record digest and the file's SHA-256
 (`zsupply.py`), and passes the results as facts.
 
+### The conductor (`Orchestrator.lean`, docs/ORCHESTRATOR.md)
+
+| Theorem | Statement |
+|---|---|
+| `route_sound` | A piece of a task is sent only to a provider the person allows. |
+| `no_linked_pair` | Under an allowed route, no provider receives both what a record is about (a name, a label) and its value (a number, a diagnosis). |
+| `one_provider_not_whole` | Under an allowed route, for every protected record and every provider, part of that record never reaches that provider. |
+| `vote_sound`, `one_provider_never_decides` | A cross-checked result is accepted only when its backers hold more than half of the weight of all who answered and at least two distinct providers back it; however the weights are set, one provider never decides alone. |
+| `masked_only_out`, `local_sends_nothing`, `split_needs_route`, `send_to_allowed` | A masked task sends nothing the masker flagged as real; a task kept on the PC sends nothing; a split piece goes out only on a route decideRoute allowed. |
+| `taint_narrows`, `dest_from_person` | After outside content, the destinations open are a subset of those open before; every destination a step reaches was set by the person. |
+| `confirm_irreversible` | An act that cannot be taken back runs only after confirmation. |
+| `chart_split_allowed`, `chart_whole_refused`, `chart_unlisted_refused`, `heavy_alone_refused`, `heavy_with_second_accepted` | The examples, checked. |
+
+The conductor finds the values to mask (`zorch.py`: the person's terms, patterns, the tables' names and cells) and
+gives each piece its role; those are passed as facts.
+
 ## What is trusted, not proved
 
 - Cryptography: Ed25519 signature checks with the officers' enrolled keys, SHA-256 digests, AES-GCM; for sign-in,

@@ -5,6 +5,7 @@ import ZenosFormal.Egress
 import ZenosFormal.Cred
 import ZenosFormal.KeyService
 import ZenosFormal.Supply
+import ZenosFormal.Orchestrator
 
 /-!
 `zenos-decide`: reads one JSON request on stdin, writes one JSON answer on stdout, runs the proven decision
@@ -39,6 +40,12 @@ functions of `ZenosFormal.Decide` and nothing else. Any input it cannot read is 
   {"op":"install", "nodes":[..], "votes":[{"node","sig_ok","record"}], "record", "hash_ok", "signers":[..],
    "officers":[..], "required", "revoked", "ring_open", "now"}       -> {"allow": bool, "reason": str|null}
   {"op":"sysegress", "system", "listed", "loopback", "enforce"}       -> {"cut": bool}   (the network sentinel)
+  {"op":"route", "allowed":[..], "frags":[{"to", "atoms":[{"record","role":"ident"|"attr"|"other"}]}]}
+      -> {"allow": bool, "reason": str|null}                          (the conductor)
+  {"op":"vote", "weights":[{"provider","weight"}], "ballots":[{"provider","answer"}], "answer"} -> {"accept": bool}
+  {"op":"step", "kind":"send"|"tool"|"act", "level":"masked"|"split"|"pc", "provider", "allowed":[..],
+   "payload_masked", "route_ok", "dest", "dests":[..], "after_taint":[..], "tainted", "confirmed"}
+      -> {"allow": bool, "reason": str|null}
   zenos-decide egress W THR   (the network sentinel's stream: one send per line
       "key<TAB>destination<TAB>allowed 0|1<TAB>time ms<TAB>bytes", one answer per line "cut" | "ok")
 -/
@@ -255,6 +262,43 @@ def answer (j : J) : Except String J := do
                             required := ← getN j "required", revoked := ← getB j "revoked",
                             ringOpen := ← getN j "ring_open", now := ← getN j "now" }
     return match decideInstall r with
+      | .allow => .obj [("allow", .bool true), ("reason", .null)]
+      | .refuse why => .obj [("allow", .bool false), ("reason", .str why)]
+  | "route" =>
+    let frags ← (← getArr j "frags").mapM fun f => do
+      let atoms ← (← getArr f "atoms").mapM fun a => do
+        let role ← match ← getS a "role" with
+          | "ident" => pure Role.ident
+          | "attr" => pure Role.attr
+          | "other" => pure Role.other
+          | x => throw s!"unknown role {x}"
+        return ({ record := ← getS a "record", role } : Atom)
+      return ({ atoms, to := ← getS f "to" } : Fragment)
+    let r : RouteReq := { allowed := ← getSs j "allowed", frags }
+    return match decideRoute r with
+      | .allow => .obj [("allow", .bool true), ("reason", .null)]
+      | .refuse why => .obj [("allow", .bool false), ("reason", .str why)]
+  | "vote" =>
+    let ws ← (← getArr j "weights").mapM fun w => do return (← getS w "provider", ← getN w "weight")
+    let bs ← (← getArr j "ballots").mapM fun b => do
+      return ({ provider := ← getS b "provider", answer := ← getS b "answer" } : Ballot)
+    return .obj [("accept", .bool (decideVote { weights := ws, ballots := bs, answer := ← getS j "answer" }))]
+  | "step" =>
+    let kind ← match ← getS j "kind" with
+      | "send" => pure StepKind.send
+      | "tool" => pure StepKind.tool
+      | "act" => pure StepKind.act
+      | x => throw s!"unknown kind {x}"
+    let level ← match ← getS j "level" with
+      | "masked" => pure Level.masked
+      | "split" => pure Level.split
+      | "pc" => pure Level.onPC
+      | x => throw s!"unknown level {x}"
+    let r : StepReq := { kind, level, provider := ← getS j "provider", allowed := ← getSs j "allowed",
+                         payloadMasked := ← getB j "payload_masked", routeOk := ← getB j "route_ok",
+                         dest := ← getS j "dest", dests := ← getSs j "dests", afterTaint := ← getSs j "after_taint",
+                         tainted := ← getB j "tainted", confirmed := ← getB j "confirmed" }
+    return match decideStep r with
       | .allow => .obj [("allow", .bool true), ("reason", .null)]
       | .refuse why => .obj [("allow", .bool false), ("reason", .str why)]
   | "sysegress" =>

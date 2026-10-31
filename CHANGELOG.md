@@ -3,6 +3,14 @@
 ## Unreleased
 
 **System**
+- The conductor (`zenos-conductor`, `zorch.py`, docs/ORCHESTRATOR.md; Lean: `Orchestrator.lean`): ZENOS runs a
+  task with several frontier models over their APIs, with the person's own keys, and no provider gets the plain
+  data or both halves of a record. Masked work: models write code on tokens, ZENOS runs it on the PC in a sandbox
+  (`zsandbox.py`: bubblewrap, no network, no home folder, seccomp filter) and accepts a result only when providers
+  holding more than half of the weight, at least two of them, agree. Split work: a table's numbers to one
+  provider, the text that says what they are to another. Weights per provider and kind of work, measured on the
+  PC. Google, Qwen and providers under laws that compel access without due process are refused. Nothing is
+  configured by default.
 - The update path (after NetamLoader, Kaspersky, 29 Oct 2026): a release ledger for packages (`zsupply.py`,
   `zenos_release.py`, `zenos_pkgcheck.py` as apt's pre-install check; Lean: `Supply.lean`, `install_sound`,
   `one_node_not_enough`, `one_key_not_enough`, `revoked_refused`): a package goes in only when a majority of the

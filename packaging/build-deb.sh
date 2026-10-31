@@ -58,6 +58,8 @@ cp -a "$SRC"/system/lib/. "$P/usr/lib/zenos/"
 cp -a "$SRC"/system/sbin/. "$P/usr/sbin/"
 chmod 755 "$P"/usr/sbin/*
 chmod 644 "$P/usr/sbin/zenos-netsense.bt"
+mkdir -p "$P/usr/bin"
+ln -sf ../sbin/zenos_conductor.py "$P/usr/bin/zenos-conductor"     # the conductor runs as the person
 cp "$SRC"/system/systemd/*.service "$SRC"/system/systemd/*.timer "$P/lib/systemd/system/"
 # fewer ways into the kernel: sysctl settings and modules that are never loaded (docs/THREAT_MODEL.md)
 mkdir -p "$P/usr/lib/sysctl.d" "$P/usr/lib/modprobe.d"
