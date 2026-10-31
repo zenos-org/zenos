@@ -64,7 +64,7 @@ h1,h2{word-break:auto-phrase}h1{word-break:keep-all;overflow-wrap:anywhere}
 <body>
 <nav id="nav"><div class="wrap">
 <a class="logo" href="#top"><img src="../img/logo.svg" alt="">ZENOS</a>
-<div class="links"><a href="#vision">考え方</a><a href="/ja/features/">機能</a><a href="#protects">守り方</a><a href="#editions">エディション</a><a href="#feedback">フィードバック</a><a href="https://feedback.zenos-os.org">ボード</a><a href="#status">現状</a><a href="#download">ダウンロード</a><a class="lang" href="../" hreflang="en" lang="en">English</a></div>
+<div class="links"><a href="#vision">考え方</a><a href="/ja/features/">機能</a><a href="#protects">守り方</a><a href="#editions">エディション</a><a href="#feedback">フィードバック</a><a href="https://feedback.zenos-os.org">ボード</a><a href="#updates">更新情報</a><a href="#status">現状</a><a href="#download">ダウンロード</a><a class="lang" href="../" hreflang="en" lang="en">English</a></div>
 <a class="btn navgh" href="https://github.com/zenos-org/zenos">GitHub →</a>
 <button class="menu" id="menu" aria-label="メニュー" aria-expanded="false">☰</button>
 </div></nav>
@@ -173,13 +173,24 @@ h1,h2{word-break:auto-phrase}h1{word-break:keep-all;overflow-wrap:anywhere}
 </ul></div>
 </div></section>
 
-<section id="status"><div class="wrap">
+<section id="updates"><div class="wrap">
+<p class="eyebrow">更新情報</p>
+<h2>最近の更新</h2>
+<p class="lead">何が変わったか、そしてそれがリリースに入っているか、まだソースにあるだけかを分けて書いています。全部の一覧は <a href="https://github.com/zenos-org/zenos/blob/main/CHANGELOG.md">CHANGELOG（英語）</a> にあります。</p>
+<div class="grid g3">
+<div class="card"><span class="tag t-ok">リリース済み · 2026年10月30日</span><h3>0.1.2：カーネルへの入口を減らす</h3><p>最初の起動からカーネルの lockdown を有効にしました（root でも署名のないモジュールの読み込みやカーネルメモリの書き換えができません）。マルチパス TCP、io_uring、権限のない BPF を止め、使わない通信方式と古いファイルシステムは読み込みません。カーネルの修正が入ったら、誰もサインインしていないときに再起動します。監査ノードは、90秒報告が来ない PC を知らせます。</p></div>
+<div class="card"><span class="tag t-warn">ソースのみ · 未リリース</span><h3>鍵を PC の外へ</h3><p>別のマシンに置く鍵サービスを使うと、新しく封印するファイルの鍵を PC に置きません。鍵サービスは、報告を続けている PC にだけ、決まった回数の範囲で、1回に1ファイル分の鍵を渡し、渡したことをすべて記録します。TPM のある PC では、PC を名乗る鍵を TPM の中に作ります。異常は ZENOS Messages で担当者に届きます。</p></div>
+<div class="card"><span class="tag t-warn">ソースのみ · 未リリース</span><h3>更新の通り道</h3><p>NetamLoader（Kaspersky、2026年10月29日）を受けて：パッケージは、そのファイルの記録を監査ノードの過半数が同じ形で持ち、配布担当者2人が署名しているときだけ入ります。更新フォルダに現れたファイルはその場で確かめ、入っているファイルと、本物のプログラムに別のものを読ませる道は1時間ごとに確かめます。そのための監査ノードが動くまでは切ってあります。</p></div>
+</div>
+</div></section>
+
+<section class="tint" id="status"><div class="wrap">
 <p class="eyebrow">現状</p>
 <h2>どこまでできているか、そのまま</h2>
 <p class="lead">ZENOS は開発者向けプレビュー版です。試して、穴を探して、意見をもらうための版で、そのための試用は歓迎します。いくつかの守りはまだ実演の段階なので、外部の独立した監査が終わるまでは、大切なデータを扱う本番の業務には使わないでください。</p>
 <div class="grid g2">
 <div class="card"><span class="tag t-ok">完了</span><h3>今動いているもの</h3><p>レベル付きで封印されるファイル、責任者の端末で署名する承認、停止と解除、改ざんが分かる台帳、暗号化されたメッセンジャーと通話、証明された判定、ディスクを暗号化するインストーラー。スマートフォンでのサインインは仮想パスキーで動いており、実機ではまだ試していません。</p></div>
-<div class="card"><span class="tag t-warn">次</span><h3>これから</h3><p>鍵を TPM に封じること、責任者用の FIDO2 キー、強制アクセス制御（SELinux MLS）、共有の鍵サービス、Office 形式との互換性の向上、外部のセキュリティ監査。</p></div>
+<div class="card"><span class="tag t-warn">次</span><h3>これから</h3><p>ソースにあるもの（鍵サービス、TPM の鍵、更新の通り道の確認）のリリース、ファイルごとのスマートフォンでの確認、責任者用の FIDO2 キー、強制アクセス制御（SELinux MLS）、同じものを作り直せるインストール用イメージ、Office 形式との互換性の向上、外部のセキュリティ監査。</p></div>
 </div></div></section>
 
 <section class="alt" id="download"><div class="wrap">

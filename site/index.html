@@ -61,7 +61,7 @@ footer{border-top:1px solid var(--line);padding:40px 0;font-size:13px;color:#8A8
 <body>
 <nav id="nav"><div class="wrap">
 <a class="logo" href="#top"><img src="img/logo.svg" alt="">ZENOS</a>
-<div class="links"><a href="#vision">Vision</a><a href="/features/">Features</a><a href="#protects">How it protects</a><a href="#editions">Editions</a><a href="#feedback">Feedback</a><a href="https://feedback.zenos-os.org">Board</a><a href="#status">Status</a><a href="#download">Download</a><a class="lang" href="ja/" hreflang="ja" lang="ja">日本語</a></div>
+<div class="links"><a href="#vision">Vision</a><a href="/features/">Features</a><a href="#protects">How it protects</a><a href="#editions">Editions</a><a href="#feedback">Feedback</a><a href="https://feedback.zenos-os.org">Board</a><a href="#updates">What's new</a><a href="#status">Status</a><a href="#download">Download</a><a class="lang" href="ja/" hreflang="ja" lang="ja">日本語</a></div>
 <a class="btn navgh" href="https://github.com/zenos-org/zenos">GitHub →</a>
 <button class="menu" id="menu" aria-label="Menu" aria-expanded="false">☰</button>
 </div></nav>
@@ -170,13 +170,24 @@ footer{border-top:1px solid var(--line);padding:40px 0;font-size:13px;color:#8A8
 </ul></div>
 </div></section>
 
-<section id="status"><div class="wrap">
+<section id="updates"><div class="wrap">
+<p class="eyebrow">What's new</p>
+<h2>Recent updates</h2>
+<p class="lead">What changed, and whether it is in a release or only in the source so far. The full list is in the <a href="https://github.com/zenos-org/zenos/blob/main/CHANGELOG.md">changelog</a>.</p>
+<div class="grid g3">
+<div class="card"><span class="tag t-ok">Released · 30 Oct 2026</span><h3>0.1.2: fewer ways into the kernel</h3><p>Kernel lockdown from the first start (even root cannot load unsigned modules or write to kernel memory). Multipath TCP, io_uring and unprivileged BPF off; unused network protocols and old file systems not loaded. A waiting kernel fix restarts the PC while nobody is signed in. The audit nodes report a PC that goes quiet for 90 seconds.</p></div>
+<div class="card"><span class="tag t-warn">In the source · not released</span><h3>Keys off the PC</h3><p>With a key service on another machine, the keys of newly sealed files are no longer kept on the PC. The service releases one file's key per request, only to a PC that is reporting, within limits, and records every release. The PC's identity key is made inside the TPM when the PC has one. Officers are alerted through ZENOS Messages.</p></div>
+<div class="card"><span class="tag t-warn">In the source · not released</span><h3>The update path</h3><p>After NetamLoader (Kaspersky, 29 Oct 2026): a package goes in only when a majority of the audit nodes hold the same record for its exact file, signed by two release officers. Files that appear in the update folder are checked at once; installed files and the ways a genuine program can be made to load something else are checked every hour. Off until the audit nodes for it are running.</p></div>
+</div>
+</div></section>
+
+<section class="tint" id="status"><div class="wrap">
 <p class="eyebrow">Status</p>
 <h2>Where it stands, plainly</h2>
 <p class="lead">ZENOS is a Developer Preview: a release for trying it, looking for holes and telling us what you find, and that kind of testing is welcome. Several protections are still demonstrations, so do not use it for real sensitive data until an independent audit is done.</p>
 <div class="grid g2">
 <div class="card"><span class="tag t-ok">Done</span><h3>Working today</h3><p>Sealed level files, approvals signed on officers' devices, stop-and-release, the tamper-evident ledger, encrypted messenger and calls, proven decisions, an installer that encrypts the disk. Phone sign-in works with virtual passkeys and is not yet tested on a physical phone.</p></div>
-<div class="card"><span class="tag t-warn">Next</span><h3>Still ahead</h3><p>Keys sealed to the TPM and FIDO2 keys for officers; mandatory access control (SELinux MLS); a shared key service; better Office compatibility; an external security audit.</p></div>
+<div class="card"><span class="tag t-warn">Next</span><h3>Still ahead</h3><p>Releasing what is in the source (key service, TPM identity, the update-path checks); confirmation on the phone for each file; FIDO2 keys for officers; mandatory access control (SELinux MLS); a reproducible installer image; better Office compatibility; an external security audit.</p></div>
 </div></div></section>
 
 <section class="alt" id="download"><div class="wrap">
