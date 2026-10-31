@@ -20,6 +20,17 @@ python3 -W error::ResourceWarning -m unittest discover -s tests
 packaging/check-secrets.sh
 ```
 
+If you touched anything under `formal/` (the Lean definitions, proofs or the `zenos-decide` program), also run:
+
+```
+cd formal && lake build
+```
+
+This checks every proof and rebuilds `zenos-decide`. It needs the Lean version pinned in `formal/lean-toolchain`
+and nothing else; [docs/FORMAL_VERIFICATION.md](docs/FORMAL_VERIFICATION.md) explains what is proved and what is
+trusted. The CI workflow (`.github/workflows/test.yml`) runs these checks plus the Node tests for the messenger
+and the storage layer on every pull request.
+
 Changes to the root services (`system/sbin`) are tested on a clean Debian 13 install of the package, not only in
 the development layout. See [docs/RELEASING.md](docs/RELEASING.md) for releases.
 
