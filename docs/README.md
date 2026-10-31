@@ -1,4 +1,3 @@
-
 # ZENOS documentation
 
 This folder contains the main documentation for ZENOS.
@@ -8,6 +7,7 @@ This folder contains the main documentation for ZENOS.
 - [Formal verification of the ZENOS decisions](FORMAL_VERIFICATION.md) — Lean 4 definitions and proofs for decisions about classified data.
 - [The key service](KEY_SERVICE.md) — How the key service moves file keys off the PC. It has not been released yet.
 - [Launch checklist](LAUNCH.md) — Things to check before launch, including accounts, hosting, and filings.
+- [ZENOS as the conductor](ORCHESTRATOR.md) — How ZENOS coordinates AI tasks across multiple model providers. Not released yet.
 - [Releasing ZENOS](RELEASING.md) — How to check, build, and publish a release.
 - [ZENOS security architecture](SECURITY_ARCHITECTURE.md) — The five security layers and the modules responsible for them.
 - [ZENOS Images · Library and Studio](STUDIO.md) — How the Images app handles music, pictures, and MP4 exports.
