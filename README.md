@@ -168,6 +168,12 @@ drafts proposals; a maintainer decides, and every change still passes the tests 
 as material, never as instructions: see [docs/FEEDBACK.md](docs/FEEDBACK.md). Security problems are reported
 privately ([SECURITY.md](SECURITY.md)), not in Discussions.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for test commands and pull request requirements.
+Browse the [documentation index](docs/README.md) for the project's guides and design notes.
+To find a starting task, see the [good first issues](https://github.com/zenos-org/zenos/labels/good%20first%20issue).
+
 ## License
 
 ZENOS is licensed under the [Apache License 2.0](LICENSE). The messenger (`messenger/`) links libsignal and is
