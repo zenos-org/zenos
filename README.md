@@ -142,23 +142,14 @@ The development machine runs ZENOS inside WSL2 for convenience; `dev/` holds the
 
 ## Roadmap
 
+What comes next, in order, is in [ROADMAP.md](ROADMAP.md); each item has an issue in the [0.1.3](https://github.com/zenos-org/zenos/milestone/1) or [Next](https://github.com/zenos-org/zenos/milestone/2) milestone. What has changed is in the [changelog](CHANGELOG.md).
+
 Done in this preview: one repository with secrets removed and licences documented; a Debian package, a signed apt
 repository and an installer ISO (full-disk encryption checked by default); the guard as a root service with
 fanotify; a root key agent with per-user clearance; approvals signed on officers' own devices; ledgers shipped to
 audit nodes; messenger accounts bound to their devices; printing with level watermarks and a ceiling; a level
 clipboard between sealed windows; screenshot and terminal control; a certified storage grid (encrypted, erasure-coded shards
 served only to cleared PCs; packaged as `zenos-grid`) and audit nodes of different parties that catch a forked history.
-
-Still ahead:
-
-1. **Hardware keys**: level keys sealed to the TPM, officer and user keys on FIDO2 devices, disk unlock by TPM +
-   fingerprint.
-2. **Mandatory access control**: SELinux multi-level security, so no program can write a copy of an open sealed
-   file to a lower level.
-3. **Shared infrastructure**: a key service so sealed files open on any cleared PC and capabilities are issued
-   through the approval flow.
-4. **Everyday apps**: Files, Settings, notifications, better Office format compatibility.
-5. **External security audit** before any claim of production readiness.
 
 Editions are configurations of one shared core, so a fix in the core reaches every edition at once:
 

@@ -20,6 +20,23 @@ python3 -W error::ResourceWarning -m unittest discover -s tests
 packaging/check-secrets.sh
 ```
 
+### On Windows
+
+The tests check Linux itself (the kernel's network filter and sandboxing, the TPM, Debian packages), so they run on
+Linux, not on Windows. On Windows, use WSL 2, which runs Debian inside Windows (free, from Microsoft):
+
+```
+wsl --install -d Debian          # in PowerShell, once; restart if asked, then open "Debian"
+sudo apt update
+sudo apt install -y git python3 python3-cryptography curl zstd bubblewrap
+git clone https://github.com/<your account>/zenos && cd zenos
+python3 -m unittest discover -s tests
+```
+
+For changes under `formal/`, install Lean as the CI does (see `.github/workflows/test.yml`) and run `lake build`
+in `formal/`. If you cannot run the tests at all, send the pull request anyway: CI runs every test on each pull
+request (a maintainer approves the first run for a first-time contributor), and failures are explained there.
+
 Changes to the root services (`system/sbin`) are tested on a clean Debian 13 install of the package, not only in
 the development layout. See [docs/RELEASING.md](docs/RELEASING.md) for releases.
 
