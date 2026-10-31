@@ -1,0 +1,4654 @@
+[
+ {
+  "file": "02c4cd89e9ca.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "e:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:22401:17\n    at async Promise.all (index 1)\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "02c4cd89e9ca.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.999
+ },
+ {
+  "file": "074e79f1188f.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    2,
+    0
+   ],
+   "pictures": [
+    1,
+    0
+   ],
+   "vertical text": [
+    29,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    36,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   3,
+   5
+  ],
+  "look": 0.006
+ },
+ {
+  "file": "074e79f1188f.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    2,
+    2
+   ],
+   "pictures": [
+    1,
+    1
+   ],
+   "vertical text": [
+    29,
+    29
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    36,
+    36
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   3,
+   3
+  ],
+  "look": 0.999
+ },
+ {
+  "file": "0a08a3201ae0.xls",
+  "kind": "xls",
+  "engine": "zapps",
+  "saved": true,
+  "pages": [
+   6,
+   4
+  ],
+  "look": 0.012
+ },
+ {
+  "file": "0a08a3201ae0.xls",
+  "kind": "xls",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   6,
+   6
+  ],
+  "look": 0.953
+ },
+ {
+  "file": "11c24ef47dc6.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "11c24ef47dc6.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "11f2d5bf92be.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "11f2d5bf92be.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.997
+ },
+ {
+  "file": "14c5a7f8cdc1.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    2,
+    0
+   ],
+   "pictures": [
+    1,
+    0
+   ],
+   "vertical text": [
+    3,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    17,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0
+ },
+ {
+  "file": "14c5a7f8cdc1.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": false,
+  "error": "timeout"
+ },
+ {
+  "file": "15e634ec0fbc.xlsx",
+  "kind": "xlsx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    157,
+    0
+   ],
+   "column widths": [
+    97,
+    0
+   ],
+   "borders": [
+    48,
+    0
+   ],
+   "print areas": [
+    12,
+    0
+   ],
+   "page breaks": [
+    15,
+    0
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ]
+  },
+  "text": 0.499,
+  "cells": {
+   "cells": 2430,
+   "same": 2160,
+   "kept": 0.889
+  },
+  "pages": [
+   28,
+   33
+  ],
+  "look": 0.026
+ },
+ {
+  "file": "15e634ec0fbc.xlsx",
+  "kind": "xlsx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    157,
+    157
+   ],
+   "column widths": [
+    97,
+    97
+   ],
+   "borders": [
+    48,
+    54
+   ],
+   "print areas": [
+    12,
+    12
+   ],
+   "page breaks": [
+    15,
+    15
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ]
+  },
+  "text": 0.625,
+  "cells": {
+   "cells": 2430,
+   "same": 2430,
+   "kept": 1.0
+  },
+  "pages": [
+   28,
+   28
+  ],
+  "look": 0.283
+ },
+ {
+  "file": "17ec787012d2.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    0
+   ],
+   "pictures": [
+    1,
+    0
+   ],
+   "vertical text": [
+    3,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 0.919,
+  "pages": [
+   1,
+   2
+  ],
+  "look": 0.005
+ },
+ {
+  "file": "17ec787012d2.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    1
+   ],
+   "pictures": [
+    1,
+    1
+   ],
+   "vertical text": [
+    3,
+    3
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.999
+ },
+ {
+  "file": "1ab6cc22cbfc.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "1ab6cc22cbfc.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.996
+ },
+ {
+  "file": "1bf0ed0bfccf.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "1bf0ed0bfccf.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.999
+ },
+ {
+  "file": "1c6c159e6525.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   3
+  ],
+  "look": 0.01
+ },
+ {
+  "file": "1c6c159e6525.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.062
+ },
+ {
+  "file": "1deec228c779.xlsx",
+  "kind": "xlsx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    20,
+    0
+   ],
+   "column widths": [
+    11,
+    0
+   ],
+   "borders": [
+    32,
+    0
+   ],
+   "print areas": [
+    1,
+    0
+   ],
+   "page breaks": [
+    1,
+    0
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ]
+  },
+  "text": 0.425,
+  "cells": {
+   "cells": 110,
+   "same": 110,
+   "kept": 1.0
+  },
+  "pages": [
+   6,
+   4
+  ],
+  "look": 0.026
+ },
+ {
+  "file": "1deec228c779.xlsx",
+  "kind": "xlsx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    20,
+    20
+   ],
+   "column widths": [
+    11,
+    11
+   ],
+   "borders": [
+    32,
+    30
+   ],
+   "print areas": [
+    1,
+    1
+   ],
+   "page breaks": [
+    1,
+    1
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ]
+  },
+  "text": 0.494,
+  "cells": {
+   "cells": 110,
+   "same": 110,
+   "kept": 1.0
+  },
+  "pages": [
+   6,
+   6
+  ],
+  "look": 0.996
+ },
+ {
+  "file": "1edd862a8b2e.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "apps.bundle.mjs:22378:32\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:22477:18\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "1edd862a8b2e.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "1fd0ffdb8a3d.xls",
+  "kind": "xls",
+  "engine": "zapps",
+  "saved": true,
+  "pages": [
+   8,
+   18
+  ],
+  "look": 0.006
+ },
+ {
+  "file": "1fd0ffdb8a3d.xls",
+  "kind": "xls",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   8,
+   8
+  ],
+  "look": 0.879
+ },
+ {
+  "file": "1ff4676f148f.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "apps.bundle.mjs:22378:32\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:22477:18\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "1ff4676f148f.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "202460cfa965.xls",
+  "kind": "xls",
+  "engine": "zapps",
+  "saved": true,
+  "pages": [
+   12,
+   10
+  ],
+  "look": 0.022
+ },
+ {
+  "file": "202460cfa965.xls",
+  "kind": "xls",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   12,
+   12
+  ],
+  "look": 0.919
+ },
+ {
+  "file": "214a1886fa28.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "214a1886fa28.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.868
+ },
+ {
+  "file": "25cce30381cf.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "25cce30381cf.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "25e16f70c56f.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "25e16f70c56f.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "267a69d5bd64.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "apps.bundle.mjs:22378:32\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:22477:18\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "267a69d5bd64.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   3,
+   3
+  ],
+  "look": 0.792
+ },
+ {
+  "file": "2829e24fc8d3.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "2829e24fc8d3.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.671
+ },
+ {
+  "file": "28b579d085d5.xlsx",
+  "kind": "xlsx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    56,
+    0
+   ],
+   "column widths": [
+    123,
+    0
+   ],
+   "borders": [
+    118,
+    0
+   ],
+   "print areas": [
+    25,
+    0
+   ],
+   "page breaks": [
+    13,
+    0
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ]
+  },
+  "text": 0.712,
+  "cells": {
+   "cells": 12232,
+   "same": 11852,
+   "kept": 0.969
+  },
+  "pages": [
+   72,
+   117
+  ],
+  "look": 0.011
+ },
+ {
+  "file": "28b579d085d5.xlsx",
+  "kind": "xlsx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    56,
+    56
+   ],
+   "column widths": [
+    123,
+    115
+   ],
+   "borders": [
+    118,
+    126
+   ],
+   "print areas": [
+    25,
+    25
+   ],
+   "page breaks": [
+    13,
+    13
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ]
+  },
+  "text": 0.717,
+  "cells": {
+   "cells": 12232,
+   "same": 12232,
+   "kept": 1.0
+  },
+  "pages": [
+   72,
+   71
+  ],
+  "look": 0.31
+ },
+ {
+  "file": "291601a22b53.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    0
+   ],
+   "pictures": [
+    1,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    5,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   3,
+   8
+  ],
+  "look": 0.003
+ },
+ {
+  "file": "291601a22b53.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    1
+   ],
+   "pictures": [
+    1,
+    1
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    5,
+    5
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   3,
+   3
+  ],
+  "look": 0.84
+ },
+ {
+  "file": "29221c95d99e.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "29221c95d99e.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   6,
+   6
+  ],
+  "look": 0.102
+ },
+ {
+  "file": "2ab5f062b11c.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "2ab5f062b11c.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "2b255b2dbf65.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    1,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    1,
+    0
+   ]
+  },
+  "text": 0.946,
+  "pages": [
+   1,
+   2
+  ],
+  "look": 0.001
+ },
+ {
+  "file": "2b255b2dbf65.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    1,
+    1
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    1,
+    3
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.982
+ },
+ {
+  "file": "2d5e5f6d320d.xls",
+  "kind": "xls",
+  "engine": "zapps",
+  "saved": true,
+  "pages": [
+   6,
+   4
+  ],
+  "look": 0.013
+ },
+ {
+  "file": "2d5e5f6d320d.xls",
+  "kind": "xls",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   6,
+   6
+  ],
+  "look": 0.95
+ },
+ {
+  "file": "30be03680067.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "30be03680067.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.994
+ },
+ {
+  "file": "30efa25e69e7.xls",
+  "kind": "xls",
+  "engine": "zapps",
+  "saved": true,
+  "pages": [
+   6,
+   6
+  ],
+  "look": 0.014
+ },
+ {
+  "file": "30efa25e69e7.xls",
+  "kind": "xls",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   6,
+   6
+  ],
+  "look": 0.945
+ },
+ {
+  "file": "3452fd6f2e47.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "3452fd6f2e47.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "381280c73a11.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "381280c73a11.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "381aaf9ee9ab.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "381aaf9ee9ab.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   3,
+   3
+  ],
+  "look": 0.253
+ },
+ {
+  "file": "3b149051488d.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    5,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   3,
+   4
+  ],
+  "look": 0.056
+ },
+ {
+  "file": "3b149051488d.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    5,
+    5
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   3,
+   3
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "3be6cad1ab33.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "3be6cad1ab33.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "3d7e5a32bbda.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "3d7e5a32bbda.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "3eb3f27a4618.xlsx",
+  "kind": "xlsx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    162,
+    0
+   ],
+   "column widths": [
+    1024,
+    0
+   ],
+   "borders": [
+    114,
+    0
+   ],
+   "print areas": [
+    1,
+    0
+   ],
+   "page breaks": [
+    0,
+    0
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ]
+  },
+  "text": 0.457,
+  "cells": {
+   "cells": 95,
+   "same": 85,
+   "kept": 0.895
+  },
+  "pages": [
+   3,
+   8
+  ],
+  "look": 0.005
+ },
+ {
+  "file": "3eb3f27a4618.xlsx",
+  "kind": "xlsx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    162,
+    162
+   ],
+   "column widths": [
+    1024,
+    1024
+   ],
+   "borders": [
+    114,
+    121
+   ],
+   "print areas": [
+    1,
+    1
+   ],
+   "page breaks": [
+    0,
+    0
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ]
+  },
+  "text": 0.506,
+  "cells": {
+   "cells": 95,
+   "same": 95,
+   "kept": 1.0
+  },
+  "pages": [
+   3,
+   3
+  ],
+  "look": 0.981
+ },
+ {
+  "file": "3f23a9fc471e.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    4,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    1,
+    0
+   ]
+  },
+  "text": 0.776,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.009
+ },
+ {
+  "file": "3f23a9fc471e.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    4,
+    4
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    1,
+    3
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.983
+ },
+ {
+  "file": "42923bce0a08.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "42923bce0a08.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "440640994fcf.xls",
+  "kind": "xls",
+  "engine": "zapps",
+  "saved": true,
+  "pages": [
+   8,
+   6
+  ],
+  "look": 0.011
+ },
+ {
+  "file": "440640994fcf.xls",
+  "kind": "xls",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   8,
+   8
+  ],
+  "look": 0.962
+ },
+ {
+  "file": "445858b51867.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "445858b51867.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.995
+ },
+ {
+  "file": "445dfd8e329d.xlsx",
+  "kind": "xlsx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    90,
+    0
+   ],
+   "column widths": [
+    5,
+    0
+   ],
+   "borders": [
+    102,
+    0
+   ],
+   "print areas": [
+    1,
+    0
+   ],
+   "page breaks": [
+    2,
+    0
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    2,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ]
+  },
+  "text": 0.556,
+  "cells": {
+   "cells": 41,
+   "same": 24,
+   "kept": 0.585
+  },
+  "pages": [
+   2,
+   5
+  ],
+  "look": 0.008
+ },
+ {
+  "file": "445dfd8e329d.xlsx",
+  "kind": "xlsx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    90,
+    90
+   ],
+   "column widths": [
+    5,
+    5
+   ],
+   "borders": [
+    102,
+    82
+   ],
+   "print areas": [
+    1,
+    1
+   ],
+   "page breaks": [
+    2,
+    2
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    2,
+    2
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ]
+  },
+  "text": 0.607,
+  "cells": {
+   "cells": 41,
+   "same": 41,
+   "kept": 1.0
+  },
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.983
+ },
+ {
+  "file": "48d1b71d7127.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "48d1b71d7127.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "4a5e7cf14af2.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "4a5e7cf14af2.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "4b4fce1b921a.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "4b4fce1b921a.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.294
+ },
+ {
+  "file": "5017f7cf4aad.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "apps.bundle.mjs:22378:32\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:22477:18\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "5017f7cf4aad.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "5143b1d7a024.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "5143b1d7a024.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.919
+ },
+ {
+  "file": "5707c64cb666.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "5707c64cb666.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "57d5a8759abb.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "57d5a8759abb.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.294
+ },
+ {
+  "file": "5b6a48310499.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    0
+   ],
+   "pictures": [
+    1,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 0.94,
+  "pages": [
+   2,
+   3
+  ],
+  "look": 0.004
+ },
+ {
+  "file": "5b6a48310499.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    1
+   ],
+   "pictures": [
+    1,
+    1
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "5cb0092a564c.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "5cb0092a564c.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "5d4df2d68e1b.xlsx",
+  "kind": "xlsx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    112,
+    0
+   ],
+   "column widths": [
+    1,
+    0
+   ],
+   "borders": [
+    72,
+    0
+   ],
+   "print areas": [
+    0,
+    0
+   ],
+   "page breaks": [
+    0,
+    0
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    1,
+    0
+   ]
+  },
+  "text": 0.429,
+  "cells": {
+   "cells": 71,
+   "same": 59,
+   "kept": 0.831
+  },
+  "pages": [
+   5,
+   30
+  ],
+  "look": 0.001
+ },
+ {
+  "file": "5d4df2d68e1b.xlsx",
+  "kind": "xlsx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    112,
+    112
+   ],
+   "column widths": [
+    1,
+    1
+   ],
+   "borders": [
+    72,
+    52
+   ],
+   "print areas": [
+    0,
+    0
+   ],
+   "page breaks": [
+    0,
+    0
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    1,
+    1
+   ]
+  },
+  "text": 0.498,
+  "cells": {
+   "cells": 71,
+   "same": 71,
+   "kept": 1.0
+  },
+  "pages": [
+   5,
+   5
+  ],
+  "look": 0.976
+ },
+ {
+  "file": "60f168a28cda.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "60f168a28cda.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "6bb89821f7a4.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "apps.bundle.mjs:22378:32\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:22477:18\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "6bb89821f7a4.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "6ed26dc50edc.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "6ed26dc50edc.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.245
+ },
+ {
+  "file": "743363d3d91b.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   1,
+   2
+  ],
+  "look": 0.007
+ },
+ {
+  "file": "743363d3d91b.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.111
+ },
+ {
+  "file": "76725394a40b.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "apps.bundle.mjs:22378:32\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:22477:18\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "76725394a40b.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.987
+ },
+ {
+  "file": "7814216e5d0e.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    1,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    2,
+    0
+   ]
+  },
+  "text": 0.927,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.115
+ },
+ {
+  "file": "7814216e5d0e.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    1,
+    1
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    2,
+    6
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.361
+ },
+ {
+  "file": "7a797326c45e.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   1,
+   2
+  ],
+  "look": 0.002
+ },
+ {
+  "file": "7a797326c45e.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.086
+ },
+ {
+  "file": "7bd28b9d5a5a.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "7bd28b9d5a5a.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "81d648db687a.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    0
+   ],
+   "pictures": [
+    1,
+    0
+   ],
+   "vertical text": [
+    2,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    4,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   3
+  ],
+  "look": 0.008
+ },
+ {
+  "file": "81d648db687a.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    1
+   ],
+   "pictures": [
+    1,
+    1
+   ],
+   "vertical text": [
+    2,
+    2
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    4,
+    4
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "82d68ab30377.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    6,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    46,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   9
+  ],
+  "look": 0.002
+ },
+ {
+  "file": "82d68ab30377.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    1
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    6,
+    6
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    46,
+    46
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.999
+ },
+ {
+  "file": "82f837700f36.xlsx",
+  "kind": "xlsx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    207,
+    0
+   ],
+   "column widths": [
+    12,
+    0
+   ],
+   "borders": [
+    236,
+    0
+   ],
+   "print areas": [
+    1,
+    0
+   ],
+   "page breaks": [
+    1,
+    0
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    3,
+    0
+   ]
+  },
+  "text": 0.445,
+  "cells": {
+   "cells": 113,
+   "same": 90,
+   "kept": 0.796
+  },
+  "pages": [
+   2,
+   43
+  ],
+  "look": 0.0
+ },
+ {
+  "file": "82f837700f36.xlsx",
+  "kind": "xlsx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    207,
+    207
+   ],
+   "column widths": [
+    12,
+    12
+   ],
+   "borders": [
+    236,
+    148
+   ],
+   "print areas": [
+    1,
+    1
+   ],
+   "page breaks": [
+    1,
+    1
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    3,
+    2
+   ]
+  },
+  "text": 0.541,
+  "cells": {
+   "cells": 113,
+   "same": 113,
+   "kept": 1.0
+  },
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.974
+ },
+ {
+  "file": "83550699276e.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    4,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.039
+ },
+ {
+  "file": "83550699276e.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    4,
+    4
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "86159ec02e97.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "86159ec02e97.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.569
+ },
+ {
+  "file": "8787584468ce.xls",
+  "kind": "xls",
+  "engine": "zapps",
+  "saved": true,
+  "pages": [
+   7,
+   17
+  ],
+  "look": 0.008
+ },
+ {
+  "file": "8787584468ce.xls",
+  "kind": "xls",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   7,
+   7
+  ],
+  "look": 0.995
+ },
+ {
+  "file": "8fd2843f56e7.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    0
+   ],
+   "pictures": [
+    1,
+    0
+   ],
+   "vertical text": [
+    3,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    6,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 0.925,
+  "pages": [
+   1,
+   3
+  ],
+  "look": 0.006
+ },
+ {
+  "file": "8fd2843f56e7.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    1
+   ],
+   "pictures": [
+    1,
+    1
+   ],
+   "vertical text": [
+    3,
+    3
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    6,
+    6
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.999
+ },
+ {
+  "file": "9038df420d3d.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    5,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   3,
+   4
+  ],
+  "look": 0.054
+ },
+ {
+  "file": "9038df420d3d.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    5,
+    5
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   3,
+   3
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "93fbb9d31c9d.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    4,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.057
+ },
+ {
+  "file": "93fbb9d31c9d.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    4,
+    4
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "a5ce6a37016b.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.003
+ },
+ {
+  "file": "a5ce6a37016b.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.066
+ },
+ {
+  "file": "a6e1adc15bfe.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "a6e1adc15bfe.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.995
+ },
+ {
+  "file": "aa172506bbc8.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "aa172506bbc8.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   3,
+   3
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "aae6e420be7c.xlsx",
+  "kind": "xlsx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    631,
+    0
+   ],
+   "column widths": [
+    230,
+    0
+   ],
+   "borders": [
+    638,
+    0
+   ],
+   "print areas": [
+    14,
+    0
+   ],
+   "page breaks": [
+    1,
+    0
+   ],
+   "conditional formats": [
+    198,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    1,
+    1
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    3,
+    0
+   ]
+  },
+  "text": 0.464,
+  "cells": {
+   "cells": 6367,
+   "same": 6257,
+   "kept": 0.983
+  },
+  "pages": [
+   20,
+   132
+  ],
+  "look": 0.005
+ },
+ {
+  "file": "aae6e420be7c.xlsx",
+  "kind": "xlsx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    631,
+    631
+   ],
+   "column widths": [
+    230,
+    230
+   ],
+   "borders": [
+    638,
+    621
+   ],
+   "print areas": [
+    14,
+    14
+   ],
+   "page breaks": [
+    1,
+    1
+   ],
+   "conditional formats": [
+    198,
+    198
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    1,
+    1
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    3,
+    2
+   ]
+  },
+  "text": 0.615,
+  "cells": {
+   "cells": 6367,
+   "same": 6320,
+   "kept": 0.993
+  },
+  "pages": [
+   20,
+   20
+  ],
+  "look": 0.962
+ },
+ {
+  "file": "bad34f0d3daa.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "bad34f0d3daa.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "bc9ad3571b2f.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    2,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    6,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.013
+ },
+ {
+  "file": "bc9ad3571b2f.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    2,
+    2
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    6,
+    6
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "bff3aeb4db4a.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "bff3aeb4db4a.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   4,
+   4
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "c14cf765540f.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    0
+   ],
+   "pictures": [
+    1,
+    0
+   ],
+   "vertical text": [
+    3,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    6,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 0.941,
+  "pages": [
+   1,
+   2
+  ],
+  "look": 0.007
+ },
+ {
+  "file": "c14cf765540f.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    1
+   ],
+   "pictures": [
+    1,
+    1
+   ],
+   "vertical text": [
+    3,
+    3
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    6,
+    6
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "c4e5d3da9c68.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "c4e5d3da9c68.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.945
+ },
+ {
+  "file": "c695c0a4fd39.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   3
+  ],
+  "look": 0.004
+ },
+ {
+  "file": "c695c0a4fd39.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.054
+ },
+ {
+  "file": "c6e5d15775b5.xls",
+  "kind": "xls",
+  "engine": "zapps",
+  "saved": true,
+  "pages": [
+   7,
+   18
+  ],
+  "look": 0.009
+ },
+ {
+  "file": "c6e5d15775b5.xls",
+  "kind": "xls",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   7,
+   7
+  ],
+  "look": 0.987
+ },
+ {
+  "file": "c877ae740d21.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.006
+ },
+ {
+  "file": "c877ae740d21.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.088
+ },
+ {
+  "file": "cc73c0501bce.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    1,
+    0
+   ]
+  },
+  "text": 0.942,
+  "pages": [
+   2,
+   5
+  ],
+  "look": 0.003
+ },
+ {
+  "file": "cc73c0501bce.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    1
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    1,
+    3
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.618
+ },
+ {
+  "file": "d15f19603dc7.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "d15f19603dc7.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   3,
+   3
+  ],
+  "look": 0.248
+ },
+ {
+  "file": "d3442b0f75a6.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "d3442b0f75a6.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.997
+ },
+ {
+  "file": "d42c39201584.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "d42c39201584.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "d4d30c185f80.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "d4d30c185f80.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   3,
+   3
+  ],
+  "look": 0.248
+ },
+ {
+  "file": "d59ebe3d2d88.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   1,
+   2
+  ],
+  "look": 0.002
+ },
+ {
+  "file": "d59ebe3d2d88.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.079
+ },
+ {
+  "file": "d6137934a0dc.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "d6137934a0dc.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "dcec3d88aa46.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "apps.bundle.mjs:22378:32\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:22477:18\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "dcec3d88aa46.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "e182902f9da6.xlsx",
+  "kind": "xlsx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    140,
+    0
+   ],
+   "column widths": [
+    2,
+    0
+   ],
+   "borders": [
+    56,
+    0
+   ],
+   "print areas": [
+    1,
+    0
+   ],
+   "page breaks": [
+    0,
+    0
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    1,
+    0
+   ]
+  },
+  "text": 0.447,
+  "cells": {
+   "cells": 78,
+   "same": 67,
+   "kept": 0.859
+  },
+  "pages": [
+   5,
+   35
+  ],
+  "look": 0.001
+ },
+ {
+  "file": "e182902f9da6.xlsx",
+  "kind": "xlsx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    140,
+    140
+   ],
+   "column widths": [
+    2,
+    2
+   ],
+   "borders": [
+    56,
+    57
+   ],
+   "print areas": [
+    1,
+    1
+   ],
+   "page breaks": [
+    0,
+    0
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    1,
+    1
+   ]
+  },
+  "text": 0.522,
+  "cells": {
+   "cells": 78,
+   "same": 78,
+   "kept": 1.0
+  },
+  "pages": [
+   5,
+   5
+  ],
+  "look": 0.983
+ },
+ {
+  "file": "e1cb9c2c33f6.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    0
+   ],
+   "pictures": [
+    1,
+    0
+   ],
+   "vertical text": [
+    2,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    8,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   3,
+   8
+  ],
+  "look": 0.004
+ },
+ {
+  "file": "e1cb9c2c33f6.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    1
+   ],
+   "pictures": [
+    1,
+    1
+   ],
+   "vertical text": [
+    2,
+    2
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    8,
+    8
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   3,
+   3
+  ],
+  "look": 0.942
+ },
+ {
+  "file": "e97a7b1b7e95.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "e97a7b1b7e95.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.996
+ },
+ {
+  "file": "ead711e4c539.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    10,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    1,
+    0
+   ]
+  },
+  "text": 0.807,
+  "pages": [
+   7,
+   5
+  ],
+  "look": 0.01
+ },
+ {
+  "file": "ead711e4c539.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    10,
+    10
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    1,
+    3
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   7,
+   7
+  ],
+  "look": 0.472
+ },
+ {
+  "file": "ee77a676378a.xlsx",
+  "kind": "xlsx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    16,
+    0
+   ],
+   "column widths": [
+    5,
+    0
+   ],
+   "borders": [
+    12,
+    0
+   ],
+   "print areas": [
+    0,
+    0
+   ],
+   "page breaks": [
+    0,
+    0
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ]
+  },
+  "text": 0.55,
+  "cells": {
+   "cells": 21,
+   "same": 20,
+   "kept": 0.952
+  },
+  "pages": [
+   4,
+   2
+  ],
+  "look": 0.006
+ },
+ {
+  "file": "ee77a676378a.xlsx",
+  "kind": "xlsx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "merged cells": [
+    16,
+    16
+   ],
+   "column widths": [
+    5,
+    5
+   ],
+   "borders": [
+    12,
+    12
+   ],
+   "print areas": [
+    0,
+    0
+   ],
+   "page breaks": [
+    0,
+    0
+   ],
+   "conditional formats": [
+    0,
+    0
+   ],
+   "input rules": [
+    0,
+    0
+   ],
+   "charts": [
+    0,
+    0
+   ],
+   "formulas": [
+    0,
+    0
+   ],
+   "macros": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ]
+  },
+  "text": 0.579,
+  "cells": {
+   "cells": 21,
+   "same": 21,
+   "kept": 1.0
+  },
+  "pages": [
+   4,
+   4
+  ],
+  "look": 0.992
+ },
+ {
+  "file": "f1097f67f41e.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "f1097f67f41e.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.672
+ },
+ {
+  "file": "f30dec1e71a5.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "f30dec1e71a5.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "f4b2dc027d8f.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "f4b2dc027d8f.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "f58a35094aab.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "apps.bundle.mjs:22378:32\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:22477:18\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "f58a35094aab.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "f66367d63d63.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "f66367d63d63.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   3,
+   3
+  ],
+  "look": 0.253
+ },
+ {
+  "file": "f97d3620dfbf.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.009
+ },
+ {
+  "file": "f97d3620dfbf.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    0,
+    0
+   ],
+   "pictures": [
+    0,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   2,
+   1
+  ],
+  "look": 0.056
+ },
+ {
+  "file": "f9f7e17c8ae6.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "f9f7e17c8ae6.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   2,
+   2
+  ],
+  "look": 0.569
+ },
+ {
+  "file": "fabdb9daefae.docx",
+  "kind": "docx",
+  "engine": "zapps",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    0
+   ],
+   "pictures": [
+    1,
+    0
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 0.923,
+  "pages": [
+   1,
+   2
+  ],
+  "look": 0.004
+ },
+ {
+  "file": "fabdb9daefae.docx",
+  "kind": "docx",
+  "engine": "libreoffice",
+  "saved": true,
+  "features": {
+   "tables": [
+    1,
+    1
+   ],
+   "pictures": [
+    1,
+    1
+   ],
+   "vertical text": [
+    0,
+    0
+   ],
+   "ruby": [
+    0,
+    0
+   ],
+   "distributed": [
+    0,
+    0
+   ],
+   "headers/footers": [
+    0,
+    0
+   ]
+  },
+  "text": 1.0,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "fb064079082e.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "fb064079082e.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 1.0
+ },
+ {
+  "file": "fd445e3732ad.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "apps.bundle.mjs:22378:32\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:22477:18\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "fd445e3732ad.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.498
+ },
+ {
+  "file": "fd8ce964e90d.xls",
+  "kind": "xls",
+  "engine": "zapps",
+  "saved": true,
+  "pages": [
+   12,
+   10
+  ],
+  "look": 0.019
+ },
+ {
+  "file": "fd8ce964e90d.xls",
+  "kind": "xls",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   12,
+   12
+  ],
+  "look": 0.951
+ },
+ {
+  "file": "ffec3f4a4ca6.doc",
+  "kind": "doc",
+  "engine": "zapps",
+  "saved": false,
+  "error": "pps.bundle.mjs:11057:40)\n    at file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:10345:23\n    at async openDocxFile (file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:25149:21)\n    at async file:///home/claude/z2/tests/office/engines/zapps.bundle.mjs:57327:3\n\nNode.js v22.22.0\n"
+ },
+ {
+  "file": "ffec3f4a4ca6.doc",
+  "kind": "doc",
+  "engine": "libreoffice",
+  "saved": true,
+  "pages": [
+   1,
+   1
+  ],
+  "look": 0.938
+ }
+]

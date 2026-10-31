@@ -25,7 +25,9 @@ const rv = (p, body) => call("rev", p, body, { Authorization: "Bearer " + REVIEW
   let up = false; for (let i = 0; i < 300; i++) { try { const r = await fetch(B + "/api/state"); if (r.ok) { up = true; break; } } catch {} await wait(200); }
   assert.ok(up, "wrangler dev did not start");
   let r = await call("anon", "/api/state");
-  assert.equal(r.j.me, null); assert.equal(r.j.signin, "test"); assert.equal(r.j.threads.length, 9); ok("state without sign-in");
+  assert.equal(r.j.me, null); assert.equal(r.j.signin, "test"); assert.equal(r.j.threads.length, 10); ok("state without sign-in");
+  r = await call("anon", "/api/thread?t=github"); assert.equal(r.status, 200); assert.ok(Array.isArray(r.j.github.events) && Array.isArray(r.j.github.milestones)); ok("the repository thread answers (read only)");
+  r = await call("anon", "/api/post", { thread: "github", text: "posting into the repository thread" }); assert.notEqual(r.status, 200); ok("nobody posts into the repository thread");
   r = await call("anon", "/api/post", { thread: "ideas", text: "hello there everyone" }); assert.equal(r.status, 401); ok("posting needs sign-in");
   r = await call("anon", "/auth/test", { handle: "maya" }, { "X-ZF": "0" }); assert.equal(r.status, 403); ok("POST without the board header refused");
   for (const u of ["maya", "ken", "ana"]) { r = await call(u, "/auth/test", { handle: u }); assert.equal(r.status, 302); }

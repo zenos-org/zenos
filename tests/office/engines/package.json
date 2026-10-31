@@ -1,0 +1,1 @@
+{"name":"zenos-office-compat","private":true,"type":"module","dependencies":{"mammoth":"1.13.0","jszip":"3.10.2","xlsx":"https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz","@xmldom/xmldom":"0.9.12","esbuild":"0.28.2"}}

@@ -1,0 +1,38 @@
+name: office-compat
+# Public Word/Excel/PowerPoint files opened and saved by the ZENOS apps and by LibreOffice, compared with the
+# originals (tests/office). Runs in Debian 13, as ZENOS does, when the office apps or the check change, and weekly.
+on:
+  push:
+    paths: ["apps/**", "tests/office/**", ".github/workflows/office-compat.yml"]
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compat:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    container: debian:trixie
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends libreoffice-writer libreoffice-calc libreoffice-impress \
+            fonts-noto-cjk poppler-utils python3-openpyxl python3-pil python3-numpy nodejs npm ca-certificates
+      - name: The public files
+        run: python3 tests/office/fetch.py /tmp/office-corpus
+      - name: The ZENOS apps' own open/save code
+        run: npm install --no-audit --no-fund && node build.mjs
+        working-directory: tests/office/engines
+      - name: Open, save, compare
+        run: python3 tests/office/compat.py /tmp/office-corpus /tmp/office-results > /tmp/office-results.log
+      - name: Results
+        if: always()
+        run: cat /tmp/office-results/results.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: office-compat-results
+          path: /tmp/office-results
