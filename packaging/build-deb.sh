@@ -6,6 +6,10 @@ set -euo pipefail
 SRC="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
 VER="${VER:-0.1.0~preview$(date +%Y%m%d)}"
 OUT="${OUT:-$SRC/build}"
+# reproducible: the same source gives the same bytes (packaging/repro-check.sh builds twice and compares)
+export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git -C "$SRC" log -1 --format=%ct 2>/dev/null || date +%s)}"
+export TZ=UTC LC_ALL=C.UTF-8
+umask 022
 B="$OUT/work"; P="$OUT/pkg"
 mkdir -p "$OUT"
 exec 9>"$OUT/.build.lock"
@@ -75,6 +79,7 @@ mkdir -p "$P/etc/zenos"
 # security fixes install themselves (packaging/debian/apt/52zenos-auto-update)
 mkdir -p "$P/etc/apt/apt.conf.d"
 install -m 644 "$SRC/packaging/debian/apt/52zenos-auto-update" "$P/etc/apt/apt.conf.d/52zenos-auto-update"
+install -m 644 "$SRC/packaging/debian/apt/53zenos-supply" "$P/etc/apt/apt.conf.d/53zenos-supply"
 # Node.js 24 LTS from NodeSource; Debian 13's Node 20 is past end of life (packaging/debian/apt/zenos-nodesource.*)
 mkdir -p "$P/etc/apt/sources.list.d" "$P/etc/apt/preferences.d" "$P/usr/share/keyrings"
 install -m 644 "$SRC/packaging/debian/apt/zenos-nodesource.sources" "$P/etc/apt/sources.list.d/zenos-nodesource.sources"
@@ -121,11 +126,32 @@ cp "$SRC/messenger/LICENSE" "$P/usr/share/doc/zenos/LICENSE.messenger-AGPL-3.0"
 
 echo "== control"
 find "$P" -name __pycache__ -prune -exec rm -rf {} +
+# modes and times that do not depend on the build machine
+find "$P" -type d -exec chmod 755 {} +
+find "$P" -type f -perm /111 -exec chmod 755 {} +
+find "$P" -type f ! -perm /111 -exec chmod 644 {} +
 mkdir -p "$P/DEBIAN"
-SIZE=$(du -sk "$P" | cut -f1)
+SIZE=$(find "$P" -type f -printf '%s\n' | awk '{s+=$1} END {print int(s/1024)+1}')
 sed -e "s/@VERSION@/$VER/" -e "s/@SIZE@/$SIZE/" "$SRC/packaging/debian/control.in" > "$P/DEBIAN/control"
 for s in postinst prerm postrm; do install -m 755 "$SRC/packaging/debian/$s" "$P/DEBIAN/$s"; done
 printf '/etc/zenos/zenos.conf\n/etc/default/grub.d/zenos-hardening.cfg\n' > "$P/DEBIAN/conffiles"
 
+find "$P" -exec touch -h -d "@$SOURCE_DATE_EPOCH" {} +
 dpkg-deb --root-owner-group -Zxz --build "$P" "$OUT/zenos_${VER}_amd64.deb" >/dev/null
 ls -la "$OUT/zenos_${VER}_amd64.deb"
+# the build record: what it was built from and with (published next to the package)
+LAKE="$LAKE" python3 - "$OUT/zenos_${VER}_amd64.deb" "$SRC" > "$OUT/zenos_${VER}_amd64.buildinfo.json" <<'PY'
+import hashlib, json, os, subprocess, sys
+deb, src = sys.argv[1], sys.argv[2]
+def v(*a):
+    try:
+        return (subprocess.run(a, capture_output=True, text=True).stdout or "").strip().splitlines()[:1]
+    except OSError:
+        return []
+print(json.dumps({"package": os.path.basename(deb), "sha256": hashlib.sha256(open(deb, "rb").read()).hexdigest(),
+                  "source_commit": (v("git", "-C", src, "rev-parse", "HEAD") or [""])[0],
+                  "source_dirty": bool(v("git", "-C", src, "status", "--porcelain")),
+                  "source_date_epoch": int(os.environ["SOURCE_DATE_EPOCH"]),
+                  "tools": {"dpkg": v("dpkg", "--version"), "node": v("node", "--version"), "npm": v("npm", "--version"),
+                            "python": v("python3", "--version"), "lean": v(os.environ.get("LAKE", "lake"), "--version")}}, indent=1))
+PY

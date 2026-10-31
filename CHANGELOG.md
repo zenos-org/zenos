@@ -3,6 +3,19 @@
 ## Unreleased
 
 **System**
+- The update path (after NetamLoader, Kaspersky, 29 Oct 2026): a release ledger for packages (`zsupply.py`,
+  `zenos_release.py`, `zenos_pkgcheck.py` as apt's pre-install check; Lean: `Supply.lean`, `install_sound`,
+  `one_node_not_enough`, `one_key_not_enough`, `revoked_refused`): a package goes in only when a majority of the
+  audit nodes hold the same record for its exact file, signed by at least two release officers, not revoked and
+  released to the PC's ring; dpkg reads root-only copies checked again by SHA-256 (`zenos-dpkg`). Off unless
+  `/etc/zenos/supply.json` turns it on; every installation is recorded.
+- `zenos-supplywatch`: files that appear in apt's download folder are checked at once; anything not in the ledger
+  is quarantined and reported. `zenos-integrity` (hourly): installed files against the accepted records, dpkg sums,
+  and unowned loader paths (`ld.so.preload`, `LD_PRELOAD`, `.pth`, systemd drop-ins, apt hooks, `NODE_OPTIONS`).
+- Network sentinel: system accounts may reach only named destinations (`/etc/zenos/egress-system.json`, monitor by
+  default, enforce to cut; Lean: `sysegress_cut_only_unlisted`, `sysegress_listed_kept`).
+- Reproducible package builds (`SOURCE_DATE_EPOCH`, fixed modes and times), a build record next to each package,
+  and `packaging/repro-check.sh`.
 - Key service (`zenos_keysvc.py`, [docs/KEY_SERVICE.md](docs/KEY_SERVICE.md)): with `/etc/zenos/keysvc.json` on a PC,
   the keys of newly sealed files are no longer kept on the PC. The service, on another machine, releases one file's
   key per request after deciding again with its own clearance table, officers and the users assigned to each PC,

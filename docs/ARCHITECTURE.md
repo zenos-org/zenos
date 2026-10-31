@@ -77,6 +77,38 @@ Rules:
 | `zenos-heartwatch` | `zenos_heartbeat.py` | dead-man's switch for the sensors |
 | (on demand) | `zenos_siren.py` | full-screen red alert until acknowledged |
 
+## From source to an installed package
+
+```mermaid
+flowchart LR
+  S[Source in git] --> B1[Build A]
+  S --> B2[Build B, another machine]
+  B1 -- same bytes? --> M[Release record<br/>name, version, SHA-256,<br/>every file and conffile]
+  B2 -- same bytes? --> M
+  D[Debian / NodeSource<br/>file checked against<br/>their signed index] --> M
+  M --> O1[Officer 1 signs]
+  M --> O2[Officer 2 signs]
+  O1 --> P[Publisher<br/>carries records,<br/>holds no officer key]
+  O2 --> P
+  P --> N1[(Audit node 1)]
+  P --> N2[(Audit node 2)]
+  P --> N3[(Audit node 3)]
+  R[apt repository / mirror] --> C[apt download folder<br/>zenos-supplywatch]
+  C --> H{apt pre-install check<br/>zenos_pkgcheck.py<br/>Supply.lean}
+  N1 -- signed answer --> H
+  N2 -- signed answer --> H
+  N3 -- signed answer --> H
+  H -- majority holds the same record,<br/>2+ officers, not revoked,<br/>ring open --> I[dpkg installs<br/>recorded in the PC ledger]
+  H -- otherwise --> X[refused, reported]
+  I --> G[zenos-integrity hourly<br/>files and loader paths]
+```
+
+Checked at each step: the two builds give the same bytes (`packaging/repro-check.sh`); a file from Debian or
+NodeSource is the one their signed index names (`--apt-check`); each officer signs the record's digest with their
+own key; the audit nodes accept only records that continue their chain and sign every answer; the PC accepts a file
+only on a majority of identical node answers and enough officer signatures (`decideInstall`); after installation,
+the files stay the ones in the record (`zenos-integrity`).
+
 ## Conventions
 
 - Python modules and service programs: `snake_case`, services prefixed `zenos_`, library modules prefixed `z`.

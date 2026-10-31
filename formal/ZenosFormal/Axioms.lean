@@ -5,6 +5,7 @@ import ZenosFormal.Egress
 import ZenosFormal.Protocol
 import ZenosFormal.Cred
 import ZenosFormal.KeyService
+import ZenosFormal.Supply
 
 /-! The main theorems rest only on Lean's standard axioms: no `sorry`, no axiom of our own. The build fails if
     that changes (`#guard_msgs` on the kernel's own report). -/
@@ -107,3 +108,21 @@ import ZenosFormal.KeyService
 
 /-- info: 'Zenos.key_rate_bounded' depends on axioms: [propext, Quot.sound] -/
 #guard_msgs in #print axioms Zenos.key_rate_bounded
+
+/-- info: 'Zenos.install_sound' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.install_sound
+
+/-- info: 'Zenos.one_node_not_enough' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.one_node_not_enough
+
+/-- info: 'Zenos.one_key_not_enough' depends on axioms: [propext, Quot.sound] -/
+#guard_msgs in #print axioms Zenos.one_key_not_enough
+
+/-- info: 'Zenos.revoked_refused' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.revoked_refused
+
+/-- info: 'Zenos.sysegress_cut_only_unlisted' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.sysegress_cut_only_unlisted
+
+/-- info: 'Zenos.sysegress_listed_kept' depends on axioms: [propext] -/
+#guard_msgs in #print axioms Zenos.sysegress_listed_kept

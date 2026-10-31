@@ -43,6 +43,7 @@ def canon(o):
 
 
 DAY = 86400
+PC_ALERTS = ("supply-alert", "integrity-alert", "pkg-refused")
 
 
 def batch_digest(b):
@@ -175,6 +176,10 @@ class Node:
                 self.alert("broken-chain", machine=machine, chain=chain, index=n + (j or 0))
                 return 422, {"ok": False, "error": "broken chain", "index": n + (j or 0)}
             prev = head
+            for rec in new:                                       # what the PC itself reported as an alert
+                if rec.get("event") in PC_ALERTS:
+                    self.alert(rec["event"], machine=machine, reason=str(rec.get("reason") or rec.get("first") or "")[:200],
+                               path=str(rec.get("file") or ""))
             if new:
                 with open(self.chain_path(machine, chain), "a", encoding="utf-8") as f:
                     for rec in new:
@@ -248,6 +253,32 @@ class Node:
                         out.append({"i": i, "fid": str(r["fid"]), "actor": str(r.get("actor"))})
         u = {"machine": machine, "from": frm, "count": n, "unseals": out}
         return {"unseals": u, "sig": base64.b64encode(self.key.sign(canon(u))).decode()}
+
+    publishers = ()                                 # machines whose "releases" chain is the release ledger
+
+    def release(self, sha):
+        """the release and revocation records the release publishers put in this node's ledger for one package file
+        (SHA-256), signed by this node; PCs check them before installing (zsupply.py)"""
+        out = []
+        for pub in self.publishers:
+            p = self.chain_path(pub, "releases")
+            if not (NAME.match(pub) and p.exists()):
+                continue
+            with open(p, encoding="utf-8") as f:
+                for l in f:
+                    if sha not in l:
+                        continue
+                    try:
+                        r = json.loads(l)
+                    except ValueError:
+                        continue
+                    body = r.get("record")
+                    if r.get("event") in ("release", "revoke") and isinstance(body, dict):
+                        m = body.get("manifest") or body.get("revoke") or {}
+                        if m.get("sha256") == sha:
+                            out.append(body)
+        rel = {"sha256": sha, "records": out, "t": time.time()}
+        return {"release": rel, "sig": base64.b64encode(self.key.sign(canon(rel))).decode()}
 
     def check_silence(self, limit):
         """a PC that stops reporting (switched off the network, shipping stopped) is itself a signal"""
@@ -447,6 +478,9 @@ def serve(node, host, port, cert=None, key=None, silence=90, peers=(), check_eve
             self.reply(*node.accept(b))
 
         def do_GET(self):
+            r = re.match(r"^/v1/release/([0-9a-f]{64})$", self.path)
+            if r:
+                return self.reply(200, {"ok": True, **node.release(r.group(1))})
             h = re.match(r"^/v1/(health|unseals)/([A-Za-z0-9_.-]{1,64})(?:\?from=(\d{1,9}))?$", self.path)
             if h:
                 kind, machine, frm = h.groups()
@@ -510,6 +544,7 @@ def main():
         sys.exit("Listening beyond this machine needs TLS: give --cert and --key.")
     silence = int(opt("--silence-seconds", 0) or 0) or int(opt("--silence-minutes", 0) or 0) * 60 or 90
     node.set_notify(cfg.get("notify"))
+    node.publishers = tuple(cfg.get("publishers", ["zenos-release"]))
     serve(node, host, int(opt("--port", "8443")), opt("--cert"), opt("--key"), silence,
           peers=cfg.get("peers", []), check_every=int(cfg.get("check_seconds", 120)))
 

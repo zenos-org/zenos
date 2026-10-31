@@ -96,6 +96,19 @@ officers' signatures on a grant and reads the PC's health from the audit node's 
 file key is derived on the service (HKDF-SHA256 from the level's master key and the file id) and reaches keyd wrapped
 for that request only (X25519, HKDF, AES-256-GCM); the answer is signed with the service's key.
 
+### What a PC lets in (`Supply.lean`)
+
+| Theorem | Statement |
+|---|---|
+| `install_sound` | A package file is installed only when it matches the release record, more than half of the configured audit nodes answered with that same record under their own signatures, at least `required` (and at least one) distinct enrolled release officers signed it, no revocation is agreed, and the PC's ring is open. |
+| `one_node_not_enough` | With two or more audit nodes configured, one node vouching never lets a package in. |
+| `one_key_not_enough` | When two or more officers must sign, one release key never lets a package in. |
+| `revoked_refused` | An agreed revocation keeps a package out. |
+| `sysegress_cut_only_unlisted`, `sysegress_listed_kept` | The network sentinel cuts a system account's connection only in enforce mode and only to a destination that is not listed; listed destinations and people's own programs are never cut by this rule. |
+
+The PC checks the node answers' signatures, the officers' signatures over the record digest and the file's SHA-256
+(`zsupply.py`), and passes the results as facts.
+
 ## What is trusted, not proved
 
 - Cryptography: Ed25519 signature checks with the officers' enrolled keys, SHA-256 digests, AES-GCM; for sign-in,

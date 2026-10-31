@@ -74,6 +74,31 @@ Next, in this order (0.2):
 ZENOS does not use kernel livepatching; a fix takes effect at the next restart, and the restart window and the audit
 nodes make sure a waiting fix is seen and applied.
 
+## If the update path is taken over
+
+On 29 October 2026 Kaspersky reported NetamLoader (https://securelist.com/netamloader/121676/): on a Windows 10 build
+used by government entities in Asia, a CAB archive in the Windows update folder held mostly genuine, signed
+components of a patch tool, plus one crafted configuration file and one data file; a genuine signed program loaded
+them. Its controller posed as an AI service (openaigpt4v.com). A signature check on the program does not see this.
+ZENOS updates itself every day, so its update path is exactly such an entrance.
+
+| | Today (0.1.2) | In the repository, not in a release yet |
+|---|---|---|
+| What lets a package in | apt's signature check on the repositories (Debian, NodeSource, ZENOS). Whoever holds a repository's signing key, or takes over its server, can ship any package to every PC. | Also the release ledger (`zenos_pkgcheck.py`, apt's pre-install check; proved in `Supply.lean`): the exact file (SHA-256) must be in a record that more than half of the audit nodes configured on the PC hold identically, signed by at least two release officers enrolled on the PC, not revoked (an officer-signed revocation counts wherever it is found), and released to this PC's ring. dpkg is then given root-only copies of the files, checked again by their SHA-256 (`zenos-dpkg`), so a file swapped in the download folder after the check is never what dpkg reads. One audit node, one officer's key, the publisher, or the repository server alone does not let a package in. With `"enforce"`, nothing installs while the audit nodes cannot be reached, and one refused package stops that whole apt run. Debian and NodeSource packages are recorded the same way after their file is checked against the signed index (`zenos_release.py manifest --apt-check`). Off unless `/etc/zenos/supply.json` turns it on (`"warn"` or `"enforce"`); every package installed is recorded in the PC's ledger either way. |
+| A file that does not belong in the update folder | Not looked at. | `zenos-supplywatch` checks every file that appears in apt's download folder at once: a package file must be in the ledger, anything else does not belong there; either is quarantined and reported to the audit nodes, which alert the officers. |
+| A genuine program fed a changed file | Not looked at. | `zenos-integrity` (hourly): every file of a package whose record the PC accepted, byte for byte, configuration files included (a changed configuration file is reported for review, a changed program as an alert); every other package against dpkg's own sums; and anything no package owns among the paths that make a genuine program load something else: `/etc/ld.so.preload`, `LD_PRELOAD` and similar variables in environment files and systemd settings, Python `.pth` and `sitecustomize` files, systemd drop-ins, apt hooks, `ld.so.conf.d`, `npmrc`. |
+| Where system services may connect | Any address; large sends to unknown addresses are cut by the network sentinel. | Root and service accounts may reach only named destinations (the update mirrors, the audit nodes, the key service, the DNS servers; `/etc/zenos/egress-system.json`). Anything else is recorded (`"monitor"`, the default) or its address cut at the first byte (`"enforce"`; proved: `sysegress_cut_only_unlisted`). The mirrors in apt's sources, NetworkManager's connectivity check and the upstream DNS servers are added automatically. The sensor sees IPv4 TCP only (not IPv6, UDP or QUIC). |
+| Reproducing a build | Not checked. | `packaging/repro-check.sh` builds the package twice in separate places and compares the bytes; `zenos_release.py manifest --rebuilt` refuses to describe a file that a listed rebuild does not match. A build record (`.buildinfo.json`) is written next to the package. |
+| Rollout | Every PC at once. | Each record says when each ring of PCs may install it (`--rings 0=0,1=+1d,2=+3d`); a revocation signed by enough officers stops it everywhere. |
+
+Not done yet: the ISO is not reproducible; the officers' release keys are files (hardware keys next); the audit
+nodes that hold the release ledger and the mirror for Debian and NodeSource are not running for the public
+preview, so the check stays off by default; kernel IMA/EVM: Debian's kernel has IMA, IMA appraisal and EVM built in,
+and in a VM with lockdown "integrity" and `ima_policy=tcb` the kernel measured every program and library it ran
+(31 October 2026). Appraisal (refusing a file whose hash is not signed) needs signatures on the files themselves
+(`security.ima`), which Debian's packages do not carry; signing ZENOS's own files and appraising them is the next
+step, and the measurement list is to be sent to the audit nodes with a TPM quote.
+
 ## Known weaknesses in dependencies
 
 - `xlsx` (SheetJS) is no longer published on npm; the npm copy (0.18.5) has known vulnerabilities (prototype

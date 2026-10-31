@@ -4,6 +4,7 @@ import ZenosFormal.Ledger
 import ZenosFormal.Egress
 import ZenosFormal.Cred
 import ZenosFormal.KeyService
+import ZenosFormal.Supply
 
 /-!
 `zenos-decide`: reads one JSON request on stdin, writes one JSON answer on stdout, runs the proven decision
@@ -35,6 +36,9 @@ functions of `ZenosFormal.Decide` and nothing else. Any input it cannot read is 
    "rate_max", "machine_recent", "machine_rate_max", "assigned", "presence_from", "presence": null | {"registered","sig_ok","challenge_ok","origin_ok",
    "user_verified","counter_ok"}, "open": {the fields of "open" above, without "op"}}
       -> {"allow": bool, "by": "clearance"|"grant"|null, "reason": str|null}   (the key service)
+  {"op":"install", "nodes":[..], "votes":[{"node","sig_ok","record"}], "record", "hash_ok", "signers":[..],
+   "officers":[..], "required", "revoked", "ring_open", "now"}       -> {"allow": bool, "reason": str|null}
+  {"op":"sysegress", "system", "listed", "loopback", "enforce"}       -> {"cut": bool}   (the network sentinel)
   zenos-decide egress W THR   (the network sentinel's stream: one send per line
       "key<TAB>destination<TAB>allowed 0|1<TAB>time ms<TAB>bytes", one answer per line "cut" | "ok")
 -/
@@ -243,6 +247,20 @@ def answer (j : J) : Except String J := do
                         assigned := ← getB j "assigned",
                         presenceFrom := ← getN j "presence_from", presence := p, openReq := ← openReq (← field j "open") }
     return decisionJ (decideKey k)
+  | "install" =>
+    let votes ← (← getArr j "votes").mapM fun v => do
+      return ({ node := ← getS v "node", sigOk := ← getB v "sig_ok", record := ← getS v "record" } : Vote)
+    let r : InstallReq := { nodes := ← getSs j "nodes", votes, record := ← getS j "record", hashOk := ← getB j "hash_ok",
+                            signers := ← getSs j "signers", officers := ← getSs j "officers",
+                            required := ← getN j "required", revoked := ← getB j "revoked",
+                            ringOpen := ← getN j "ring_open", now := ← getN j "now" }
+    return match decideInstall r with
+      | .allow => .obj [("allow", .bool true), ("reason", .null)]
+      | .refuse why => .obj [("allow", .bool false), ("reason", .str why)]
+  | "sysegress" =>
+    let e : SysEgress := { system := ← getB j "system", listed := ← getB j "listed", loopback := ← getB j "loopback",
+                           enforce := ← getB j "enforce" }
+    return .obj [("cut", .bool (decideSysEgress e))]
   | "approve" =>
     let act ← match ← getS j "act" with
       | "approve" => pure Act.approve

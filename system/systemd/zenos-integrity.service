@@ -1,0 +1,12 @@
+[Unit]
+Description=ZENOS integrity check (installed files against the release ledger; loader paths)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -I /usr/sbin/zenos_integrity.py
+Nice=10
+IOSchedulingClass=idle
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/zenos /var/log/zenos
+PrivateTmp=yes
