@@ -17,30 +17,25 @@ const THREADS = [
 ];
 // ---------- the repository's activity (public GitHub data, fetched by the server every 30 minutes) ----------
 const REPO = "zenos-org/zenos";
-const GH_EVERY = 30 * 60 * 1000;
+const GH_EVERY = 10 * 60 * 1000;
 const ghUrl = (u) => (typeof u === "string" && u.startsWith("https://github.com/" + REPO + "/")) ? u : "https://github.com/" + REPO;
-async function ghGet(env, path) {
-  const r = await fetch("https://api.github.com/repos/" + REPO + path, { headers: { "User-Agent": "zenos-feedback", Accept: "application/vnd.github+json" } });
-  if (!r.ok) throw new Error("github " + r.status);
-  return r.json();
-}
+// GitHub's API limit for requests without a key is shared by every Cloudflare server on the same address, so the
+// repository publishes its activity itself (.github/workflows/activity.yml, tools/github_activity.py) and the board
+// reads that file. Every link is checked to point into the repository.
+const ACTIVITY = "https://raw.githubusercontent.com/" + REPO + "/activity/activity.json";
 async function syncGithub(env, force) {
   const last = await one(env.DB, "SELECT v FROM meta WHERE k = 'githubAt'");
   if (!force && last && Date.now() - +last.v < GH_EVERY) return;
-  const [rel, prs, iss, ms] = await Promise.all([ghGet(env, "/releases?per_page=5"), ghGet(env, "/pulls?state=closed&sort=updated&direction=desc&per_page=20"),
-    ghGet(env, "/issues?state=all&sort=updated&direction=desc&per_page=40"), ghGet(env, "/milestones?state=open&sort=due_on")]);
-  const ev = [];
+  const r = await fetch(ACTIVITY, { headers: { "User-Agent": "zenos-feedback" } });
+  if (!r.ok) throw new Error("activity " + r.status);
+  const a = await r.json();
   const cut = (t) => String(t || "").slice(0, 200);
-  for (const r of rel) if (!r.draft) ev.push({ kind: "release", title: cut(r.name || r.tag_name), url: ghUrl(r.html_url), at: Date.parse(r.published_at), who: "" });
-  for (const p of prs) if (p.merged_at) ev.push({ kind: "merged", n: p.number, title: cut(p.title), url: ghUrl(p.html_url), at: Date.parse(p.merged_at), who: cut(p.user && p.user.login) });
-  for (const i of iss) {
-    if (i.pull_request) continue;
-    ev.push({ kind: "opened", n: i.number, title: cut(i.title), url: ghUrl(i.html_url), at: Date.parse(i.created_at), who: cut(i.user && i.user.login) });
-    if (i.closed_at) ev.push({ kind: "closed", n: i.number, title: cut(i.title), url: ghUrl(i.html_url), at: Date.parse(i.closed_at), who: "" });
-  }
-  ev.sort((a, b) => b.at - a.at);
-  const data = { events: ev.slice(0, 60), milestones: ms.map((m) => ({ title: cut(m.title), open: m.open_issues, closed: m.closed_issues, url: ghUrl(m.html_url) })), at: Date.now() };
-  await run(env.DB, "INSERT OR REPLACE INTO meta (k, v) VALUES ('github', ?)", JSON.stringify(data));
+  const KINDS = ["release", "merged", "opened", "closed"];
+  const ev = (Array.isArray(a.events) ? a.events : []).filter((e) => e && KINDS.includes(e.kind)).slice(0, 60)
+    .map((e) => ({ kind: e.kind, n: Number.isInteger(e.n) ? e.n : undefined, title: cut(e.title), url: ghUrl(e.url), at: +e.at || 0, who: cut(e.who) }));
+  const ms = (Array.isArray(a.milestones) ? a.milestones : []).slice(0, 5)
+    .map((m) => ({ title: cut(m.title), open: +m.open || 0, closed: +m.closed || 0, url: ghUrl(m.url) }));
+  await run(env.DB, "INSERT OR REPLACE INTO meta (k, v) VALUES ('github', ?)", JSON.stringify({ events: ev, milestones: ms, at: +a.at || Date.now() }));
   await run(env.DB, "INSERT OR REPLACE INTO meta (k, v) VALUES ('githubAt', ?)", String(Date.now()));
 }
 async function githubData(env) {
@@ -313,5 +308,6 @@ export default {
     }
     return env.ASSETS.fetch(req);
   },
-  async scheduled(ev, env, ctx) { ctx.waitUntil((async () => { await triage(env); await localReview(env); try { await syncGithub(env); } catch (e) {} })()); },
+  async scheduled(ev, env, ctx) { ctx.waitUntil((async () => { try { await syncGithub(env); } catch (e) { console.log("github sync failed:", String(e)); }
+    await triage(env); await localReview(env); })()); },
 };
