@@ -125,6 +125,25 @@ The PC checks the node answers' signatures, the officers' signatures over the re
 The conductor finds the values to mask (`zorch.py`: the person's terms, patterns, the tables' names and cells) and
 gives each piece its role; those are passed as facts.
 
+### Organizations reaching each other, and place (`Federation.lean`, docs/FEDERATION.md)
+
+| Theorem | Statement |
+|---|---|
+| `fed_sound` | A request from one organization's relay to another passes only when it is signed by the sending relay, fresh, both organizations are listed, and its level is within both entries. |
+| `unlisted_refused`, `unlisted_sender_refused` | A request to or from an organization without a valid entry is refused. |
+| `one_signer_not_enough` | An organization whose entries each carry at most one valid authority signature is not listed (the list needs at least two distinct authorities per entry). |
+| `level_bound` | An allowed request never carries a level above what the receiving organization may receive. |
+| `publisher_cannot_message` | A publish-only member (a disaster information service) never sends or receives messages or key bundles. |
+| `abroad_closes` | Outside the country, levels from the set threshold up are refused. |
+| `no_widen_without_emergency`, `widen_needs_all` | Place never allows more than the decision without place, except emergency sharing while a disaster is declared, inside the area by both the device and a second proof. |
+| `zone_needs_proof` | Content that requires a zone opens only with a second proof of place that does not come from the device's positioning. |
+| `gps_alone_changes_nothing` | Without that second proof, the device's location reading does not change the decision: faking it gains nothing. |
+| `ex_ministry_to_city`, `ex_above_city_level`, `ex_rogue_refused`, `ex_geoid_alert`, `ex_geoid_no_message`, `ex_k1_refused` | The examples, checked. |
+
+The relay checks each authority's Ed25519 signature on the entries, the sending relay's signature on the request
+and its freshness (`messenger/federation.js`); the device measures its position (`messenger/zgeo.js`). Those are
+passed as facts.
+
 ## What is trusted, not proved
 
 - Cryptography: Ed25519 signature checks with the officers' enrolled keys, SHA-256 digests, AES-GCM; for sign-in,

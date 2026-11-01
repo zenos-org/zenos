@@ -6,6 +6,7 @@ import ZenosFormal.Cred
 import ZenosFormal.KeyService
 import ZenosFormal.Supply
 import ZenosFormal.Orchestrator
+import ZenosFormal.Federation
 
 /-!
 `zenos-decide`: reads one JSON request on stdin, writes one JSON answer on stdout, runs the proven decision
@@ -46,6 +47,11 @@ functions of `ZenosFormal.Decide` and nothing else. Any input it cannot read is 
   {"op":"step", "kind":"send"|"tool"|"act", "level":"masked"|"split"|"pc", "provider", "allowed":[..],
    "payload_masked", "route_ok", "dest", "dests":[..], "after_taint":[..], "tainted", "confirmed"}
       -> {"allow": bool, "reason": str|null}
+  {"op":"federate", "authorities":[..], "k", "members":[{"org","max_level","publish_only","sigs":[{"by","ok"}]}],
+   "from", "to", "relay_sig_ok", "fresh", "kind":"message"|"keys"|"alert", "level"}
+      -> {"allow": bool, "reason": str|null}                          (relays of different organizations)
+  {"op":"place", "base_allow", "level", "zone_required", "gps_inside", "proof_inside", "abroad",
+   "close_abroad_from", "emergency", "emergency_share"}               -> {"allow": bool, "reason": str|null}
   zenos-decide egress W THR   (the network sentinel's stream: one send per line
       "key<TAB>destination<TAB>allowed 0|1<TAB>time ms<TAB>bytes", one answer per line "cut" | "ok")
 -/
@@ -299,6 +305,30 @@ def answer (j : J) : Except String J := do
                          dest := ← getS j "dest", dests := ← getSs j "dests", afterTaint := ← getSs j "after_taint",
                          tainted := ← getB j "tainted", confirmed := ← getB j "confirmed" }
     return match decideStep r with
+      | .allow => .obj [("allow", .bool true), ("reason", .null)]
+      | .refuse why => .obj [("allow", .bool false), ("reason", .str why)]
+  | "federate" =>
+    let members ← (← getArr j "members").mapM fun m => do
+      let sigs ← (← getArr m "sigs").mapM fun g => do return ({ signer := ← getS g "by", ok := ← getB g "ok" } : FedSig)
+      return ({ org := ← getS m "org", maxLevel := ← getN m "max_level", publishOnly := ← getB m "publish_only", sigs } : Member)
+    let kind ← match ← getS j "kind" with
+      | "message" => pure FedKind.message
+      | "keys" => pure FedKind.keys
+      | "alert" => pure FedKind.alert
+      | x => throw s!"unknown kind {x}"
+    let r : FedReq := { authorities := ← getSs j "authorities", k := ← getN j "k", members, fromOrg := ← getS j "from",
+                        toOrg := ← getS j "to", relaySigOk := ← getB j "relay_sig_ok", fresh := ← getB j "fresh",
+                        kind, level := ← getN j "level" }
+    return match decideFederate r with
+      | .allow => .obj [("allow", .bool true), ("reason", .null)]
+      | .refuse why => .obj [("allow", .bool false), ("reason", .str why)]
+  | "place" =>
+    let r : PlaceReq := { baseAllow := ← getB j "base_allow", level := ← getN j "level",
+                          zoneRequired := ← getB j "zone_required", gpsInside := ← getB j "gps_inside",
+                          proofInside := ← getB j "proof_inside", abroad := ← getB j "abroad",
+                          closeAbroadFrom := ← getN j "close_abroad_from", emergency := ← getB j "emergency",
+                          emergencyShare := ← getB j "emergency_share" }
+    return match decidePlace r with
       | .allow => .obj [("allow", .bool true), ("reason", .null)]
       | .refuse why => .obj [("allow", .bool false), ("reason", .str why)]
   | "sysegress" =>

@@ -25,6 +25,9 @@ If this is your first time contributing, here is what you need to know:
 - **Paths that need review:** changes to the paths listed in
   [.github/CODEOWNERS](.github/CODEOWNERS) require the maintainer's approval before they can be
   merged. Documentation changes are the quickest way to get started — this file is a good first target.
+- **When to expect a reply:** pull requests, issues and comments are reviewed about five times a day, around
+  22:30, 02:30, 06:30, 10:30 and 14:30 UTC, by the project's AI assistant. Merges of anything beyond documentation
+  wait for the maintainer.
 
 Before sending a change:
 

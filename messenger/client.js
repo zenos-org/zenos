@@ -168,6 +168,7 @@ async function setup() {
 }
 
 async function send(to, text, level, meta) {
+  if (FEDADDR.test(to)) return sendFed(to, text, level, meta);
   if (!PEOPLE[to]) throw new Error("Unknown recipient.");
   if (level > PEOPLE[ACC].level) throw new Error(`Your clearance is L${PEOPLE[ACC].level}.`);
   if (level > PEOPLE[to].level) {
@@ -208,6 +209,56 @@ async function send(to, text, level, meta) {
     if (["msg", "event"].includes(payload.kind)) recordMsg(hist[hist.length - 1]); }
 }
 
+// ---------- people at another organization ("account@organization", docs/FEDERATION.md) ----------
+// This relay passes the envelope to the other organization's relay only when both are on the signed member list
+// and the level is within what that organization may receive (decided by zenos-decide "federate" on both relays).
+// The other relay sees this relay, a mailbox and a size; never who sent it. Attachments and channels stay inside one
+// organization for now.
+const FEDADDR = /^[a-z_][a-z0-9_.]{1,40}@[a-z0-9][a-z0-9.-]{1,80}$/;
+let MYORG = null, FEDTRUST = { t: 0, roots: {} };
+async function myOrg() { if (!MYORG) { const r = await rq("GET", "/.well-known/zenos-relay"); if (!r.org) throw new Error("This relay is not connected to other organizations."); MYORG = r.org; } return MYORG; }
+async function fedTrust() {
+  if (Date.now() - FEDTRUST.t > 600e3) { const r = await rq("GET", "/fed/trust"); FEDTRUST = { t: Date.now(), roots: r && !r.error ? r : {} }; }
+  return FEDTRUST.roots;
+}
+async function sendFed(to, text, level, meta) {
+  const [acc, org] = to.split("@");
+  if (level > PEOPLE[ACC].level) throw new Error(`Your clearance is L${PEOPLE[ACC].level}.`);
+  meta = meta || {};
+  if (meta.ch || meta.att) throw new Error("Channels and attachments stay inside one organization for now.");
+  const addr = S.ProtocolAddress.new(to, 1);
+  if (!(await sess.getSession(addr))) {
+    const b = await rq("GET", `/fed/keys/${org}/${encodeURIComponent(acc)}?by=${ACC}`);
+    if (!b || !b.signed || !b.kyber) throw new Error("Could not reach this person: " + ((b && b.error) || "no keys"));
+    await S.processPreKeyBundle(S.PreKeyBundle.new(b.regId, 1, b.preKey ? b.preKey.id : null, b.preKey ? S.PublicKey.deserialize(ub(b.preKey.pub)) : null,
+      b.signed.id, S.PublicKey.deserialize(ub(b.signed.pub)), ub(b.signed.sig), S.PublicKey.deserialize(ub(b.identity)),
+      b.kyber.id, S.KEMPublicKey.deserialize(ub(b.kyber.pub)), ub(b.kyber.sig)), addr, LOCAL, sess, ident);
+    if (b.intro) { st.intros[to] = b.intro; persist(); }
+    audit("msg-session-created", { peer: to });
+  }
+  const t = stamp();
+  const payload = { text, level, t, ch: null, thread: meta.thread || null, id: meta.id || null, kind: "msg",
+                    rt: { mbx: st.mb.priv.id, uak: st.mb.priv.uak, org: await myOrg() } };
+  const sealed = await S.sealedSenderEncryptMessage(Buffer.from(JSON.stringify(payload)), addr, await senderCert(), sess, ident);
+  const dest = st.peers[to] || { mbx: st.intros[to], uak: null };
+  if (!dest.mbx) throw new Error("No mailbox known for this person yet.");
+  const r = await rq("POST", "/fed/send", { by: ACC, to_org: org, mbx: dest.mbx, uak: dest.uak, body: b64(sealed), level });
+  if (r.error) throw new Error("Delivery failed: " + r.error);
+  hist.push({ scope: "dm", peer: to, from: ACC, dir: "out", text, level, t, id: payload.id, thread: payload.thread, kind: "msg", on: true }); saveHist();
+  recordMsg(hist[hist.length - 1]);
+}
+/** Open a sealed envelope: this relay's trust root first, then the listed organizations' roots. */
+async function openSealed(body) {
+  const tryRoot = (root) => S.sealedSenderDecryptMessage(ub(body), root, Date.now(), null, ACC, 1, sess, ident, pks, spks, kpks);
+  try { const out = await tryRoot(await trustRoot()); return { out, org: null }; }
+  catch (first) {
+    for (const [org, k] of Object.entries(await fedTrust())) {
+      try { const out = await tryRoot(S.PublicKey.deserialize(ub(k))); return { out, org }; } catch {}
+    }
+    throw first;
+  }
+}
+
 async function sendChannel(ch, text, level, thread, extra) {
   extra = extra || {};
   const chans = await rq("GET", `/channels?member=${ACC}`);
@@ -239,10 +290,16 @@ async function receiveSealed() {
   for (const e of items) {
     let from = "?";
     try {
-      const out = await S.sealedSenderDecryptMessage(ub(e.body), await trustRoot(), Date.now(), null, ACC, 1, sess, ident, pks, spks, kpks);
-      from = out.senderUuid();
-      if (!PEOPLE[from]) { audit("msg-dropped", { reason: "unknown sender" }); continue; }
+      const { out, org } = await openSealed(e.body);
+      from = org ? out.senderUuid() + "@" + org : out.senderUuid();
+      if (!org && !PEOPLE[from]) { audit("msg-dropped", { reason: "unknown sender" }); continue; }
       const m = JSON.parse(Buffer.from(out.message()).toString("utf8"));
+      if (org) {                       // from another organization: plain messages only (no releases, calls, channels, attachments)
+        if (m.kind !== "msg" || m.ch || m.att || (m.rt && m.rt.org !== org)) { audit("msg-dropped", { reason: "not allowed across organizations", org }); continue; }
+        if (m.rt && /^[0-9a-f]{32}$/.test(m.rt.mbx || "")) { st.peers[from] = { mbx: m.rt.mbx, uak: m.rt.uak }; persist(); }
+        await ingest(from, { ...m, ev: null, status: null, target: null });
+        continue;
+      }
       if (m.rt && /^[0-9a-f]{32}$/.test(m.rt.mbx || "")) { st.peers[from] = { mbx: m.rt.mbx, uak: m.rt.uak }; persist(); }
       await ingest(from, m);
     } catch (err) { audit("msg-decrypt-failed", { from, error: String(err).slice(0, 120) }); }

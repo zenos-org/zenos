@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+**Messages**
+- Organizations reaching each other (docs/FEDERATION.md; `messenger/federation.js`; Lean: `Federation.lean`):
+  each organization runs its own relay, and relays exchange Signal-protocol envelopes only when both
+  organizations are on a member list whose entries are signed by at least two responsible bodies. Every
+  relay-to-relay request is signed with the sending relay's key (published at `/.well-known/zenos-relay`) and
+  decided by `zenos-decide` ("federate"): `unlisted_refused`, `one_signer_not_enough`, `level_bound`,
+  `publisher_cannot_message`. People write to `account@organization`; the receiving relay learns which relay sent
+  an envelope, not which person. Plain messages only across organizations for now (no channels, attachments,
+  calls).
+- Disaster alerts from a publish-only member (GEOID): signed, with issuer, label (official or simulation), area,
+  source URL and the source's SHA-256; answer cards (safe / need help) counted per device without accounts; only
+  counts go to another organization.
+- Place (`messenger/zgeo.js`; Lean: `decidePlace`): the device compares its own position and never sends it.
+  Location only narrows (outside the office, outside the country), and widens only with a second proof that does
+  not come from positioning, during a declared disaster (`gps_alone_changes_nothing`, `widen_needs_all`). Not yet
+  wired into the screens.
+
 **System**
 - The conductor (`zenos-conductor`, `zorch.py`, docs/ORCHESTRATOR.md; Lean: `Orchestrator.lean`): ZENOS runs a
   task with several frontier models over their APIs, with the person's own keys, and no provider gets the plain

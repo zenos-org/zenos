@@ -23,6 +23,8 @@ jobs:
       - name: Messenger device binding
         run: npm ci && node ../tests/messenger_binding.js
         working-directory: messenger
+      - name: Messenger across organizations (two relays, signed member list, alerts, two clients)
+        run: node tests/messenger_federation.js && node tests/messenger_federation_clients.js
       - name: Storage layer (erasure code, certificates, a certified grid on this machine, repair)
         run: npm ci && npm test
         working-directory: storage
