@@ -170,6 +170,18 @@ python3 -m unittest tests/test_decide.py
 `packaging/build-deb.sh` builds it the same way and installs the program as `/usr/lib/zenos/zenos-decide`.
 Lean 4 v4.34.1 (`formal/lean-toolchain`); no other dependency.
 
+## Reviewing the proofs
+
+Review of the specifications is the most useful help for this part: whether each theorem states what it should,
+and whether a gap between a theorem and what a service actually does is missing from the list above.
+
+- Walkthroughs: [where file content may go (`Flow.lean`)](https://github.com/zenos-org/zenos/discussions/11) and
+  [how the ledger catches a rewritten history (`Ledger.lean`)](https://github.com/zenos-org/zenos/discussions/17).
+- A theorem that says less than it should, or a missing assumption: open an
+  [issue](https://github.com/zenos-org/zenos/issues) or reply in [Discussions](https://github.com/zenos-org/zenos/discussions).
+- A way to get data out despite the decisions: please report it privately as described in
+  [SECURITY.md](../SECURITY.md), not in public.
+
 ## Credit
 
 The idea of proving these decisions in Lean came from [Nyxis](https://github.com/NyxFoundation/nyxis) by Nyx
