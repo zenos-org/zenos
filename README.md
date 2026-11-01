@@ -21,7 +21,7 @@ leak stops the machine until responsible officers release it from their own devi
 | Distributed storage | Sealed files are fragmented and replicated across storage nodes. | PoC (local test nodes) |
 | Level-gated AI | Which AI may touch a file depends on its level (external AI hidden at L4+). | UI and policy only |
 | Messenger | End-to-end encrypted messages (Signal protocol via libsignal), channels, calls (LiveKit, self-hostable). | Working PoC |
-| Apps | Browser (WebKitGTK, tabs, bookmarks), Documents, Sheets, Slides, PDF, Images, Video, file picker. | Working |
+| Apps | Browser (WebKitGTK, tabs, bookmarks), Documents, Sheets, Slides, PDF, Images, Video, file picker. | Working, but they do not yet keep the layout of Office files: in a test on 105 files, no file kept its tables, pictures, headers or borders in full, and .doc files did not open ([tests/office/results](tests/office/results)) |
 | Proven decisions | Whether a file opens, an approval counts, a stop is released, content may flow to a place, a ledger is intact and a send is allowed are decided by one program built from Lean proofs ([docs/FORMAL_VERIFICATION.md](docs/FORMAL_VERIFICATION.md)). | Working; the proofs are checked on every build |
 | Sign-in with the phone | Passwords saved in the browser are encrypted with a key only the person's phone produces (passkey, WebAuthn PRF); each sign-in is approved on the phone with fingerprint or face and a matching code. | Working PoC; tested with software and virtual passkeys, not yet on a physical phone |
 
