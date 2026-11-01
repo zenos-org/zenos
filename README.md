@@ -45,7 +45,7 @@ third_party/  modified KDE plasmoids (kept under their original GPL/LGPL license
 docs/         architecture, security architecture, threat model, release process
 feedback/     the feedback board: a Cloudflare Worker (src/worker.js) with a D1 database
 site/         the project website (zenos-os.org): a static site, no build step
-tools/        site-features/build.py generates the English and Japanese feature pages into site/
+tools/        site-features/build.py (feature pages for site/) and github_activity.py (the board's activity feed)
 dev/          pieces for the WSL2 development machine: VNC desktop service, input-method autostart
 ```
 
