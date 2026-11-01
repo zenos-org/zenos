@@ -43,6 +43,10 @@ tests/        unit tests
 formal/       the decisions of keyd and guardd in Lean 4, with their proofs (zenos-decide)
 third_party/  modified KDE plasmoids (kept under their original GPL/LGPL licenses)
 docs/         architecture, security architecture, threat model, release process
+feedback/     the feedback board: a Cloudflare Worker (src/worker.js) with a D1 database
+site/         the project website (zenos-os.org): a static site, no build step
+tools/        site-features/build.py (feature pages for site/) and github_activity.py (the board's activity feed)
+dev/          pieces for the WSL2 development machine: VNC desktop service, input-method autostart
 ```
 
 How the parts fit together and which run as root: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The decisions that
