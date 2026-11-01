@@ -12,3 +12,12 @@ This folder contains the main documentation for ZENOS.
 - [ZENOS security architecture](SECURITY_ARCHITECTURE.md) — The five security layers and the modules responsible for them.
 - [ZENOS Images · Library and Studio](STUDIO.md) — How the Images app handles music, pictures, and MP4 exports.
 - [ZENOS threat model](THREAT_MODEL.md) — What ZENOS aims to protect and which protections are available in the Developer Preview.
+
+## At the top of the repository
+
+- [README.md](../README.md) — Project overview, preview status, and instructions for running ZENOS.
+- [ROADMAP.md](../ROADMAP.md) — Planned work and release ordering.
+- [CHANGELOG.md](../CHANGELOG.md) — Changes grouped by release, including unreleased work.
+- [CONTRIBUTING.md](../CONTRIBUTING.md) — Contribution rules and checks to run before sending a change.
+- [SECURITY.md](../SECURITY.md) — Known security gaps and private vulnerability reporting instructions.
+- [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) — Third-party components used by ZENOS and their licenses.
