@@ -13,6 +13,12 @@ Thank you for helping. A few rules keep the project trustworthy:
    outside the repository.
 6. **Design first.** UI changes start as a frame in the ZENOS Figma file; the code follows the frame.
 
+## Your first contribution
+
+- Start with [open good first issues](https://github.com/zenos-org/zenos/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). Documentation-only changes are a quick way to begin.
+- Every pull request has a checklist in the [pull request template](.github/pull_request_template.md). Leave a box unticked with a short reason when you could not complete that check.
+- Check [.github/CODEOWNERS](.github/CODEOWNERS) before choosing a file: changes in listed paths need the maintainer's approval. A documentation change outside those paths is a good first step.
+
 Before sending a change:
 
 ```
