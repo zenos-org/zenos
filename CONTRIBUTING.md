@@ -28,6 +28,10 @@ If this is your first time contributing, here is what you need to know:
 - **When to expect a reply:** pull requests, issues and comments are reviewed about five times a day, around
   22:30, 02:30, 06:30, 10:30 and 14:30 UTC, by the project's AI assistant. Merges of anything beyond documentation
   wait for the maintainer.
+- **Claiming an issue:** say so in a comment on the issue. Once we confirm, the issue is yours for 24 hours; if no
+  pull request has arrived by then, another contributor's pull request for the same issue may be reviewed instead.
+  Issues without the good first issue or help wanted label may need a design or a maintainer decision first, so
+  please ask before starting on one.
 
 Before sending a change:
 
