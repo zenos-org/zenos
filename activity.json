@@ -1,0 +1,304 @@
+{
+ "events": [
+  {
+   "kind": "opened",
+   "n": 45,
+   "title": "docs: add docs/GLOSSARY.md for the ZENOS terms (sealed file, officer, ledger, egress, conductor...)",
+   "url": "https://github.com/zenos-org/zenos/issues/45",
+   "at": 1793572738000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "closed",
+   "n": 25,
+   "title": "README: add feedback/, site/, tools/ and dev/ to the repository layout",
+   "url": "https://github.com/zenos-org/zenos/issues/25",
+   "at": 1793538588000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 43,
+   "title": "README: add feedback/, site/, tools/ and dev/ to the repository layout",
+   "url": "https://github.com/zenos-org/zenos/pull/43",
+   "at": 1793538494000,
+   "who": "anubhavaanand"
+  },
+  {
+   "kind": "closed",
+   "n": 41,
+   "title": "CONTRIBUTING.md: add a short \"Your first contribution\" section (good first issues, the PR checklist, which paths need review)",
+   "url": "https://github.com/zenos-org/zenos/issues/41",
+   "at": 1793504493000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 42,
+   "title": "CONTRIBUTING.md: add a short 'Your first contribution' section",
+   "url": "https://github.com/zenos-org/zenos/pull/42",
+   "at": 1793504472000,
+   "who": "anubhavaanand"
+  },
+  {
+   "kind": "opened",
+   "n": 41,
+   "title": "CONTRIBUTING.md: add a short \"Your first contribution\" section (good first issues, the PR checklist, which paths need review)",
+   "url": "https://github.com/zenos-org/zenos/issues/41",
+   "at": 1793500678000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "closed",
+   "n": 39,
+   "title": "docs/README.md: also list the documents at the top of the repository (ROADMAP, CHANGELOG, CONTRIBUTING, SECURITY...)",
+   "url": "https://github.com/zenos-org/zenos/issues/39",
+   "at": 1793500486000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 40,
+   "title": "docs: index root-level project documents (#39)",
+   "url": "https://github.com/zenos-org/zenos/pull/40",
+   "at": 1793500484000,
+   "who": "Vamsi-2581"
+  },
+  {
+   "kind": "opened",
+   "n": 39,
+   "title": "docs/README.md: also list the documents at the top of the repository (ROADMAP, CHANGELOG, CONTRIBUTING, SECURITY...)",
+   "url": "https://github.com/zenos-org/zenos/issues/39",
+   "at": 1793486318000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "closed",
+   "n": 37,
+   "title": "README: add a Contributing section that links CONTRIBUTING.md, the docs index and good first issues",
+   "url": "https://github.com/zenos-org/zenos/issues/37",
+   "at": 1793486116000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 38,
+   "title": "docs: link contribution guidance from the README",
+   "url": "https://github.com/zenos-org/zenos/pull/38",
+   "at": 1793486114000,
+   "who": "laozhej"
+  },
+  {
+   "kind": "opened",
+   "n": 37,
+   "title": "README: add a Contributing section that links CONTRIBUTING.md, the docs index and good first issues",
+   "url": "https://github.com/zenos-org/zenos/issues/37",
+   "at": 1793457485000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "closed",
+   "n": 20,
+   "title": "Add a pull request template with the checks from CONTRIBUTING.md",
+   "url": "https://github.com/zenos-org/zenos/issues/20",
+   "at": 1793448656000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 21,
+   "title": "docs: add pull request template",
+   "url": "https://github.com/zenos-org/zenos/pull/21",
+   "at": 1793448654000,
+   "who": "zheng-guannan577"
+  },
+  {
+   "kind": "closed",
+   "n": 29,
+   "title": "CONTRIBUTING: running the tests from Windows (WSL 2)",
+   "url": "https://github.com/zenos-org/zenos/issues/29",
+   "at": 1793444934000,
+   "who": ""
+  },
+  {
+   "kind": "opened",
+   "n": 36,
+   "title": "External security audit",
+   "url": "https://github.com/zenos-org/zenos/issues/36",
+   "at": 1793441867000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 35,
+   "title": "Everyday apps: Files, Settings, notifications",
+   "url": "https://github.com/zenos-org/zenos/issues/35",
+   "at": 1793441865000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 34,
+   "title": "Conductor: multi-step plans, irreversible acts with phone confirmation, sealed keys",
+   "url": "https://github.com/zenos-org/zenos/issues/34",
+   "at": 1793441862000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 33,
+   "title": "IMA appraisal: refuse files that were not released",
+   "url": "https://github.com/zenos-org/zenos/issues/33",
+   "at": 1793441860000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 32,
+   "title": "Reproducible installer image (ISO)",
+   "url": "https://github.com/zenos-org/zenos/issues/32",
+   "at": 1793441857000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 31,
+   "title": "SELinux multi-level security for sealed files",
+   "url": "https://github.com/zenos-org/zenos/issues/31",
+   "at": 1793441854000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 30,
+   "title": "Officer keys on FIDO2 devices; phone confirmation per file",
+   "url": "https://github.com/zenos-org/zenos/issues/30",
+   "at": 1793441851000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 29,
+   "title": "CONTRIBUTING: running the tests from Windows (WSL 2)",
+   "url": "https://github.com/zenos-org/zenos/issues/29",
+   "at": 1793441847000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 28,
+   "title": "Open Office files with their layout",
+   "url": "https://github.com/zenos-org/zenos/issues/28",
+   "at": 1793441845000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 27,
+   "title": "Office compatibility check on public files, in CI",
+   "url": "https://github.com/zenos-org/zenos/issues/27",
+   "at": 1793441843000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 26,
+   "title": "Release the key service, TPM identity, update-path checks and the conductor",
+   "url": "https://github.com/zenos-org/zenos/issues/26",
+   "at": 1793441840000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "closed",
+   "n": 22,
+   "title": "Add docs/README.md: an index of the documents in docs/",
+   "url": "https://github.com/zenos-org/zenos/issues/22",
+   "at": 1793441266000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 23,
+   "title": "docs: add documentation index",
+   "url": "https://github.com/zenos-org/zenos/pull/23",
+   "at": 1793441264000,
+   "who": "Jiritsuteki"
+  },
+  {
+   "kind": "opened",
+   "n": 25,
+   "title": "README: add feedback/, site/, tools/ and dev/ to the repository layout",
+   "url": "https://github.com/zenos-org/zenos/issues/25",
+   "at": 1793439276000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 22,
+   "title": "Add docs/README.md: an index of the documents in docs/",
+   "url": "https://github.com/zenos-org/zenos/issues/22",
+   "at": 1793428564000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 20,
+   "title": "Add a pull request template with the checks from CONTRIBUTING.md",
+   "url": "https://github.com/zenos-org/zenos/issues/20",
+   "at": 1793417777000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 14,
+   "title": "Flaky test: test_heartbeat test_torn_reads_do_not_alarm raised sensor-silenced in CI",
+   "url": "https://github.com/zenos-org/zenos/issues/14",
+   "at": 1793342313000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "merged",
+   "n": 13,
+   "title": "README: how to try the prebuilt preview image",
+   "url": "https://github.com/zenos-org/zenos/pull/13",
+   "at": 1793342213000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "release",
+   "title": "ZENOS 0.1.2 Developer Preview",
+   "url": "https://github.com/zenos-org/zenos/releases/tag/v0.1.2-preview",
+   "at": 1793301905000,
+   "who": ""
+  },
+  {
+   "kind": "release",
+   "title": "ZENOS 0.1.1 Developer Preview",
+   "url": "https://github.com/zenos-org/zenos/releases/tag/v0.1.1-preview",
+   "at": 1793189126000,
+   "who": ""
+  },
+  {
+   "kind": "release",
+   "title": "ZENOS 0.1.0 Developer Preview",
+   "url": "https://github.com/zenos-org/zenos/releases/tag/v0.1.0-preview",
+   "at": 1793114905000,
+   "who": ""
+  }
+ ],
+ "milestones": [
+  {
+   "title": "0.1.3",
+   "open": 4,
+   "closed": 1,
+   "url": "https://github.com/zenos-org/zenos/milestone/1"
+  },
+  {
+   "title": "Next",
+   "open": 7,
+   "closed": 0,
+   "url": "https://github.com/zenos-org/zenos/milestone/2"
+  }
+ ],
+ "at": 1793595153147
+}
