@@ -209,3 +209,27 @@ def key_release(enrolled, sig_ok, fresh, now_s, last_seen, silence, services_ok,
         return bool(a["allow"]), a.get("by"), a.get("reason")
     except (Refused, KeyError, TypeError, ValueError) as e:
         return False, None, str(e)
+
+
+def install(f):
+    """(allowed, reason) for one package file; f: the facts from zsupply.facts"""
+    try:
+        a = ask({"op": "install", "nodes": [str(n) for n in f["nodes"]],
+                 "votes": [{"node": str(v["node"]), "sig_ok": v["sig_ok"] is True, "record": str(v["record"])}
+                           for v in f["votes"]],
+                 "record": str(f["record"]), "hash_ok": f["hash_ok"] is True, "signers": [str(s) for s in f["signers"]],
+                 "officers": [str(o) for o in f["officers"]], "required": max(0, int(f["required"])),
+                 "revoked": f["revoked"] is not False, "ring_open": max(0, int(f["ring_open"])),
+                 "now": max(0, int(f["now"]))})
+        return bool(a["allow"]), a.get("reason")
+    except (Refused, KeyError, TypeError, ValueError) as e:
+        return False, "no decision: %s" % e
+
+
+def sysegress(system, listed, loopback, enforce):
+    """cut this destination? (the network sentinel's rule for system accounts); no decision cuts in enforce mode"""
+    try:
+        return bool(ask({"op": "sysegress", "system": bool(system), "listed": bool(listed), "loopback": bool(loopback),
+                         "enforce": bool(enforce)})["cut"])
+    except (Refused, KeyError, TypeError, ValueError):
+        return bool(enforce and system and not listed and not loopback)

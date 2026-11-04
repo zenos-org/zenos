@@ -23,3 +23,5 @@ feedback/data/
 feedback/.dev.vars
 feedback/.wrangler/
 feedback/node_modules/
+tests/office/engines/node_modules
+tests/office/engines/zapps.bundle.mjs

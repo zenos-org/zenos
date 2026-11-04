@@ -4,6 +4,9 @@ import ZenosFormal.Ledger
 import ZenosFormal.Egress
 import ZenosFormal.Cred
 import ZenosFormal.KeyService
+import ZenosFormal.Supply
+import ZenosFormal.Orchestrator
+import ZenosFormal.Federation
 
 /-!
 `zenos-decide`: reads one JSON request on stdin, writes one JSON answer on stdout, runs the proven decision
@@ -35,6 +38,20 @@ functions of `ZenosFormal.Decide` and nothing else. Any input it cannot read is 
    "rate_max", "machine_recent", "machine_rate_max", "assigned", "presence_from", "presence": null | {"registered","sig_ok","challenge_ok","origin_ok",
    "user_verified","counter_ok"}, "open": {the fields of "open" above, without "op"}}
       -> {"allow": bool, "by": "clearance"|"grant"|null, "reason": str|null}   (the key service)
+  {"op":"install", "nodes":[..], "votes":[{"node","sig_ok","record"}], "record", "hash_ok", "signers":[..],
+   "officers":[..], "required", "revoked", "ring_open", "now"}       -> {"allow": bool, "reason": str|null}
+  {"op":"sysegress", "system", "listed", "loopback", "enforce"}       -> {"cut": bool}   (the network sentinel)
+  {"op":"route", "allowed":[..], "frags":[{"to", "atoms":[{"record","role":"ident"|"attr"|"other"}]}]}
+      -> {"allow": bool, "reason": str|null}                          (the conductor)
+  {"op":"vote", "weights":[{"provider","weight"}], "ballots":[{"provider","answer"}], "answer"} -> {"accept": bool}
+  {"op":"step", "kind":"send"|"tool"|"act", "level":"masked"|"split"|"pc", "provider", "allowed":[..],
+   "payload_masked", "route_ok", "dest", "dests":[..], "after_taint":[..], "tainted", "confirmed"}
+      -> {"allow": bool, "reason": str|null}
+  {"op":"federate", "authorities":[..], "k", "members":[{"org","max_level","publish_only","sigs":[{"by","ok"}]}],
+   "from", "to", "relay_sig_ok", "fresh", "kind":"message"|"keys"|"alert", "level"}
+      -> {"allow": bool, "reason": str|null}                          (relays of different organizations)
+  {"op":"place", "base_allow", "level", "zone_required", "gps_inside", "proof_inside", "abroad",
+   "close_abroad_from", "emergency", "emergency_share"}               -> {"allow": bool, "reason": str|null}
   zenos-decide egress W THR   (the network sentinel's stream: one send per line
       "key<TAB>destination<TAB>allowed 0|1<TAB>time ms<TAB>bytes", one answer per line "cut" | "ok")
 -/
@@ -243,6 +260,81 @@ def answer (j : J) : Except String J := do
                         assigned := ← getB j "assigned",
                         presenceFrom := ← getN j "presence_from", presence := p, openReq := ← openReq (← field j "open") }
     return decisionJ (decideKey k)
+  | "install" =>
+    let votes ← (← getArr j "votes").mapM fun v => do
+      return ({ node := ← getS v "node", sigOk := ← getB v "sig_ok", record := ← getS v "record" } : Vote)
+    let r : InstallReq := { nodes := ← getSs j "nodes", votes, record := ← getS j "record", hashOk := ← getB j "hash_ok",
+                            signers := ← getSs j "signers", officers := ← getSs j "officers",
+                            required := ← getN j "required", revoked := ← getB j "revoked",
+                            ringOpen := ← getN j "ring_open", now := ← getN j "now" }
+    return match decideInstall r with
+      | .allow => .obj [("allow", .bool true), ("reason", .null)]
+      | .refuse why => .obj [("allow", .bool false), ("reason", .str why)]
+  | "route" =>
+    let frags ← (← getArr j "frags").mapM fun f => do
+      let atoms ← (← getArr f "atoms").mapM fun a => do
+        let role ← match ← getS a "role" with
+          | "ident" => pure Role.ident
+          | "attr" => pure Role.attr
+          | "other" => pure Role.other
+          | x => throw s!"unknown role {x}"
+        return ({ record := ← getS a "record", role } : Atom)
+      return ({ atoms, to := ← getS f "to" } : Fragment)
+    let r : RouteReq := { allowed := ← getSs j "allowed", frags }
+    return match decideRoute r with
+      | .allow => .obj [("allow", .bool true), ("reason", .null)]
+      | .refuse why => .obj [("allow", .bool false), ("reason", .str why)]
+  | "vote" =>
+    let ws ← (← getArr j "weights").mapM fun w => do return (← getS w "provider", ← getN w "weight")
+    let bs ← (← getArr j "ballots").mapM fun b => do
+      return ({ provider := ← getS b "provider", answer := ← getS b "answer" } : Ballot)
+    return .obj [("accept", .bool (decideVote { weights := ws, ballots := bs, answer := ← getS j "answer" }))]
+  | "step" =>
+    let kind ← match ← getS j "kind" with
+      | "send" => pure StepKind.send
+      | "tool" => pure StepKind.tool
+      | "act" => pure StepKind.act
+      | x => throw s!"unknown kind {x}"
+    let level ← match ← getS j "level" with
+      | "masked" => pure Level.masked
+      | "split" => pure Level.split
+      | "pc" => pure Level.onPC
+      | x => throw s!"unknown level {x}"
+    let r : StepReq := { kind, level, provider := ← getS j "provider", allowed := ← getSs j "allowed",
+                         payloadMasked := ← getB j "payload_masked", routeOk := ← getB j "route_ok",
+                         dest := ← getS j "dest", dests := ← getSs j "dests", afterTaint := ← getSs j "after_taint",
+                         tainted := ← getB j "tainted", confirmed := ← getB j "confirmed" }
+    return match decideStep r with
+      | .allow => .obj [("allow", .bool true), ("reason", .null)]
+      | .refuse why => .obj [("allow", .bool false), ("reason", .str why)]
+  | "federate" =>
+    let members ← (← getArr j "members").mapM fun m => do
+      let sigs ← (← getArr m "sigs").mapM fun g => do return ({ signer := ← getS g "by", ok := ← getB g "ok" } : FedSig)
+      return ({ org := ← getS m "org", maxLevel := ← getN m "max_level", publishOnly := ← getB m "publish_only", sigs } : Member)
+    let kind ← match ← getS j "kind" with
+      | "message" => pure FedKind.message
+      | "keys" => pure FedKind.keys
+      | "alert" => pure FedKind.alert
+      | x => throw s!"unknown kind {x}"
+    let r : FedReq := { authorities := ← getSs j "authorities", k := ← getN j "k", members, fromOrg := ← getS j "from",
+                        toOrg := ← getS j "to", relaySigOk := ← getB j "relay_sig_ok", fresh := ← getB j "fresh",
+                        kind, level := ← getN j "level" }
+    return match decideFederate r with
+      | .allow => .obj [("allow", .bool true), ("reason", .null)]
+      | .refuse why => .obj [("allow", .bool false), ("reason", .str why)]
+  | "place" =>
+    let r : PlaceReq := { baseAllow := ← getB j "base_allow", level := ← getN j "level",
+                          zoneRequired := ← getB j "zone_required", gpsInside := ← getB j "gps_inside",
+                          proofInside := ← getB j "proof_inside", abroad := ← getB j "abroad",
+                          closeAbroadFrom := ← getN j "close_abroad_from", emergency := ← getB j "emergency",
+                          emergencyShare := ← getB j "emergency_share" }
+    return match decidePlace r with
+      | .allow => .obj [("allow", .bool true), ("reason", .null)]
+      | .refuse why => .obj [("allow", .bool false), ("reason", .str why)]
+  | "sysegress" =>
+    let e : SysEgress := { system := ← getB j "system", listed := ← getB j "listed", loopback := ← getB j "loopback",
+                           enforce := ← getB j "enforce" }
+    return .obj [("cut", .bool (decideSysEgress e))]
   | "approve" =>
     let act ← match ← getS j "act" with
       | "approve" => pure Act.approve

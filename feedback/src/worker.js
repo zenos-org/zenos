@@ -10,10 +10,39 @@ const THREADS = [
   { id: "office", group: "Editions", edition: "office", about: "ZENOS Office: for companies and teams." },
   { id: "family", group: "Editions", edition: "family", about: "ZENOS Family: for a household, with parents' approvals." },
   { id: "personal", group: "Editions", edition: "personal", about: "ZENOS Personal: for one person." },
+  { id: "github", group: "From the project", view: "github", about: "What happens in the repository: releases, merged changes, issues opened and closed, milestones." },
   { id: "release-notes", group: "From the project", staff: true, about: "What changed, and which threads it came from." },
   { id: "accepted", group: "From the project", view: "accepted", about: "Proposals a maintainer accepted, and where they are." },
   { id: "roadmap", group: "From the project", staff: true, about: "What the project plans next." },
 ];
+// ---------- the repository's activity (public GitHub data, fetched by the server every 30 minutes) ----------
+const REPO = "zenos-org/zenos";
+const GH_EVERY = 10 * 60 * 1000;
+const ghUrl = (u) => (typeof u === "string" && u.startsWith("https://github.com/" + REPO + "/")) ? u : "https://github.com/" + REPO;
+// GitHub's API limit for requests without a key is shared by every Cloudflare server on the same address, so the
+// repository publishes its activity itself (.github/workflows/activity.yml, tools/github_activity.py) and the board
+// reads that file. Every link is checked to point into the repository.
+const ACTIVITY = "https://raw.githubusercontent.com/" + REPO + "/activity/activity.json";
+async function syncGithub(env, force) {
+  const last = await one(env.DB, "SELECT v FROM meta WHERE k = 'githubAt'");
+  if (!force && last && Date.now() - +last.v < GH_EVERY) return;
+  const r = await fetch(ACTIVITY, { headers: { "User-Agent": "zenos-feedback" } });
+  if (!r.ok) throw new Error("activity " + r.status);
+  const a = await r.json();
+  const cut = (t) => String(t || "").slice(0, 200);
+  const KINDS = ["release", "merged", "opened", "closed"];
+  const ev = (Array.isArray(a.events) ? a.events : []).filter((e) => e && KINDS.includes(e.kind)).slice(0, 60)
+    .map((e) => ({ kind: e.kind, n: Number.isInteger(e.n) ? e.n : undefined, title: cut(e.title), url: ghUrl(e.url), at: +e.at || 0, who: cut(e.who) }));
+  const ms = (Array.isArray(a.milestones) ? a.milestones : []).slice(0, 5)
+    .map((m) => ({ title: cut(m.title), open: +m.open || 0, closed: +m.closed || 0, url: ghUrl(m.url) }));
+  await run(env.DB, "INSERT OR REPLACE INTO meta (k, v) VALUES ('github', ?)", JSON.stringify({ events: ev, milestones: ms, at: +a.at || Date.now() }));
+  await run(env.DB, "INSERT OR REPLACE INTO meta (k, v) VALUES ('githubAt', ?)", String(Date.now()));
+}
+async function githubData(env) {
+  const r = await one(env.DB, "SELECT v FROM meta WHERE k = 'github'");
+  try { return r ? JSON.parse(r.v) : { events: [], milestones: [], at: 0 }; } catch (e) { return { events: [], milestones: [], at: 0 }; }
+}
+
 const TH = Object.fromEntries(THREADS.map((t) => [t.id, t]));
 const EDITIONS = ["office", "family", "personal"];
 const STATUSES = ["proposed", "accepted", "declined", "building", "released", "fork"];
@@ -193,13 +222,16 @@ async function api(req, env, ctx) {
     const counts = {};
     for (const r of await all(env.DB, "SELECT thread, COUNT(*) n FROM posts WHERE reply IS NULL GROUP BY thread")) counts[r.thread] = r.n;
     for (const r of await all(env.DB, "SELECT edition, COUNT(*) n FROM posts WHERE reply IS NULL AND edition != '' GROUP BY edition")) counts["ed:" + r.edition] = r.n;
+    const gd = await githubData(env), weekAgo = Date.now() - 7 * 864e5;
+    const ghCount = gd.events.filter((e) => e.at > weekAgo).length;
     const acc = (await one(env.DB, `SELECT COUNT(*) n FROM proposals WHERE status IN ('accepted','building','released','fork')`)).n;
     return json(200, { me: me && { handle: me.handle, name: me.name, via: me.via }, admin, signin: env.TEST_SIGNIN === "1" ? "test" : "github",
       threads: THREADS.map((t) => ({ id: t.id, group: t.group, about: t.about, staff: !!t.staff, view: t.view || "",
-        count: t.view === "accepted" ? acc : t.edition ? (counts["ed:" + t.edition] || 0) : (counts[t.id] || 0) })) });
+        count: t.view === "github" ? ghCount : t.view === "accepted" ? acc : t.edition ? (counts["ed:" + t.edition] || 0) : (counts[t.id] || 0) })) });
   }
   if (p === "/api/thread") {
     const t = TH[u.searchParams.get("t")]; if (!t) return json(404, { error: "no such thread" });
+    if (t.view === "github") return json(200, { github: await githubData(env) });
     if (t.view === "accepted") {
       const ps = await all(env.DB, `SELECT * FROM proposals WHERE status IN ('accepted','building','released','fork') ORDER BY id DESC LIMIT 100`);
       return json(200, { proposals: await Promise.all(ps.map((x) => viewProposal(env, x))) });
@@ -276,5 +308,6 @@ export default {
     }
     return env.ASSETS.fetch(req);
   },
-  async scheduled(ev, env, ctx) { ctx.waitUntil((async () => { await triage(env); await localReview(env); })()); },
+  async scheduled(ev, env, ctx) { ctx.waitUntil((async () => { try { await syncGithub(env); } catch (e) { console.log("github sync failed:", String(e)); }
+    await triage(env); await localReview(env); })()); },
 };

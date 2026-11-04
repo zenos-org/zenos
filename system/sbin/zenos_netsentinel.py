@@ -26,6 +26,11 @@ BT = os.path.join(zconf.SBIN, "zenos-netsense.bt")
 DEFAULT = {"allow_cidrs": [], "threshold_bytes": 1048576, "window_sec": 3.0,
            "trusted_exe_prefixes": [zconf.root().rstrip("/") + "/", zconf.data().rstrip("/") + "/"]}
 ACTIONS = ("terminate", "keep_contained", "escalate")
+# System accounts (root and service accounts) may reach only named destinations: the update mirrors, the audit
+# nodes, the key service, the DNS servers. NetamLoader's controller posed as an AI service (openaigpt4v.com); a
+# system service has no business with any name that is not on this list. "monitor" records, "enforce" cuts.
+SYS_CFG = "/etc/zenos/egress-system.json"
+SYS_DEFAULT = {"mode": "monitor", "names": ["deb.debian.org", "security.debian.org", "deb.nodesource.com"]}
 
 cfg = dict(DEFAULT)
 try:
@@ -57,6 +62,88 @@ def sh(*a):
 def allowed(dst):
     ip = ipaddress.ip_address(dst)
     return ip.is_loopback or any(ip in n for n in ALLOW)
+
+
+SYS = dict(SYS_DEFAULT)
+try:
+    SYS.update(json.load(open(SYS_CFG)))
+except Exception:
+    pass
+sys_ips, sys_seen = set(), {}             # resolved addresses of the listed names; (uid class, ip) -> decided
+
+
+def system_names():
+    names = set(SYS.get("names", []))
+    names.add("deb.debian.org")
+    from urllib.parse import urlparse
+    import glob, re
+    for f in ["/etc/apt/sources.list"] + glob.glob("/etc/apt/sources.list.d/*"):     # the mirrors apt really uses
+        try:
+            names.update(re.findall(r"https?://([A-Za-z0-9.-]+)", open(f).read()))
+        except OSError:
+            pass
+    try:                                    # NetworkManager's connectivity check
+        names.update(re.findall(r"uri=https?://([A-Za-z0-9.-]+)",
+                                "".join(open(f).read() for f in glob.glob("/etc/NetworkManager/conf.d/*") +
+                                        glob.glob("/usr/lib/NetworkManager/conf.d/*"))))
+    except OSError:
+        pass
+    for p, key in (("/etc/zenos/audit.json", "nodes"),):
+        try:
+            for n in json.load(open(p)).get(key, []):
+                names.add(urlparse(n["url"]).hostname)
+        except Exception:
+            pass
+    try:
+        names.add(urlparse(json.load(open("/etc/zenos/keysvc.json"))["url"]).hostname)
+    except Exception:
+        pass
+    return {n for n in names if n}
+
+
+def resolve_loop():
+    """keep the addresses of the listed names (kept for a day: mirrors move between CDN addresses)"""
+    import socket
+    seen = {}
+    while True:
+        t = now()
+        for name in system_names():
+            try:
+                for ai in socket.getaddrinfo(name, 443, proto=socket.IPPROTO_TCP):
+                    seen[ai[4][0]] = t
+            except OSError:
+                pass
+        for rc in ("/etc/resolv.conf", "/run/systemd/resolve/resolv.conf"):   # systemd-resolved: the upstream ones
+            try:
+                for line in open(rc):
+                    if line.startswith("nameserver"):
+                        seen[line.split()[1]] = t
+            except (OSError, IndexError):
+                pass
+        for ip in [k for k, v in seen.items() if t - v > 86400]:
+            del seen[ip]
+        sys_ips.clear()
+        sys_ips.update(seen)
+        time.sleep(300)
+
+
+def system_check(pid, ip, port, comm):
+    """the first byte from a system account to a destination: is it listed?"""
+    info = proc_info(pid)
+    uid = info.get("uid")
+    # root, service accounts and systemd's dynamic users are system accounts; a process already gone counts as one
+    system = uid is None or uid < 1000 or 61184 <= uid <= 65519
+    key = (system, ip)
+    if key in sys_seen and now() - sys_seen[key] < 300:
+        return False
+    listed = allowed(ip) or ip in sys_ips
+    loop = ipaddress.ip_address(ip).is_loopback
+    cut = zdecide.sysegress(system, listed, loop, SYS.get("mode") == "enforce")
+    sys_seen[key] = now()
+    if system and not listed and not loop:
+        log({"t": time.strftime("%Y-%m-%dT%H:%M:%S"), "type": "system-egress-unlisted", "dst": ip, "port": port,
+             "comm": comm, "proc": info, "mode": SYS.get("mode"), "cut": cut})
+    return cut
 
 
 def proc_info(pid):
@@ -222,6 +309,7 @@ def main():
     threading.Thread(target=firewall_watch, daemon=True).start()
     threading.Thread(target=_heartbeat, daemon=True).start()
     threading.Thread(target=open_flag_watch, daemon=True).start()
+    threading.Thread(target=resolve_loop, daemon=True).start()
     me = os.getpid()
     bt = subprocess.Popen(["bpftrace", "-B", "line", BT], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                           text=True)
@@ -244,6 +332,13 @@ def main():
         if ip in blocked:
             continue
         k = (pid, ip)
+        if k not in first_seen and system_check(pid, ip, port, comm):
+            blocked.add(ip)
+            sh("iptables", "-I", "ZENOS_OUT", "1", "-d", ip, "-j", "DROP")
+            sh("ss", "-K", "dst", ip)
+            log({"t": time.strftime("%Y-%m-%dT%H:%M:%S"), "type": "system-egress-cut", "dst": ip, "port": port,
+                 "comm": comm, "proc": proc_info(pid), "reflex": ["block-dst", "kill-sockets"]})
+            continue
         first_seen.setdefault(k, t)
         sent[k] = sent.get(k, 0) + size
         # cut exactly when an unapproved destination reaches the threshold within the window

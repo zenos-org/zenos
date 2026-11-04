@@ -26,6 +26,9 @@ TEXT = {
     "key-refused-silent": "{machine} asked for a key for {user} while it was not reporting. Refused.",
     "key-refused-unhealthy": "{machine} asked for a key for {user} while a protecting service was down. Refused.",
     "key-refused-halted": "{machine} asked for a key for {user} while stopped after an anomaly. Refused.",
+    "supply-alert": "{machine}: a file appeared where updates arrive and is not in the release ledger ({path}). Quarantined.",
+    "integrity-alert": "{machine}: installed files or loader settings differ from what was released: {reason}",
+    "pkg-refused": "{machine}: a package that is not in the release ledger was refused: {reason}",
     "presence-failed": "A confirmation on the phone for {user} ({machine}) did not verify.",
     "passkey-added": "A passkey was added for {user} on the key service.",
 }

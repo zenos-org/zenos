@@ -1,0 +1,34 @@
+name: activity
+# The repository's recent activity as one JSON file on the `activity` branch, read by the feedback board.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  push:
+    branches: [main]
+  issues:
+    types: [opened, closed, reopened, milestoned, demilestoned]
+  release:
+    types: [published]
+  milestone:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: activity
+  cancel-in-progress: true
+jobs:
+  activity:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect
+        run: python3 tools/github_activity.py /tmp/activity.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish on the activity branch
+        run: |
+          mkdir /tmp/pub && cd /tmp/pub && git init -q -b activity
+          cp /tmp/activity.json .
+          git add activity.json
+          git -c user.name="zenos-activity" -c user.email="hello@zenos-os.org" commit -q -m "activity"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" activity

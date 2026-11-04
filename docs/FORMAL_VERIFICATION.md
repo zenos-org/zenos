@@ -96,6 +96,54 @@ officers' signatures on a grant and reads the PC's health from the audit node's 
 file key is derived on the service (HKDF-SHA256 from the level's master key and the file id) and reaches keyd wrapped
 for that request only (X25519, HKDF, AES-256-GCM); the answer is signed with the service's key.
 
+### What a PC lets in (`Supply.lean`)
+
+| Theorem | Statement |
+|---|---|
+| `install_sound` | A package file is installed only when it matches the release record, more than half of the configured audit nodes answered with that same record under their own signatures, at least `required` (and at least one) distinct enrolled release officers signed it, no revocation is agreed, and the PC's ring is open. |
+| `one_node_not_enough` | With two or more audit nodes configured, one node vouching never lets a package in. |
+| `one_key_not_enough` | When two or more officers must sign, one release key never lets a package in. |
+| `revoked_refused` | An agreed revocation keeps a package out. |
+| `sysegress_cut_only_unlisted`, `sysegress_listed_kept` | The network sentinel cuts a system account's connection only in enforce mode and only to a destination that is not listed; listed destinations and people's own programs are never cut by this rule. |
+
+The PC checks the node answers' signatures, the officers' signatures over the record digest and the file's SHA-256
+(`zsupply.py`), and passes the results as facts.
+
+### The conductor (`Orchestrator.lean`, docs/ORCHESTRATOR.md)
+
+| Theorem | Statement |
+|---|---|
+| `route_sound` | A piece of a task is sent only to a provider the person allows. |
+| `no_linked_pair` | Under an allowed route, no provider receives both what a record is about (a name, a label) and its value (a number, a diagnosis). |
+| `one_provider_not_whole` | Under an allowed route, for every protected record and every provider, part of that record never reaches that provider. |
+| `vote_sound`, `one_provider_never_decides` | A cross-checked result is accepted only when its backers hold more than half of the weight of all who answered and at least two distinct providers back it; however the weights are set, one provider never decides alone. |
+| `masked_only_out`, `local_sends_nothing`, `split_needs_route`, `send_to_allowed` | A masked task sends nothing the masker flagged as real; a task kept on the PC sends nothing; a split piece goes out only on a route decideRoute allowed. |
+| `taint_narrows`, `dest_from_person` | After outside content, the destinations open are a subset of those open before; every destination a step reaches was set by the person. |
+| `confirm_irreversible` | An act that cannot be taken back runs only after confirmation. |
+| `chart_split_allowed`, `chart_whole_refused`, `chart_unlisted_refused`, `heavy_alone_refused`, `heavy_with_second_accepted` | The examples, checked. |
+
+The conductor finds the values to mask (`zorch.py`: the person's terms, patterns, the tables' names and cells) and
+gives each piece its role; those are passed as facts.
+
+### Organizations reaching each other, and place (`Federation.lean`, docs/FEDERATION.md)
+
+| Theorem | Statement |
+|---|---|
+| `fed_sound` | A request from one organization's relay to another passes only when it is signed by the sending relay, fresh, both organizations are listed, and its level is within both entries. |
+| `unlisted_refused`, `unlisted_sender_refused` | A request to or from an organization without a valid entry is refused. |
+| `one_signer_not_enough` | An organization whose entries each carry at most one valid authority signature is not listed (the list needs at least two distinct authorities per entry). |
+| `level_bound` | An allowed request never carries a level above what the receiving organization may receive. |
+| `publisher_cannot_message` | A publish-only member (a disaster information service) never sends or receives messages or key bundles. |
+| `abroad_closes` | Outside the country, levels from the set threshold up are refused. |
+| `no_widen_without_emergency`, `widen_needs_all` | Place never allows more than the decision without place, except emergency sharing while a disaster is declared, inside the area by both the device and a second proof. |
+| `zone_needs_proof` | Content that requires a zone opens only with a second proof of place that does not come from the device's positioning. |
+| `gps_alone_changes_nothing` | Without that second proof, the device's location reading does not change the decision: faking it gains nothing. |
+| `ex_ministry_to_city`, `ex_above_city_level`, `ex_rogue_refused`, `ex_geoid_alert`, `ex_geoid_no_message`, `ex_k1_refused` | The examples, checked. |
+
+The relay checks each authority's Ed25519 signature on the entries, the sending relay's signature on the request
+and its freshness (`messenger/federation.js`); the device measures its position (`messenger/zgeo.js`). Those are
+passed as facts.
+
 ## What is trusted, not proved
 
 - Cryptography: Ed25519 signature checks with the officers' enrolled keys, SHA-256 digests, AES-GCM; for sign-in,
@@ -115,12 +163,36 @@ for that request only (X25519, HKDF, AES-256-GCM); the answer is signed with the
 ## Building and checking
 
 ```
+# once: install elan, Lean's toolchain manager (https://github.com/leanprover/elan)
+curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh
+
+git clone https://github.com/zenos-org/zenos && cd zenos
 cd formal && lake build          # checks every proof and builds .lake/build/bin/zenos-decide
-python3 -m unittest tests/test_decide.py
+cd .. && python3 -m unittest tests/test_decide.py
 ```
+
+elan picks the Lean version from `formal/lean-toolchain` by itself. If `lake build` finishes without an error,
+every theorem in `formal/` has been checked by Lean's kernel on your machine, and `Axioms.lean` has confirmed
+that none of them uses `sorry` or an added axiom.
+
+A short reading order for a first look: `Flow.lean` (one decision, with the
+[walkthrough](https://github.com/zenos-org/zenos/discussions/11)), then the theorems in `Proofs.lean` against the
+tables above, then `Axioms.lean`, then "What is trusted, not proved" above, where the proofs stop.
 
 `packaging/build-deb.sh` builds it the same way and installs the program as `/usr/lib/zenos/zenos-decide`.
 Lean 4 v4.34.1 (`formal/lean-toolchain`); no other dependency.
+
+## Reviewing the proofs
+
+Review of the specifications is the most useful help for this part: whether each theorem states what it should,
+and whether a gap between a theorem and what a service actually does is missing from the list above.
+
+- Walkthroughs: [where file content may go (`Flow.lean`)](https://github.com/zenos-org/zenos/discussions/11) and
+  [how the ledger catches a rewritten history (`Ledger.lean`)](https://github.com/zenos-org/zenos/discussions/17).
+- A theorem that says less than it should, or a missing assumption: open an
+  [issue](https://github.com/zenos-org/zenos/issues) or reply in [Discussions](https://github.com/zenos-org/zenos/discussions).
+- A way to get data out despite the decisions: please report it privately as described in
+  [SECURITY.md](../SECURITY.md), not in public.
 
 ## Credit
 

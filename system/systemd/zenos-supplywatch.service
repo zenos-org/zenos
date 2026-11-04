@@ -1,0 +1,22 @@
+[Unit]
+Description=ZENOS supply watch (files that appear where updates arrive must be in the release ledger)
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 -I /usr/sbin/zenos_supplywatch.py
+Restart=always
+RestartSec=5
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/cache/apt/archives /var/lib/zenos /var/log/zenos
+ProtectHome=yes
+PrivateTmp=yes
+CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_FOWNER CAP_CHOWN
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

@@ -113,7 +113,7 @@ class KeydGrant(unittest.TestCase):
                 import zenos_keyd as K
                 K = importlib.reload(K)
                 core = {"id": "r1", "requester": "tanaka", "file": "x", "file_hash": "f1", "level": 4,
-                        "reason": "r", "created": "2026-10-30T10:00:00+0900"}
+                        "reason": "r", "created": __import__("time").strftime("%Y-%m-%dT%H:%M:%S%z")}
                 digest = hashlib.sha256(json.dumps(core, sort_keys=True, ensure_ascii=False).encode()).digest()
                 sig = lambda n: base64.b64encode(keys[n].sign(digest)).decode()
                 g = {"requester": "tanaka", "expires": 4e9, "digest": base64.b64encode(digest).decode(), "core": core,

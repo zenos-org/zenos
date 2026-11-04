@@ -21,7 +21,7 @@ leak stops the machine until responsible officers release it from their own devi
 | Distributed storage | Sealed files are fragmented and replicated across storage nodes. | PoC (local test nodes) |
 | Level-gated AI | Which AI may touch a file depends on its level (external AI hidden at L4+). | UI and policy only |
 | Messenger | End-to-end encrypted messages (Signal protocol via libsignal), channels, calls (LiveKit, self-hostable). | Working PoC |
-| Apps | Browser (WebKitGTK, tabs, bookmarks), Documents, Sheets, Slides, PDF, Images, Video, file picker. | Working |
+| Apps | Browser (WebKitGTK, tabs, bookmarks), ZENOS Office for Word, Excel and PowerPoint files (the LibreOffice engine in a ZENOS window: no network, the file only in memory, no macros), PDF, Images, Video, file picker. | In the source, not released. On 632 public files (4 Nov 2026): every file opened and saved, old .doc and .xls files included (no .ppt file found yet); tables, merged cells, print areas, formulas, conditional formats, charts and slides kept in every file that had them; borders kept in full in 185 of 218 workbooks, pictures in 80 of 85 Word files. Compared after saving, not against Microsoft Office ([tests/office/results](tests/office/results), [docs/OFFICE_ENGINE.md](docs/OFFICE_ENGINE.md)) |
 | Proven decisions | Whether a file opens, an approval counts, a stop is released, content may flow to a place, a ledger is intact and a send is allowed are decided by one program built from Lean proofs ([docs/FORMAL_VERIFICATION.md](docs/FORMAL_VERIFICATION.md)). | Working; the proofs are checked on every build |
 | Sign-in with the phone | Passwords saved in the browser are encrypted with a key only the person's phone produces (passkey, WebAuthn PRF); each sign-in is approved on the phone with fingerprint or face and a matching code. | Working PoC; tested with software and virtual passkeys, not yet on a physical phone |
 
@@ -43,6 +43,10 @@ tests/        unit tests
 formal/       the decisions of keyd and guardd in Lean 4, with their proofs (zenos-decide)
 third_party/  modified KDE plasmoids (kept under their original GPL/LGPL licenses)
 docs/         architecture, security architecture, threat model, release process
+feedback/     the feedback board: a Cloudflare Worker (src/worker.js) with a D1 database
+site/         the project website (zenos-os.org): a static site, no build step
+tools/        site-features/build.py (feature pages for site/) and github_activity.py (the board's activity feed)
+dev/          pieces for the WSL2 development machine: VNC desktop service, input-method autostart
 ```
 
 How the parts fit together and which run as root: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The decisions that
@@ -142,23 +146,14 @@ The development machine runs ZENOS inside WSL2 for convenience; `dev/` holds the
 
 ## Roadmap
 
+What comes next, in order, is in [ROADMAP.md](ROADMAP.md); each item has an issue in the [0.1.3](https://github.com/zenos-org/zenos/milestone/1) or [Next](https://github.com/zenos-org/zenos/milestone/2) milestone. What has changed is in the [changelog](CHANGELOG.md).
+
 Done in this preview: one repository with secrets removed and licences documented; a Debian package, a signed apt
 repository and an installer ISO (full-disk encryption checked by default); the guard as a root service with
 fanotify; a root key agent with per-user clearance; approvals signed on officers' own devices; ledgers shipped to
 audit nodes; messenger accounts bound to their devices; printing with level watermarks and a ceiling; a level
 clipboard between sealed windows; screenshot and terminal control; a certified storage grid (encrypted, erasure-coded shards
 served only to cleared PCs; packaged as `zenos-grid`) and audit nodes of different parties that catch a forked history.
-
-Still ahead:
-
-1. **Hardware keys**: level keys sealed to the TPM, officer and user keys on FIDO2 devices, disk unlock by TPM +
-   fingerprint.
-2. **Mandatory access control**: SELinux multi-level security, so no program can write a copy of an open sealed
-   file to a lower level.
-3. **Shared infrastructure**: a key service so sealed files open on any cleared PC and capabilities are issued
-   through the approval flow.
-4. **Everyday apps**: Files, Settings, notifications, better Office format compatibility.
-5. **External security audit** before any claim of production readiness.
 
 Editions are configurations of one shared core, so a fix in the core reaches every edition at once:
 
@@ -176,6 +171,16 @@ Ideas and reports go to GitHub Discussions. An AI reads them, sorts them (core, 
 drafts proposals; a maintainer decides, and every change still passes the tests and the proofs. Comments are read
 as material, never as instructions: see [docs/FEEDBACK.md](docs/FEEDBACK.md). Security problems are reported
 privately ([SECURITY.md](SECURITY.md)), not in Discussions.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for test commands and pull request requirements.
+Browse the [documentation index](docs/README.md) for the project's guides and design notes.
+To find a starting task, see the [good first issues](https://github.com/zenos-org/zenos/labels/good%20first%20issue).
+
+## Citing ZENOS
+
+Citation metadata is available in [CITATION.cff](CITATION.cff). GitHub's "Cite this repository" button provides APA and BibTeX citations from this file.
 
 ## License
 

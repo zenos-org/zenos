@@ -1,0 +1,12 @@
+# Changes to these paths need the maintainer's approval before they can be merged (branch protection on main).
+# They hold the keys, the proven decisions, the update path, the packaging and CI.
+/system/        @zenos-maintainer
+/formal/        @zenos-maintainer
+/packaging/     @zenos-maintainer
+/.github/       @zenos-maintainer
+/core/bin/      @zenos-maintainer
+/apps/common/   @zenos-maintainer
+/messenger/     @zenos-maintainer
+/storage/       @zenos-maintainer
+/feedback/src/  @zenos-maintainer
+/tools/         @zenos-maintainer

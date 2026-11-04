@@ -27,7 +27,7 @@ async function loadState() {
   let g = "";
   for (const t of S.threads) {
     if (t.group !== g) { g = t.group; L.append(h("div", { cls: "gh" }, g)); }
-    const icon = t.id === "release-notes" ? "★" : t.id === "accepted" ? "✓" : t.id === "roadmap" ? "→" : "#";
+    const icon = t.id === "release-notes" ? "★" : t.id === "accepted" ? "✓" : t.id === "roadmap" ? "→" : t.id === "github" ? "↗" : "#";
     L.append(h("div", { cls: "th" + (t.id === cur ? " on" : ""), on: { click: () => { cur = t.id; location.hash = t.id; $("threads").classList.remove("open"); render(); } } },
       h("i", {}, icon), t.id, h("span", { cls: "n" + (t.count ? "" : " z") }, t.count)));
   }
@@ -97,7 +97,21 @@ async function render() {
   const r = await get("/api/thread?t=" + cur);
   const TL = $("tl"); TL.replaceChildren();
   const ie = introEl(); if (ie) TL.append(ie);
-  if (r.proposals) {
+  if (r.github) {
+    const g = r.github;
+    for (const m of g.milestones) {
+      const all = m.open + m.closed;
+      TL.append(h("a", { cls: "ai gh-ms", href: m.url, target: "_blank", rel: "noopener" }, h("em", {}, "Milestone"),
+        h("span", {}, m.title + " · " + m.closed + " of " + all + " done"),
+        h("span", { cls: "bar", style: "flex:0 0 90px" }, h("i", { style: "width:" + (all ? Math.round(100 * m.closed / all) : 0) + "%" }))));
+    }
+    if (!g.events.length) TL.append(h("div", { cls: "empty" }, "Nothing from GitHub yet. Activity in the repository appears here within 30 minutes."));
+    const LABEL = { release: "Released", merged: "Merged", opened: "New issue", closed: "Closed" };
+    for (const e of g.events) TL.append(h("a", { cls: "ghe ghe-" + e.kind, href: e.url, target: "_blank", rel: "noopener" },
+      h("b", {}, LABEL[e.kind] || e.kind), h("span", { cls: "t" }, (e.n ? "#" + e.n + " " : "") + e.title),
+      h("span", { cls: "m" }, (e.who ? "@" + e.who + " · " : "") + when(e.at))));
+    if (g.at) TL.append(h("div", { cls: "ghat" }, "From github.com/zenos-org/zenos · updated " + when(g.at)));
+  } else if (r.proposals) {
     if (!r.proposals.length) TL.append(h("div", { cls: "empty" }, "No proposal has been accepted yet. Accepted proposals appear here with where they stand."));
     for (const pr of r.proposals) TL.append(h("div", { cls: "ai", on: { click: () => showProposal(pr.id) } }, h("em", {}, "#" + pr.id),
       h("span", {}, pr.title + " · " + pr.people + (pr.people === 1 ? " person" : " people")), h("span", { cls: stCls(pr.status), style: "flex:0" }, cap(pr.status))));

@@ -141,6 +141,29 @@ function send(res, code, obj) {
 }
 
 
+// ---------- sealed delivery into a mailbox (from a device here, or from another organization's relay) ----------
+function deliverSealed(mbx, uak, b64body) {
+  const mb = mailboxes[mbx];
+  if (!mb || typeof b64body !== "string") return { status: 404, body: { error: "unknown mailbox" } };
+  if (mb.uak) { if (H(uak || "") !== mb.uak) return { status: 403, body: { error: "bad access key" } }; }
+  else { const now = Date.now(); introHits[mbx] = (introHits[mbx] || []).filter((x) => now - x < 60e3);
+         if (introHits[mbx].length >= 60) return { status: 429, body: { error: "slow down" } }; introHits[mbx].push(now); }
+  sweep();
+  (squeue[mbx] = squeue[mbx] || []).push({ body: b64body, t: stamp() }); saveM();
+  audit("msg-sealed-delivered", { mailbox: mbx.slice(0, 8), bytes: Buffer.from(b64body, "base64").length });
+  return { status: 200, body: { ok: true } };
+}
+function bundleFor(acc) {                    // a key bundle for a new session; the one-time prekey is used up
+  const b = bundles[acc];
+  if (!b) return null;
+  const out = { ...b, preKey: (b.preKeys || []).shift() || null };
+  delete out.preKeys; delete out.enroll;
+  save();
+  return out;
+}
+// ---------- organizations reaching each other (federation.js, docs/FEDERATION.md) ----------
+const fed = require("./federation").federation({ DIR, audit, send, body, isAdmin, authed, deliverSealed, bundleFor, trust: ca.trustPub });
+
 // ---------- calls (WebRTC via self-hosted LiveKit SFU). The relay only decides WHO may enter a room;
 // media is end-to-end encrypted with a key that travels inside libsignal messages, never through here.
 const LKENV = (() => { try { return Object.fromEntries(fs.readFileSync(path.join(HOME, ".local/share/zenos/livekit/keys.env"), "utf8").trim().split("\n").map((l) => l.split("="))); } catch { return {}; } })();
@@ -158,6 +181,7 @@ http.createServer(async (req, res) => {
   try {
     const u = new URL(req.url, "http://x");
     const parts = u.pathname.split("/").filter(Boolean);
+    if (await fed(req, res, u, parts)) return;
     if (parts[0] === "call" && parts[1] === "servers") {
       // management is only reachable from this PC (client.js forwards it for the local, non-remote UI only)
       if (req.method === "GET") return send(res, 200, callPub());
@@ -283,12 +307,8 @@ http.createServer(async (req, res) => {
       return send(res, 200, { ok: true });
     }
     if (req.method === "GET" && parts[0] === "keys") {           // fetch a bundle (one-time prekey is used up)
-      const b = bundles[parts[1]];
-      if (!b) return send(res, 404, { error: "unknown account" });
-      const out = { ...b, preKey: (b.preKeys || []).shift() || null };
-      delete out.preKeys;
-      save();
-      return send(res, 200, out);
+      const out = bundleFor(parts[1]);
+      return out ? send(res, 200, out) : send(res, 404, { error: "unknown account" });
     }
     if (req.method === "GET" && parts[0] === "accounts") {
       return send(res, 200, Object.keys(bundles).map(pub));
@@ -310,15 +330,8 @@ http.createServer(async (req, res) => {
       return send(res, 200, { ok: true });
     }
     if (req.method === "POST" && parts[0] === "deliver") {           // sealed envelope: the relay sees a mailbox id and a size, nothing else
-      const e = await body(req); const mb = mailboxes[e.mbx];
-      if (!mb) return send(res, 404, { error: "unknown mailbox" });
-      if (mb.uak) { if (H(e.uak || "") !== mb.uak) return send(res, 403, { error: "bad access key" }); }
-      else { const now = Date.now(); introHits[e.mbx] = (introHits[e.mbx] || []).filter((x) => now - x < 60e3);
-             if (introHits[e.mbx].length >= 60) return send(res, 429, { error: "slow down" }); introHits[e.mbx].push(now); }
-      sweep();
-      (squeue[e.mbx] = squeue[e.mbx] || []).push({ body: e.body, t: stamp() }); saveM();
-      audit("msg-sealed-delivered", { mailbox: e.mbx.slice(0, 8), bytes: Buffer.from(e.body, "base64").length });
-      return send(res, 200, { ok: true });
+      const e = await body(req); const r = deliverSealed(e.mbx, e.uak, e.body);
+      return send(res, r.status, r.body);
     }
     if (req.method === "GET" && parts[0] === "collect") {             // only the holder of the owner token can empty a mailbox
       const mb = mailboxes[parts[1]];

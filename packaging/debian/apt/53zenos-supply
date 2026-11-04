@@ -1,0 +1,7 @@
+// ZENOS: every package file is checked against the release ledger before dpkg installs it
+// (zenos_pkgcheck.py; /etc/zenos/supply.json sets "enforce", "warn" or "off"; without that file: off, recorded).
+DPkg::Pre-Install-Pkgs { "/usr/sbin/zenos_pkgcheck.py"; };
+DPkg::Tools::Options::/usr/sbin/zenos_pkgcheck.py::Version "1";
+// dpkg itself is given root-only copies of the files, checked again by their SHA-256 (zenos-dpkg): a file swapped
+// in the download folder after the first check is never what dpkg reads.
+Dir::Bin::dpkg "/usr/sbin/zenos-dpkg";

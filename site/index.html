@@ -61,7 +61,7 @@ footer{border-top:1px solid var(--line);padding:40px 0;font-size:13px;color:#8A8
 <body>
 <nav id="nav"><div class="wrap">
 <a class="logo" href="#top"><img src="img/logo.svg" alt="">ZENOS</a>
-<div class="links"><a href="#vision">Vision</a><a href="/features/">Features</a><a href="#protects">How it protects</a><a href="#editions">Editions</a><a href="#feedback">Feedback</a><a href="https://feedback.zenos-os.org">Board</a><a href="#status">Status</a><a href="#download">Download</a><a class="lang" href="ja/" hreflang="ja" lang="ja">日本語</a></div>
+<div class="links"><a href="#vision">Vision</a><a href="/features/">Features</a><a href="#protects">How it protects</a><a href="#editions">Editions</a><a href="#feedback">Feedback</a><a href="https://feedback.zenos-os.org">Board</a><a href="#updates">What's new</a><a href="#status">Status</a><a href="#download">Download</a><a class="lang" href="ja/" hreflang="ja" lang="ja">日本語</a></div>
 <a class="btn navgh" href="https://github.com/zenos-org/zenos">GitHub →</a>
 <button class="menu" id="menu" aria-label="Menu" aria-expanded="false">☰</button>
 </div></nav>
@@ -77,9 +77,9 @@ footer{border-top:1px solid var(--line);padding:40px 0;font-size:13px;color:#8A8
 <section class="alt" id="vision"><div class="wrap">
 <p class="eyebrow">Vision</p>
 <h2>Protection should live in the system, not in people&#39;s memory</h2>
-<p class="lead">Cyberattacks are happening everywhere, and people around the world are fixing code to stop them. That work matters. ZENOS adds protection at the level of the operating system, so that a weakness in one program does not become a leak. Many leaks are not even attacks: a file sent to the wrong place, a copy left on a laptop, a password reused. Training does not fix that. ZENOS puts the rules into the system itself, so the safe way is the only way, while the screen looks and works like the computer people already know.</p>
+<p class="lead">Cyberattacks are happening everywhere, and people around the world are fixing code to stop them. That work matters. ZENOS adds protection at the level of the operating system, so that a weakness in one program does not become a leak. Many leaks are not even attacks: a file sent to the wrong place, a copy left on a laptop, a password reused. Training does not fix that. ZENOS puts the rules into the system itself, so the safe way is the only way, while keeping the screen close to the computer people already know.</p>
 <div class="grid g4">
-<div class="card"><h3>Familiar first</h3><p>Windows-like layout and ordinary apps. People should not need training; the protection sits underneath.</p></div>
+<div class="card"><h3>Familiar first</h3><p>Windows-like layout and ordinary apps. People should not need training; the protection sits underneath. Office files keep their text, but not yet their layout (measured below).</p></div>
 <div class="card"><h3>Nobody acts alone</h3><p>Opening above your level, releasing a stopped PC or signing in with a saved password needs a person to approve on their own device.</p></div>
 <div class="card"><h3>Proven, not promised</h3><p>The decisions that open files and release keys are written as proofs in Lean and run exactly as proved.</p></div>
 <div class="card"><h3>Open, no single vendor</h3><p>Debian, KDE and WebKitGTK underneath. Apache-2.0. Anyone can inspect it, run it, or fork it.</p></div>
@@ -170,13 +170,28 @@ footer{border-top:1px solid var(--line);padding:40px 0;font-size:13px;color:#8A8
 </ul></div>
 </div></section>
 
-<section id="status"><div class="wrap">
+<section id="updates"><div class="wrap">
+<p class="eyebrow">What's new</p>
+<h2>Recent updates</h2>
+<p class="lead">What changed, and whether it is in a release or only in the source so far. The full list is in the <a href="https://github.com/zenos-org/zenos/blob/main/CHANGELOG.md">changelog</a>.</p>
+<div class="grid g2">
+<div class="card"><span class="tag t-warn">In the source · not released</span><h3>Messages across organizations</h3><p>Each organization (a ministry, a prefecture, a city) runs its own relay for ZENOS Messages, and relays reach each other only when both organizations are on a member list signed by at least two responsible bodies. Messages stay encrypted end to end with the Signal protocol; the receiving relay sees which relay sent a message, not which person. Disaster alerts come from a publish-only member with their source and its digest, and only counts of the answers (safe / need help) go to other organizations. Location is checked on the phone and never sent. The rules are proved in Lean. The design is in <a href="https://github.com/zenos-org/zenos/blob/main/docs/FEDERATION.md">FEDERATION.md</a>; the Cloudflare backend and phones without a ZENOS PC come next.</p></div>
+<div class="card"><span class="tag t-warn">In the source · not released</span><h3>The conductor</h3><p>ZENOS can run a task with AI models from several providers, using your own API keys, so that no provider gets the plain data. Names, numbers, files and column names are replaced with tokens; the models write code on the tokens, and ZENOS runs it on the PC in a sandbox with no network. A result is accepted only when at least two providers agree, each counted by a weight measured on the PC. A table and the text about it can go to different providers. ZENOS itself contains no AI model.</p></div>
+<div class="card"><span class="tag t-ok">On GitHub · 3 Nov 2026</span><h3>Open to contributions</h3><p>Nine outside contributions are merged so far: an index of the documents, a checklist shown on every pull request, a Contributing section in the README that points to the guide, the index and the good first issues, links from the index to the documents at the top of the repository, a "Your first contribution" section in the contribution guide, the rest of the top-level folders in the README's repository layout, a citation file so that GitHub shows "Cite this repository", a "Citing ZENOS" section in the README, and a <a href="https://github.com/zenos-org/zenos/blob/main/docs/GLOSSARY.md">glossary</a> of the terms the documents use. What comes next is in <a href="https://github.com/zenos-org/zenos/blob/main/ROADMAP.md">ROADMAP.md</a>, with an issue for each item and progress per milestone; the <a href="https://feedback.zenos-os.org/#github">board</a> shows the repository's activity. Every change needs the maintainer's approval and passing tests; changes to the keys, the proven decisions, the update path, packaging or CI need the maintainer's review in particular.</p></div>
+<div class="card"><span class="tag t-warn">Measured · 31 Oct 2026</span><h3>Office files, measured</h3><p>105 public Word and Excel files from Japanese ministries and municipalities, opened and saved. Today's ZENOS apps keep text, values and formulas, but not layout: tables, pictures, vertical writing, merged cells and print areas were lost in every file that had them, and old .doc files (57 of the 105) do not open. LibreOffice kept all of these in the same files. Office files are to open in a full office engine under ZENOS's rules; the <a href="https://github.com/zenos-org/zenos/tree/main/tests/office">check and its results</a> are public and run every week.</p></div>
+<div class="card"><span class="tag t-ok">Released · 30 Oct 2026</span><h3>0.1.2: fewer ways into the kernel</h3><p>Kernel lockdown from the first start (even root cannot load unsigned modules or write to kernel memory). Multipath TCP, io_uring and unprivileged BPF off; unused network protocols and old file systems not loaded. A waiting kernel fix restarts the PC while nobody is signed in. The audit nodes report a PC that goes quiet for 90 seconds.</p></div>
+<div class="card"><span class="tag t-warn">In the source · not released</span><h3>Keys off the PC</h3><p>With a key service on another machine, the keys of newly sealed files are no longer kept on the PC. The service releases one file's key per request, only to a PC that is reporting, within limits, and records every release. The PC's identity key is made inside the TPM when the PC has one. Officers are alerted through ZENOS Messages.</p></div>
+<div class="card"><span class="tag t-warn">In the source · not released</span><h3>The update path</h3><p>After NetamLoader (Kaspersky, 29 Oct 2026): a package goes in only when a majority of the audit nodes hold the same record for its exact file, signed by two release officers. Files that appear in the update folder are checked at once; installed files and the ways a genuine program can be made to load something else are checked every hour. Off until the audit nodes for it are running.</p></div>
+</div>
+</div></section>
+
+<section class="tint" id="status"><div class="wrap">
 <p class="eyebrow">Status</p>
 <h2>Where it stands, plainly</h2>
 <p class="lead">ZENOS is a Developer Preview: a release for trying it, looking for holes and telling us what you find, and that kind of testing is welcome. Several protections are still demonstrations, so do not use it for real sensitive data until an independent audit is done.</p>
 <div class="grid g2">
 <div class="card"><span class="tag t-ok">Done</span><h3>Working today</h3><p>Sealed level files, approvals signed on officers' devices, stop-and-release, the tamper-evident ledger, encrypted messenger and calls, proven decisions, an installer that encrypts the disk. Phone sign-in works with virtual passkeys and is not yet tested on a physical phone.</p></div>
-<div class="card"><span class="tag t-warn">Next</span><h3>Still ahead</h3><p>Keys sealed to the TPM and FIDO2 keys for officers; mandatory access control (SELinux MLS); a shared key service; better Office compatibility; an external security audit.</p></div>
+<div class="card"><span class="tag t-warn">Next</span><h3>Still ahead</h3><p>Releasing what is in the source (key service, TPM identity, the update-path checks, the conductor); confirmation on the phone for each file; FIDO2 keys for officers; mandatory access control (SELinux MLS); a reproducible installer image; better Office compatibility; an external security audit.</p></div>
 </div></div></section>
 
 <section class="alt" id="download"><div class="wrap">
