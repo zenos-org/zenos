@@ -1,0 +1,498 @@
+{
+ "events": [
+  {
+   "kind": "closed",
+   "n": 64,
+   "title": "docs/README.md: list PHONE_KEYS.md in the documentation index",
+   "url": "https://github.com/zenos-org/zenos/issues/64",
+   "at": 1793979648000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 65,
+   "title": "docs: add phone passkeys to documentation index",
+   "url": "https://github.com/zenos-org/zenos/pull/65",
+   "at": 1793979646000,
+   "who": "Pranjali258"
+  },
+  {
+   "kind": "opened",
+   "n": 67,
+   "title": "Help wanted: test passkey approvals on an Android phone",
+   "url": "https://github.com/zenos-org/zenos/issues/67",
+   "at": 1793979469000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 66,
+   "title": "Help wanted: test reports from physical PCs (0.2.0)",
+   "url": "https://github.com/zenos-org/zenos/issues/66",
+   "at": 1793979467000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "pr",
+   "n": 65,
+   "title": "docs: add phone passkeys to documentation index",
+   "url": "https://github.com/zenos-org/zenos/pull/65",
+   "at": 1793975811000,
+   "who": "Pranjali258"
+  },
+  {
+   "kind": "comment",
+   "n": 64,
+   "title": "docs/README.md: list PHONE_KEYS.md in the documentation index",
+   "url": "https://github.com/zenos-org/zenos/issues/64#issuecomment-6686253462",
+   "at": 1793972650000,
+   "who": "Pranjali258"
+  },
+  {
+   "kind": "opened",
+   "n": 64,
+   "title": "docs/README.md: list PHONE_KEYS.md in the documentation index",
+   "url": "https://github.com/zenos-org/zenos/issues/64",
+   "at": 1793967427000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "closed",
+   "n": 56,
+   "title": "README: link the Code of Conduct and the glossary from the Contributing section",
+   "url": "https://github.com/zenos-org/zenos/issues/56",
+   "at": 1793953061000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 63,
+   "title": "docs: link community rules and glossary for contributors",
+   "url": "https://github.com/zenos-org/zenos/pull/63",
+   "at": 1793953059000,
+   "who": "laozhej"
+  },
+  {
+   "kind": "release",
+   "title": "ZENOS 0.2.0 Developer Preview",
+   "url": "https://github.com/zenos-org/zenos/releases/tag/v0.2.0-preview",
+   "at": 1793950723000,
+   "who": ""
+  },
+  {
+   "kind": "pr",
+   "n": 63,
+   "title": "docs: link community rules and glossary for contributors",
+   "url": "https://github.com/zenos-org/zenos/pull/63",
+   "at": 1793942598000,
+   "who": "laozhej"
+  },
+  {
+   "kind": "claim",
+   "n": 56,
+   "title": "README: link the Code of Conduct and the glossary from the Contributing section",
+   "url": "https://github.com/zenos-org/zenos/issues/56#issuecomment-6677568441",
+   "at": 1793942193000,
+   "who": "laozhej"
+  },
+  {
+   "kind": "closed",
+   "n": 57,
+   "title": "ROADMAP.md: link each item to its tracking issue (#26-#36)",
+   "url": "https://github.com/zenos-org/zenos/issues/57",
+   "at": 1793903948000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 61,
+   "title": "docs: link roadmap items to tracking issues",
+   "url": "https://github.com/zenos-org/zenos/pull/61",
+   "at": 1793903936000,
+   "who": "Jiritsuteki"
+  },
+  {
+   "kind": "pr",
+   "n": 61,
+   "title": "docs: link roadmap items to tracking issues",
+   "url": "https://github.com/zenos-org/zenos/pull/61",
+   "at": 1793899719000,
+   "who": "Jiritsuteki"
+  },
+  {
+   "kind": "pr",
+   "n": 60,
+   "title": "docs(roadmap): link each roadmap item to its tracking issue",
+   "url": "https://github.com/zenos-org/zenos/pull/60",
+   "at": 1793895463000,
+   "who": "MAKHMUDuz"
+  },
+  {
+   "kind": "claim",
+   "n": 57,
+   "title": "ROADMAP.md: link each item to its tracking issue (#26-#36)",
+   "url": "https://github.com/zenos-org/zenos/issues/57#issuecomment-6663027592",
+   "at": 1793895389000,
+   "who": "MAKHMUDuz"
+  },
+  {
+   "kind": "claim",
+   "n": 57,
+   "title": "ROADMAP.md: link each item to its tracking issue (#26-#36)",
+   "url": "https://github.com/zenos-org/zenos/issues/57#issuecomment-6660606089",
+   "at": 1793889161000,
+   "who": "Jiritsuteki"
+  },
+  {
+   "kind": "opened",
+   "n": 58,
+   "title": "Network sentinel: feed the egress window a monotonic clock (prune_prune assumes time never goes backwards)",
+   "url": "https://github.com/zenos-org/zenos/issues/58",
+   "at": 1793852241000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 57,
+   "title": "ROADMAP.md: link each item to its tracking issue (#26-#36)",
+   "url": "https://github.com/zenos-org/zenos/issues/57",
+   "at": 1793838080000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 56,
+   "title": "README: link the Code of Conduct and the glossary from the Contributing section",
+   "url": "https://github.com/zenos-org/zenos/issues/56",
+   "at": 1793820672000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "closed",
+   "n": 52,
+   "title": "docs/README.md: list FEDERATION.md and OFFICE_ENGINE.md in the documentation index",
+   "url": "https://github.com/zenos-org/zenos/issues/52",
+   "at": 1793820332000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 55,
+   "title": "docs: add federation and Office engine guides to the index",
+   "url": "https://github.com/zenos-org/zenos/pull/55",
+   "at": 1793820331000,
+   "who": "laozhej"
+  },
+  {
+   "kind": "pr",
+   "n": 55,
+   "title": "docs: add federation and Office engine guides to the index",
+   "url": "https://github.com/zenos-org/zenos/pull/55",
+   "at": 1793808233000,
+   "who": "laozhej"
+  },
+  {
+   "kind": "claim",
+   "n": 52,
+   "title": "docs/README.md: list FEDERATION.md and OFFICE_ENGINE.md in the documentation index",
+   "url": "https://github.com/zenos-org/zenos/issues/52#issuecomment-6635450431",
+   "at": 1793808149000,
+   "who": "laozhej"
+  },
+  {
+   "kind": "claim",
+   "n": 51,
+   "title": "docs/GLOSSARY.md: add zenos-decide, clearance, grant, pre-send check and network sentinel",
+   "url": "https://github.com/zenos-org/zenos/issues/51#issuecomment-6630947110",
+   "at": 1793796343000,
+   "who": "Web-Maxxer"
+  },
+  {
+   "kind": "closed",
+   "n": 53,
+   "title": "README: update the docs/ line in Repository layout (glossary, design notes)",
+   "url": "https://github.com/zenos-org/zenos/issues/53",
+   "at": 1793777840000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 54,
+   "title": "docs: update repository layout description",
+   "url": "https://github.com/zenos-org/zenos/pull/54",
+   "at": 1793777838000,
+   "who": "laishettikarthik-tech"
+  },
+  {
+   "kind": "claim",
+   "n": 53,
+   "title": "README: update the docs/ line in Repository layout (glossary, design notes)",
+   "url": "https://github.com/zenos-org/zenos/issues/53#issuecomment-6625291016",
+   "at": 1793777524000,
+   "who": "8Ashwinee"
+  },
+  {
+   "kind": "pr",
+   "n": 54,
+   "title": "docs: update repository layout description",
+   "url": "https://github.com/zenos-org/zenos/pull/54",
+   "at": 1793769428000,
+   "who": "laishettikarthik-tech"
+  },
+  {
+   "kind": "claim",
+   "n": 53,
+   "title": "README: update the docs/ line in Repository layout (glossary, design notes)",
+   "url": "https://github.com/zenos-org/zenos/issues/53#issuecomment-6623117285",
+   "at": 1793768954000,
+   "who": "laishettikarthik-tech"
+  },
+  {
+   "kind": "opened",
+   "n": 53,
+   "title": "README: update the docs/ line in Repository layout (glossary, design notes)",
+   "url": "https://github.com/zenos-org/zenos/issues/53",
+   "at": 1793765900000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "closed",
+   "n": 14,
+   "title": "Flaky test: test_heartbeat test_torn_reads_do_not_alarm raised sensor-silenced in CI",
+   "url": "https://github.com/zenos-org/zenos/issues/14",
+   "at": 1793763943000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 16,
+   "title": "Heartbeat watcher: look again before counting an empty read as silence (#14)",
+   "url": "https://github.com/zenos-org/zenos/pull/16",
+   "at": 1793763932000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 52,
+   "title": "docs/README.md: list FEDERATION.md and OFFICE_ENGINE.md in the documentation index",
+   "url": "https://github.com/zenos-org/zenos/issues/52",
+   "at": 1793751606000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 51,
+   "title": "docs/GLOSSARY.md: add zenos-decide, clearance, grant, pre-send check and network sentinel",
+   "url": "https://github.com/zenos-org/zenos/issues/51",
+   "at": 1793722761000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "closed",
+   "n": 48,
+   "title": "docs: mention CITATION.cff in docs/README.md and add a short Citing ZENOS section to the README",
+   "url": "https://github.com/zenos-org/zenos/issues/48",
+   "at": 1793722669000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 49,
+   "title": "docs: add citation information",
+   "url": "https://github.com/zenos-org/zenos/pull/49",
+   "at": 1793722668000,
+   "who": "purva-bhagwat"
+  },
+  {
+   "kind": "closed",
+   "n": 45,
+   "title": "docs: add docs/GLOSSARY.md for the ZENOS terms (sealed file, officer, ledger, egress, conductor...)",
+   "url": "https://github.com/zenos-org/zenos/issues/45",
+   "at": 1793722533000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 50,
+   "title": "docs: add glossary of ZENOS terminology",
+   "url": "https://github.com/zenos-org/zenos/pull/50",
+   "at": 1793722532000,
+   "who": "laozhej"
+  },
+  {
+   "kind": "pr",
+   "n": 50,
+   "title": "docs: add glossary of ZENOS terminology",
+   "url": "https://github.com/zenos-org/zenos/pull/50",
+   "at": 1793717732000,
+   "who": "laozhej"
+  },
+  {
+   "kind": "comment",
+   "n": 45,
+   "title": "docs: add docs/GLOSSARY.md for the ZENOS terms (sealed file, officer, ledger, egress, conductor...)",
+   "url": "https://github.com/zenos-org/zenos/issues/45#issuecomment-6606798077",
+   "at": 1793717013000,
+   "who": "laozhej"
+  },
+  {
+   "kind": "pr",
+   "n": 49,
+   "title": "docs: add citation information",
+   "url": "https://github.com/zenos-org/zenos/pull/49",
+   "at": 1793709946000,
+   "who": "purva-bhagwat"
+  },
+  {
+   "kind": "claim",
+   "n": 48,
+   "title": "docs: mention CITATION.cff in docs/README.md and add a short Citing ZENOS section to the README",
+   "url": "https://github.com/zenos-org/zenos/issues/48#issuecomment-6599039741",
+   "at": 1793694944000,
+   "who": "purva-bhagwat"
+  },
+  {
+   "kind": "opened",
+   "n": 48,
+   "title": "docs: mention CITATION.cff in docs/README.md and add a short Citing ZENOS section to the README",
+   "url": "https://github.com/zenos-org/zenos/issues/48",
+   "at": 1793694427000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "closed",
+   "n": 46,
+   "title": "Add CITATION.cff so GitHub shows \"Cite this repository\"",
+   "url": "https://github.com/zenos-org/zenos/issues/46",
+   "at": 1793694056000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 47,
+   "title": "docs: add CITATION.cff (Citation File Format 1.2.0)",
+   "url": "https://github.com/zenos-org/zenos/pull/47",
+   "at": 1793694055000,
+   "who": "Janhavi1512"
+  },
+  {
+   "kind": "pr",
+   "n": 47,
+   "title": "docs: add CITATION.cff (Citation File Format 1.2.0)",
+   "url": "https://github.com/zenos-org/zenos/pull/47",
+   "at": 1793693182000,
+   "who": "Janhavi1512"
+  },
+  {
+   "kind": "claim",
+   "n": 46,
+   "title": "Add CITATION.cff so GitHub shows \"Cite this repository\"",
+   "url": "https://github.com/zenos-org/zenos/issues/46#issuecomment-6597293131",
+   "at": 1793688360000,
+   "who": "Janhavi1512"
+  },
+  {
+   "kind": "opened",
+   "n": 46,
+   "title": "Add CITATION.cff so GitHub shows \"Cite this repository\"",
+   "url": "https://github.com/zenos-org/zenos/issues/46",
+   "at": 1793639536000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "opened",
+   "n": 45,
+   "title": "docs: add docs/GLOSSARY.md for the ZENOS terms (sealed file, officer, ledger, egress, conductor...)",
+   "url": "https://github.com/zenos-org/zenos/issues/45",
+   "at": 1793572738000,
+   "who": "zenos-maintainer"
+  },
+  {
+   "kind": "claim",
+   "n": 35,
+   "title": "Everyday apps: Files, Settings, notifications",
+   "url": "https://github.com/zenos-org/zenos/issues/35#issuecomment-6561244406",
+   "at": 1793553419000,
+   "who": "8Ashwinee"
+  },
+  {
+   "kind": "claim",
+   "n": 36,
+   "title": "External security audit",
+   "url": "https://github.com/zenos-org/zenos/issues/36#issuecomment-6561240210",
+   "at": 1793553398000,
+   "who": "8Ashwinee"
+  },
+  {
+   "kind": "closed",
+   "n": 25,
+   "title": "README: add feedback/, site/, tools/ and dev/ to the repository layout",
+   "url": "https://github.com/zenos-org/zenos/issues/25",
+   "at": 1793538588000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 43,
+   "title": "README: add feedback/, site/, tools/ and dev/ to the repository layout",
+   "url": "https://github.com/zenos-org/zenos/pull/43",
+   "at": 1793538494000,
+   "who": "anubhavaanand"
+  },
+  {
+   "kind": "closed",
+   "n": 41,
+   "title": "CONTRIBUTING.md: add a short \"Your first contribution\" section (good first issues, the PR checklist, which paths need review)",
+   "url": "https://github.com/zenos-org/zenos/issues/41",
+   "at": 1793504493000,
+   "who": ""
+  },
+  {
+   "kind": "merged",
+   "n": 42,
+   "title": "CONTRIBUTING.md: add a short 'Your first contribution' section",
+   "url": "https://github.com/zenos-org/zenos/pull/42",
+   "at": 1793504472000,
+   "who": "anubhavaanand"
+  },
+  {
+   "kind": "pr",
+   "n": 44,
+   "title": "docs: explain first-time contribution workflow",
+   "url": "https://github.com/zenos-org/zenos/pull/44",
+   "at": 1793504376000,
+   "who": "Vamsi-2581"
+  },
+  {
+   "kind": "pr",
+   "n": 43,
+   "title": "README: add feedback/, site/, tools/ and dev/ to the repository layout",
+   "url": "https://github.com/zenos-org/zenos/pull/43",
+   "at": 1793501364000,
+   "who": "anubhavaanand"
+  },
+  {
+   "kind": "pr",
+   "n": 42,
+   "title": "CONTRIBUTING.md: add a short 'Your first contribution' section",
+   "url": "https://github.com/zenos-org/zenos/pull/42",
+   "at": 1793501232000,
+   "who": "anubhavaanand"
+  }
+ ],
+ "milestones": [
+  {
+   "title": "0.1.3",
+   "open": 3,
+   "closed": 2,
+   "url": "https://github.com/zenos-org/zenos/milestone/1"
+  },
+  {
+   "title": "Next",
+   "open": 8,
+   "closed": 0,
+   "url": "https://github.com/zenos-org/zenos/milestone/2"
+  }
+ ],
+ "at": 1793979750365
+}
